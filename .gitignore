@@ -1,6 +1,7 @@
 npm-debug.log*
 
 build/Release
+build/Debug
 
 SimConnect/inc/*
 SimConnect/lib/*
