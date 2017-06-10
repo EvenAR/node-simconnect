@@ -15,3 +15,6 @@ NOTE: If your app need to work with both FSX and P3D you must use the FSX SDK.
 * Create a folder named `SimConnect` and copy the two folders `inc` and `lib` from the SimConnect SDK installation over to the new directory. These should include `SimConnect.h` and `SimConnect.lib`, respectively.
 * Run `npm install`
 * If everything went well you should be able to run the example program using: `node example`
+
+To build native NW.JS addon:
+`nw-gyp rebuild --target=0.20.3 --arch=ia32` (where `--target` is the version of NW.JS)
