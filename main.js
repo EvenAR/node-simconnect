@@ -80,6 +80,22 @@ function setupDataRequests(name) {
         console.log("Engine state:  " + data[0] + "," + data[1] + ","  + data[2] + ","  + data[3]);
     }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
 
+    simConnect.requestDataOnSimObject(simConnectId, [
+        ["LIGHT STROBE","Bool"],
+        ["LIGHT PANEL","Bool"],
+        ["LIGHT LANDING","Bool"],
+        ["LIGHT TAXI","Bool"],
+        ["LIGHT BEACON","Bool"],
+        ["LIGHT NAV","Bool"],
+        ["LIGHT LOGO","Bool"],
+        ["LIGHT WING","Bool"],
+        ["LIGHT RECOGNITION","Bool"],
+        ["LIGHT CABIN","Bool"],
+
+    ], function(data) {
+        console.log(data);
+    }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+
     // Continously check if sim is on ground. When aircraft hits the ground, get the vertical speed.
     simConnect.requestDataOnSimObject(simConnectId, [["SIM ON GROUND","Bool"], ["VERTICAL SPEED","feet per minute"]], function(data) {
         if(data[0] == 0)
