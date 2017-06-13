@@ -1,0 +1,15 @@
+{
+  "app_name": "My SimConnect-app",
+  "name": "My SimConnect-app",
+  "version": "0.0.12-alpha",
+  "main": "index.html",
+  "cpu": [
+    "ia32"
+  ],
+  "window": {
+    "frame": true,
+    "title": "My SimConnect-app",
+    "min_width": 800,
+    "min_height": 500
+  }
+}

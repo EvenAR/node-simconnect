@@ -1,0 +1,74 @@
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
+    </head>
+
+    <body>
+        <div id="status"></div>
+
+        <br><br>
+
+        <table>
+            <tr style='background: lightgray'>
+                <th style='min-width: 150px'>Name</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Paused</td>
+                <td id="td-paused"></td>
+            </tr>
+            <tr>
+                <td>Latitude</td>
+                <td id="td-lat"></td>
+            </tr>
+            <tr>
+                <td>Longitude</td>
+                <td id="td-lng"></td>
+            </tr>
+            <tr>
+                <td>Pitch</td>
+                <td id="td-pitch"></td>
+            </tr>
+            <tr>
+                <td>Bank</td>
+                <td id="td-bank"></td>
+            </tr>
+            <tr>
+                <td>AIR-path</td>
+                <td id="td-ac-path"></td>
+            </tr>
+            <tr>
+                <td>Aircraft title</td>
+                <td id="td-ac-title"></td>
+            </tr>
+        </table>
+    </body>
+
+    <script>
+        // From simconnect.h:
+        const simConnect = require('../build/Release/node-simconnect');
+
+        $('#status').text("-- THIS TEXT SHOULD NOT BE VISIBLE --");
+
+        // Open connection
+        var simConnectId = simConnect.open("MyAppName", function(name) {
+            $('#status').text("Connected to: \"" + name + "\"");
+
+             // Subscribe to paused/unpaused event
+            simConnect.subscribeToSystemEvent(simConnectId, "Pause", (paused) => { 
+                $('#td-paused').text(paused == 1); 
+            });
+
+            // Get the .air file name of the loaded aircraft
+            simConnect.requestSystemState(simConnectId, "AircraftLoaded", function(obj) {
+                $('#td-ac-path').text(obj.string);
+            });
+
+        }, function() {
+            $('#status').text("SimConnect quit");
+        }, function(exception) {
+            $('#status').text("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData);
+        });
+        
+    </script>
+</html>
