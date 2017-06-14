@@ -2,7 +2,7 @@
 
 
 
-HANDLE ghMutex;
+//HANDLE ghMutex;
 uv_loop_t *loop;
 uv_async_t async;
 
@@ -12,7 +12,7 @@ std::map<int, Nan::Callback*> systemEventCallbacks;
 std::map<int, Nan::Callback*> systemStateCallbacks;
 
 // Data received from SimConnect
-std::queue<CallbackData *> receivedDataQueue;
+//std::queue<CallbackData *> receivedDataQueue;
 
 // Special events to listen for from the beginning
 int openEventId;
@@ -23,6 +23,12 @@ int exceptionEventId;
 int defineIdCounter;
 int eventIdCounter;
 int requestIdCounter;
+
+
+uv_cond_t cv;
+uv_mutex_t mutex;
+
+
 
 HANDLE ghSimConnect = NULL;
 
@@ -47,21 +53,28 @@ public:
 
 				if (SUCCEEDED(hr))
 				{
-					WaitForSingleObject(ghMutex, INFINITE);
+					
 					CallbackData data;
 					data.pData = pData;
 					data.cbData = cbData;
-					//async.data = &data;
-					receivedDataQueue.push(&data);
-					ReleaseMutex(ghMutex);
-
+					async.data = &data;
+					//printf("Work-thread: SimConnect data pushed to queue with dwID: %i\n", pData->dwID);
+					//receivedDataQueue.push(&data);
+					//WaitForSingleObject(ghMutex, INFINITE);
+					uv_mutex_lock(&mutex);
 					uv_async_send(&async);
+					uv_cond_wait(&cv, &mutex);
+				}
+				else {
+					//printf("ahhh, break\n");
+					Sleep(1);
 				}
 			}
-			Sleep(1);
+			
+			
 		}
 	}
-
+	 
 };
 
 
@@ -90,40 +103,32 @@ void messageReceiver(uv_async_t* handle) {
 	Nan::HandleScope scope;
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 
-	ghMutex = CreateMutex(NULL, FALSE, NULL);
-	while (!receivedDataQueue.empty()) {
+	//WaitForSingleObject(ghMutex, INFINITE);
+	//while (!receivedDataQueue.empty()) {
 		
-		CallbackData* data = receivedDataQueue.front();
-		printf("Event received: ");
+		CallbackData* data = (CallbackData*)handle->data; //receivedDataQueue.front();
+
 		switch (data->pData->dwID)
 		{
 		case SIMCONNECT_RECV_ID_EVENT:
-			printf("SIMCONNECT_RECV_ID_EVENT\n");
 			handleReceived_Event(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
-			printf("SIMCONNECT_RECV_ID_SIMOBJECT_DATA\n");
 			handleReceived_Data(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_QUIT:
-			printf("SIMCONNECT_RECV_ID_QUIT\n");
 			handleReceived_Quit(isolate);
 			break;
 		case SIMCONNECT_RECV_ID_EXCEPTION:
-			printf("SIMCONNECT_RECV_ID_EXCEPTION\n");
 			handleReceived_Exception(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_EVENT_FILENAME:
-			printf("SIMCONNECT_RECV_ID_EVENT_FILENAME\n");
 			handleReceived_Filename(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_OPEN:
-			printf("SIMCONNECT_RECV_ID_OPEN\n");
 			handleReceived_Open(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_SYSTEM_STATE:
-			time_t  timev2;
-			printf("SIMCONNECT_RECV_ID_SYSTEM_STATE\n");
 			handleReceived_SystemState(isolate, data->pData, data->cbData);
 			break;
 
@@ -132,9 +137,13 @@ void messageReceiver(uv_async_t* handle) {
 			break;
 		}
 
-		receivedDataQueue.pop();
-	}
-	ReleaseMutex(ghMutex);
+		//receivedDataQueue.pop();
+		
+	//}
+	//ReleaseMutex(ghMutex);
+	
+	uv_mutex_unlock(&mutex);
+	uv_cond_signal(&cv);
 }
 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
@@ -153,7 +162,6 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 			DWORD cbString;
 			StructVS *pS = (StructVS*)((char*)(&pObjData->dwData) + offset);
 			SimConnect_RetrieveString(pData, cbData, &pS->strings, &pString, &cbString);
-			printf("Title: %s\n", (const char*)pString);
 			result_list->Set(i, String::NewFromUtf8(isolate, (const char*)pString));
 			
 			varSize = cbString;
@@ -231,7 +239,6 @@ void handleReceived_SystemState(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD 
 	obj->Set(String::NewFromUtf8(isolate, "float"), Number::New(isolate, pState->fFloat));
 	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromUtf8(isolate, pState->szString));
 
-	printf("Filename: %s\n", (const char*)pState->szString);
 	Local<Value> argv[1] = { obj };
 	systemStateCallbacks[pState->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), 1, argv);
 }
@@ -245,7 +252,11 @@ void handleReceived_Quit(Isolate* isolate) {
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
 
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	ghMutex = CreateMutex(NULL, FALSE, NULL);
+	//ghMutex = CreateMutex(NULL, FALSE, NULL);
+
+	uv_mutex_init(&mutex);
+	uv_cond_init(&cv);
+
 
 	defineIdCounter = 0;
 	eventIdCounter = 0;
@@ -292,7 +303,7 @@ void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	WaitForSingleObject(ghMutex, INFINITE);
+	//WaitForSingleObject(ghMutex, INFINITE);
 	Isolate* isolate = args.GetIsolate();
 
 	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
@@ -305,8 +316,7 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	args.GetReturnValue().Set(v8::Number::New(isolate, id));
 
-	printf("System state request ID: %i\n", id);
-	ReleaseMutex(ghMutex);
+	//ReleaseMutex(ghMutex);
 }
 
 void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -325,7 +335,7 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	WaitForSingleObject(ghMutex, INFINITE);
+	//WaitForSingleObject(ghMutex, INFINITE);
 	v8::Isolate* isolate = args.GetIsolate();
 
 	int eventId = getUniqueEventId();
@@ -338,8 +348,7 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, systemEventName);
 	args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
 
-	printf("System event ID: %i\n", eventId);
-	ReleaseMutex(ghMutex);
+	//ReleaseMutex(ghMutex);
 }
 
 void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
