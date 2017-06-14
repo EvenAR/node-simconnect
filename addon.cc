@@ -1,7 +1,5 @@
 #include "addon.h"
 
-
-
 //HANDLE ghMutex;
 uv_loop_t *loop;
 uv_async_t async;
@@ -10,9 +8,6 @@ uv_async_t async;
 std::map<int, DataRequest> dataRequests;
 std::map<int, Nan::Callback*> systemEventCallbacks;
 std::map<int, Nan::Callback*> systemStateCallbacks;
-
-// Data received from SimConnect
-//std::queue<CallbackData *> receivedDataQueue;
 
 // Special events to listen for from the beginning
 int openEventId;
@@ -24,11 +19,8 @@ int defineIdCounter;
 int eventIdCounter;
 int requestIdCounter;
 
-
 uv_cond_t cv;
 uv_mutex_t mutex;
-
-
 
 HANDLE ghSimConnect = NULL;
 
@@ -53,28 +45,22 @@ public:
 
 				if (SUCCEEDED(hr))
 				{
-					
 					CallbackData data;
 					data.pData = pData;
 					data.cbData = cbData;
 					async.data = &data;
-					//printf("Work-thread: SimConnect data pushed to queue with dwID: %i\n", pData->dwID);
-					//receivedDataQueue.push(&data);
-					//WaitForSingleObject(ghMutex, INFINITE);
 					uv_mutex_lock(&mutex);
 					uv_async_send(&async);
+
+					// Wait for mainthread to process the dispatch
 					uv_cond_wait(&cv, &mutex);
 				}
 				else {
-					//printf("ahhh, break\n");
 					Sleep(1);
 				}
 			}
-			
-			
 		}
 	}
-	 
 };
 
 
@@ -96,52 +82,44 @@ int getUniqueRequestId() {
 	return id;
 }
 
-// Runs on main thread after uv_async_send() is called.
-// TODO: Fix this: When addon is used with NW.JS the code below is not always called and callbacks gets lost.
+// Runs on main thread after uv_async_send() is called
 void messageReceiver(uv_async_t* handle) {
 
 	Nan::HandleScope scope;
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 
-	//WaitForSingleObject(ghMutex, INFINITE);
-	//while (!receivedDataQueue.empty()) {
-		
-		CallbackData* data = (CallbackData*)handle->data; //receivedDataQueue.front();
+	CallbackData* data = (CallbackData*)handle->data; //receivedDataQueue.front();
 
-		switch (data->pData->dwID)
-		{
-		case SIMCONNECT_RECV_ID_EVENT:
-			handleReceived_Event(isolate, data->pData, data->cbData);
-			break;
-		case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
-			handleReceived_Data(isolate, data->pData, data->cbData);
-			break;
-		case SIMCONNECT_RECV_ID_QUIT:
-			handleReceived_Quit(isolate);
-			break;
-		case SIMCONNECT_RECV_ID_EXCEPTION:
-			handleReceived_Exception(isolate, data->pData, data->cbData);
-			break;
-		case SIMCONNECT_RECV_ID_EVENT_FILENAME:
-			handleReceived_Filename(isolate, data->pData, data->cbData);
-			break;
-		case SIMCONNECT_RECV_ID_OPEN:
-			handleReceived_Open(isolate, data->pData, data->cbData);
-			break;
-		case SIMCONNECT_RECV_ID_SYSTEM_STATE:
-			handleReceived_SystemState(isolate, data->pData, data->cbData);
-			break;
+	switch (data->pData->dwID)
+	{
+	case SIMCONNECT_RECV_ID_EVENT:
+		handleReceived_Event(isolate, data->pData, data->cbData);
+		break;
+	case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
+		handleReceived_Data(isolate, data->pData, data->cbData);
+		break;
+	case SIMCONNECT_RECV_ID_QUIT:
+		handleReceived_Quit(isolate);
+		break;
+	case SIMCONNECT_RECV_ID_EXCEPTION:
+		handleReceived_Exception(isolate, data->pData, data->cbData);
+		break;
+	case SIMCONNECT_RECV_ID_EVENT_FILENAME:
+		handleReceived_Filename(isolate, data->pData, data->cbData);
+		break;
+	case SIMCONNECT_RECV_ID_OPEN:
+		handleReceived_Open(isolate, data->pData, data->cbData);
+		break;
+	case SIMCONNECT_RECV_ID_SYSTEM_STATE:
+		handleReceived_SystemState(isolate, data->pData, data->cbData);
+		break;
 
-		default:
-			printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
-			break;
-		}
-
-		//receivedDataQueue.pop();
-		
-	//}
-	//ReleaseMutex(ghMutex);
+	default:
+		printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
+		break;
+	}
 	
+	// The dispatch-worker can now continue
 	uv_mutex_unlock(&mutex);
 	uv_cond_signal(&cv);
 }
@@ -252,8 +230,6 @@ void handleReceived_Quit(Isolate* isolate) {
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
 
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	//ghMutex = CreateMutex(NULL, FALSE, NULL);
-
 	uv_mutex_init(&mutex);
 	uv_cond_init(&cv);
 
@@ -303,7 +279,6 @@ void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	//WaitForSingleObject(ghMutex, INFINITE);
 	Isolate* isolate = args.GetIsolate();
 
 	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
@@ -315,8 +290,6 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, stateName);
 
 	args.GetReturnValue().Set(v8::Number::New(isolate, id));
-
-	//ReleaseMutex(ghMutex);
 }
 
 void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -335,7 +308,6 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	//WaitForSingleObject(ghMutex, INFINITE);
 	v8::Isolate* isolate = args.GetIsolate();
 
 	int eventId = getUniqueEventId();
@@ -347,8 +319,6 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	HANDLE hSimConnect = ghSimConnect;
 	HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, systemEventName);
 	args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
-
-	//ReleaseMutex(ghMutex);
 }
 
 void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -398,10 +368,8 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 }
-
-/*
-* Generates a SimConnect data definition for the collection of requests.
-*/
+ 
+// Generates a SimConnect data definition for the collection of requests.
 DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
 
 	int definitionId = getUniqueDefineId();
@@ -476,15 +444,6 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 }
 
-
-
-//NAN_METHOD(StartDispatchWorker) {
-	//int	connectionId = info[0]->Int32Value();
-	//loop = uv_default_loop();
-	//Nan::AsyncQueueWorker(new DispatchWorker(NULL, simConnections[connectionId]));
-//}
-
-
 void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "open", Open);
 	NODE_SET_METHOD(exports, "close", Close);
@@ -494,7 +453,6 @@ void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
 	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
 	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
-	//Nan::Export(exports, "startDispatchWorker", StartDispatchWorker);
 }
 
 NODE_MODULE(addon, Initialize);
