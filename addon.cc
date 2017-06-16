@@ -59,6 +59,9 @@ public:
 					Sleep(1);
 				}
 			}
+			else {
+				Sleep(10);
+			}
 		}
 	}
 };
@@ -136,12 +139,13 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 		int varSize = 0;
 
 		if (valTypes[i] == SIMCONNECT_DATATYPE_STRINGV) {
-			char *pString;
+			offset += 8;		// just a quick and ugly fix to this problem: "F-22 RapF-22 Raptor - 525th Fighter Squadron" (for example)
+			char *pOutString;
 			DWORD cbString;
-			StructVS *pS = (StructVS*)((char*)(&pObjData->dwData) + offset);
-			SimConnect_RetrieveString(pData, cbData, &pS->strings, &pString, &cbString);
-			result_list->Set(i, String::NewFromUtf8(isolate, (const char*)pString));
+			char * pStringv = ((char*)(&pObjData->dwData) + offset);
+			SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
 			
+			result_list->Set(i, String::NewFromUtf8(isolate, (const char*)pOutString));
 			varSize = cbString;
 		}
 		else {
@@ -271,102 +275,115 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = args.GetIsolate();
-	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
+	if (ghSimConnect) {
+		Isolate* isolate = args.GetIsolate();
+		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
-	HRESULT hr = SimConnect_Close(&ghSimConnect);
-	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		HRESULT hr = SimConnect_Close(&ghSimConnect);
+		ghSimConnect = NULL;
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+	}
 }
 
 void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = args.GetIsolate();
+	if (ghSimConnect) {
+		Isolate* isolate = args.GetIsolate();
 
-	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
-	const char* stateName = *String::Utf8Value(args[1]);
+		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
+		const char* stateName = *String::Utf8Value(args[1]);
 
-	int id = getUniqueRequestId();
-	systemStateCallbacks[id] = new Nan::Callback(args[2].As<Function>());
+		int id = getUniqueRequestId();
+		systemStateCallbacks[id] = new Nan::Callback(args[2].As<Function>());
 
-	HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, stateName);
+		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, stateName);
 
-	args.GetReturnValue().Set(v8::Number::New(isolate, id));
+		args.GetReturnValue().Set(v8::Number::New(isolate, id));
+	}
 }
 
 void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = args.GetIsolate();
-	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
+	if (ghSimConnect) {
+		Isolate* isolate = args.GetIsolate();
+		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
 
-	const char* eventName = *String::Utf8Value(args[1]);
-	DWORD data = args.Length() > 2 ? args[2]->Int32Value() : 0;
+		const char* eventName = *String::Utf8Value(args[1]);
+		DWORD data = args.Length() > 2 ? args[2]->Int32Value() : 0;
 
-	int id = getUniqueEventId();
-	SimConnect_MapClientEventToSimEvent(ghSimConnect, id, eventName);
-	HRESULT hr = SimConnect_TransmitClientEvent(ghSimConnect, SIMCONNECT_OBJECT_ID_USER, id, data, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+		int id = getUniqueEventId();
+		SimConnect_MapClientEventToSimEvent(ghSimConnect, id, eventName);
+		HRESULT hr = SimConnect_TransmitClientEvent(ghSimConnect, SIMCONNECT_OBJECT_ID_USER, id, data, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
-	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+	}
 }
 
 void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = args.GetIsolate();
+	if (ghSimConnect) {
+		v8::Isolate* isolate = args.GetIsolate();
 
-	int eventId = getUniqueEventId();
+		int eventId = getUniqueEventId();
 
-	int				connectionId = args[0]->Int32Value();
-	const char*		systemEventName = *String::Utf8Value(args[1]);
-	systemEventCallbacks[eventId] = { new Nan::Callback(args[2].As<Function>()) };
+		int				connectionId = args[0]->Int32Value();
+		const char*		systemEventName = *String::Utf8Value(args[1]);
+		systemEventCallbacks[eventId] = { new Nan::Callback(args[2].As<Function>()) };
 
-	HANDLE hSimConnect = ghSimConnect;
-	HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, systemEventName);
-	args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
+		HANDLE hSimConnect = ghSimConnect;
+		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, systemEventName);
+		args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
+	}
 }
 
 void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = args.GetIsolate();
+	if (ghSimConnect) {
+		v8::Isolate* isolate = args.GetIsolate();
 
-	int	connectionId = args[0]->Int32Value();
-	Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[1]);
-	auto callback = new Nan::Callback(args[2].As<Function>());
+		int	connectionId = args[0]->Int32Value();
+		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[1]);
+		auto callback = new Nan::Callback(args[2].As<Function>());
 
-	int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-	int	periodId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
-	int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
-	int	origin = args.Length() > 6 ? args[6]->Int32Value() : 0;
-	int	interval = args.Length() > 7 ? args[7]->Int32Value() : 0;
-	DWORD limit = args.Length() > 8 ? args[8]->NumberValue() : 0;
+		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	periodId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
+		int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
+		int	origin = args.Length() > 6 ? args[6]->Int32Value() : 0;
+		int	interval = args.Length() > 7 ? args[7]->Int32Value() : 0;
+		DWORD limit = args.Length() > 8 ? args[8]->NumberValue() : 0;
 
-	//HANDLE hSimConnect = simConnections[connectionId];
+		//HANDLE hSimConnect = simConnections[connectionId];
 
-	int reqId = getUniqueRequestId();
+		int reqId = getUniqueRequestId();
 
-	DataRequest request = generateDataRequest(ghSimConnect, reqValues, callback);
+		DataRequest request = generateDataRequest(ghSimConnect, reqValues, callback);
 
-	HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, request.definition_id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
+		HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, request.definition_id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
 
-	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
-	dataRequests[reqId] = request;
+		dataRequests[reqId] = request;
+	}
 }
 
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	v8::Isolate* isolate = args.GetIsolate();
+	if (ghSimConnect) {
+		v8::Isolate* isolate = args.GetIsolate();
 
-	int	connectionId = args[0]->Int32Value();
-	const char* name = *String::Utf8Value(args[1]);
-	const char* unit = *String::Utf8Value(args[2]);
-	double value = args[3]->NumberValue();
+		int	connectionId = args[0]->Int32Value();
+		const char* name = *String::Utf8Value(args[1]);
+		const char* unit = *String::Utf8Value(args[2]);
+		double value = args[3]->NumberValue();
 
-	int	objectId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-	int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
+		int	objectId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
 
-	//HANDLE hSimConnect = simConnections[connectionId];
+		//HANDLE hSimConnect = simConnections[connectionId];
 
-	int defId = getUniqueDefineId();
+		int defId = getUniqueDefineId();
 
-	SimConnect_AddToDataDefinition(ghSimConnect, defId, name, unit);
-	HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
+		SimConnect_AddToDataDefinition(ghSimConnect, defId, name, unit);
+		HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
 
-	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+	}
 }
  
 // Generates a SimConnect data definition for the collection of requests.
@@ -422,26 +439,28 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 
 // Custom useful functions ////////////////////////////////////////////////////////////////////
 void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	Isolate* isolate = args.GetIsolate();
-	//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
+	if (ghSimConnect) {
+		Isolate* isolate = args.GetIsolate();
+		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
-	Local<Array> obj = Local<Array>::Cast(args[1]);
+		Local<Array> obj = Local<Array>::Cast(args[1]);
 
-	SIMCONNECT_DATA_INITPOSITION init;
-	init.Altitude = args[1]->NumberValue();
-	init.Latitude = args[2]->NumberValue();
-	init.Longitude = args[3]->NumberValue();
-	init.Pitch = args[4]->NumberValue();
-	init.Bank = args[5]->NumberValue();
-	init.Heading = args[6]->NumberValue();
-	init.OnGround = args[7]->IntegerValue();
-	init.Airspeed = args[8]->IntegerValue();
+		SIMCONNECT_DATA_INITPOSITION init;
+		init.Altitude = args[1]->NumberValue();
+		init.Latitude = args[2]->NumberValue();
+		init.Longitude = args[3]->NumberValue();
+		init.Pitch = args[4]->NumberValue();
+		init.Bank = args[5]->NumberValue();
+		init.Heading = args[6]->NumberValue();
+		init.OnGround = args[7]->IntegerValue();
+		init.Airspeed = args[8]->IntegerValue();
 
-	int id = getUniqueDefineId();
-	SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
-	HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, id, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(init), &init);
+		int id = getUniqueDefineId();
+		SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
+		HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, id, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(init), &init);
 
-	args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+	}
 }
 
 void Initialize(v8::Local<v8::Object> exports) {
