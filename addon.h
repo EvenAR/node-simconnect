@@ -9,11 +9,6 @@
 using namespace v8;
 
 
-struct StructVS
-{
-	char    strings[1];   // variable-length strings
-};
-
 struct CallbackData {
 	DWORD cbData;
 	SIMCONNECT_RECV* pData;

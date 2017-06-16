@@ -63,6 +63,11 @@
             simConnect.requestSystemState(simConnectId, "AircraftLoaded", function(obj) {
                 $('#td-ac-path').text(obj.string);
             });
+			
+			// Get aircraft title
+			simConnect.requestDataOnSimObject(simConnectId, [["TITLE", null, 11]], function(data) {
+				$('#td-ac-title').text(data[0]);
+			});
 
         }, function() {
             $('#status').text("SimConnect quit");
