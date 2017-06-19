@@ -245,7 +245,7 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	Isolate* isolate = args.GetIsolate();
 
 	// Get arguments
-	const char*		appName = *String::Utf8Value(args[0]);
+	v8::String::Utf8Value appName(args[0]->ToString());
 
 	openEventId = getUniqueEventId();
 	systemEventCallbacks[openEventId] = { new Nan::Callback(args[1].As<Function>()) };
@@ -259,7 +259,7 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	Nan::AsyncQueueWorker(new DispatchWorker(NULL));
 
 	// Open connection
-	HRESULT hr = SimConnect_Open(&ghSimConnect, appName, NULL, 0, 0, 0);
+	HRESULT hr = SimConnect_Open(&ghSimConnect, *appName, NULL, 0, 0, 0);
 
 	// Save connection handle if success
 	Local<Integer> retval;
@@ -290,12 +290,11 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Isolate* isolate = args.GetIsolate();
 
 		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
-		const char* stateName = *String::Utf8Value(args[1]);
+		v8::String::Utf8Value stateName(args[1]->ToString());
 
 		int id = getUniqueRequestId();
 		systemStateCallbacks[id] = new Nan::Callback(args[2].As<Function>());
-
-		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, stateName);
+		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, *stateName);
 
 		args.GetReturnValue().Set(v8::Number::New(isolate, id));
 	}
@@ -306,12 +305,11 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Isolate* isolate = args.GetIsolate();
 		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
-
-		const char* eventName = *String::Utf8Value(args[1]);
+		v8::String::Utf8Value eventName(args[1]->ToString());
 		DWORD data = args.Length() > 2 ? args[2]->Int32Value() : 0;
 
 		int id = getUniqueEventId();
-		SimConnect_MapClientEventToSimEvent(ghSimConnect, id, eventName);
+		SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
 		HRESULT hr = SimConnect_TransmitClientEvent(ghSimConnect, SIMCONNECT_OBJECT_ID_USER, id, data, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
@@ -325,11 +323,11 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		int eventId = getUniqueEventId();
 
 		int				connectionId = args[0]->Int32Value();
-		const char*		systemEventName = *String::Utf8Value(args[1]);
+		v8::String::Utf8Value systemEventName(args[1]->ToString());
 		systemEventCallbacks[eventId] = { new Nan::Callback(args[2].As<Function>()) };
 
 		HANDLE hSimConnect = ghSimConnect;
-		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, systemEventName);
+		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, *systemEventName);
 		args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
 	}
 }
@@ -363,13 +361,14 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 }
 
+
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 
 		int	connectionId = args[0]->Int32Value();
-		const char* name = *String::Utf8Value(args[1]);
-		const char* unit = *String::Utf8Value(args[2]);
+		v8::String::Utf8Value name(args[1]->ToString());
+		v8::String::Utf8Value unit(args[2]->ToString());
 		double value = args[3]->NumberValue();
 
 		int	objectId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
@@ -379,7 +378,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		int defId = getUniqueDefineId();
 
-		SimConnect_AddToDataDefinition(ghSimConnect, defId, name, unit);
+		SimConnect_AddToDataDefinition(ghSimConnect, defId, *name, *unit);
 		HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
@@ -409,10 +408,10 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 			SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64;	// Default type (double)
 			double epsilon;
 			float datumId;
-
+			
 			if (len > 1) {
-				datumName = *String::Utf8Value(value->Get(0));
-				unitsName = (value->Get(1)->IsNull()) ? NULL : *String::Utf8Value(value->Get(1));
+				datumName = *String::Utf8Value(value->Get(0)->ToString());
+				unitsName = (value->Get(1)->IsNull()) ? NULL : *String::Utf8Value(value->Get(1)->ToString());
 				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName);
 			}
 			if (len > 2) {

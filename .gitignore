@@ -1,9 +1,3 @@
 npm-debug.log*
-
-build/Release
-build/Debug
-
-SimConnect/inc/*
-SimConnect/lib/*
-
+build
 node_modules
