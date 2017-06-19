@@ -8,7 +8,6 @@
 #include "SimConnect.h"
 using namespace v8;
 
-
 struct CallbackData {
 	DWORD cbData;
 	SIMCONNECT_RECV* pData;
