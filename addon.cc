@@ -178,13 +178,14 @@ void handleReceived_Event(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData
 
 void handleReceived_Exception(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	SIMCONNECT_RECV_EXCEPTION *except = (SIMCONNECT_RECV_EXCEPTION*)pData;
-	printf("\n\n***** EXCEPTION=%d  SendID=%d  uOffset=%d  cbData=%d\n", except->dwException, except->dwSendID, except->dwIndex, cbData);
+	// printf("\n\n***** EXCEPTION=%d  SendID=%d  uOffset=%d  cbData=%d\n", except->dwException, except->dwSendID, except->dwIndex, cbData);
 
 	Local<Object> obj = Object::New(isolate);
 	obj->Set(String::NewFromUtf8(isolate, "dwException"), Number::New(isolate, except->dwException));
 	obj->Set(String::NewFromUtf8(isolate, "dwSendID"), Number::New(isolate, except->dwSendID));
 	obj->Set(String::NewFromUtf8(isolate, "dwIndex"), Number::New(isolate, except->dwIndex));
 	obj->Set(String::NewFromUtf8(isolate, "cbData"), Number::New(isolate, cbData));
+	obj->Set(String::NewFromUtf8(isolate, "cbVersion"), Number::New(isolate, except->dwException));
 	obj->Set(String::NewFromUtf8(isolate, "name"), String::NewFromUtf8(isolate, exceptionNames[SIMCONNECT_EXCEPTION(except->dwException)]));
 
 	Local<Value> argv[1] = { obj };
@@ -205,10 +206,17 @@ void handleReceived_Filename(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbD
 
 void handleReceived_Open(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	SIMCONNECT_RECV_OPEN *pOpen = (SIMCONNECT_RECV_OPEN*)pData;
-	const int argc = 1;
+	
+	char simconnVersion[32];
+	sprintf(simconnVersion, "%d.%d.%d.%d", pOpen->dwSimConnectVersionMajor, pOpen->dwSimConnectVersionMinor, pOpen->dwSimConnectBuildMajor, pOpen->dwSimConnectBuildMinor);
+
+	const int argc = 2;
 	Local<Value> argv[argc] = {
-		String::NewFromUtf8(isolate, (const char*)pOpen->szApplicationName)
+		String::NewFromUtf8(isolate, (const char*)pOpen->szApplicationName),
+		String::NewFromUtf8(isolate, simconnVersion)
 	};
+
+	
 
 	systemEventCallbacks[openEventId]->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
@@ -277,7 +285,6 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
-		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
 		HRESULT hr = SimConnect_Close(&ghSimConnect);
 		ghSimConnect = NULL;
@@ -289,11 +296,10 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
 
-		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
-		v8::String::Utf8Value stateName(args[1]->ToString());
+		v8::String::Utf8Value stateName(args[0]->ToString());
 
 		int id = getUniqueRequestId();
-		systemStateCallbacks[id] = new Nan::Callback(args[2].As<Function>());
+		systemStateCallbacks[id] = new Nan::Callback(args[1].As<Function>());
 		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, *stateName);
 
 		args.GetReturnValue().Set(v8::Number::New(isolate, id));
@@ -303,10 +309,9 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
-		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
 
-		v8::String::Utf8Value eventName(args[1]->ToString());
-		DWORD data = args.Length() > 2 ? args[2]->Int32Value() : 0;
+		v8::String::Utf8Value eventName(args[0]->ToString());
+		DWORD data = args.Length() > 1 ? args[1]->Int32Value() : 0;
 
 		int id = getUniqueEventId();
 		SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
@@ -322,9 +327,8 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		int eventId = getUniqueEventId();
 
-		int				connectionId = args[0]->Int32Value();
-		v8::String::Utf8Value systemEventName(args[1]->ToString());
-		systemEventCallbacks[eventId] = { new Nan::Callback(args[2].As<Function>()) };
+		v8::String::Utf8Value systemEventName(args[0]->ToString());
+		systemEventCallbacks[eventId] = { new Nan::Callback(args[1].As<Function>()) };
 
 		HANDLE hSimConnect = ghSimConnect;
 		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, *systemEventName);
@@ -336,18 +340,15 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 
-		int	connectionId = args[0]->Int32Value();
-		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[1]);
-		auto callback = new Nan::Callback(args[2].As<Function>());
+		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
+		auto callback = new Nan::Callback(args[1].As<Function>());
 
-		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-		int	periodId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
-		int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
-		int	origin = args.Length() > 6 ? args[6]->Int32Value() : 0;
-		int	interval = args.Length() > 7 ? args[7]->Int32Value() : 0;
-		DWORD limit = args.Length() > 8 ? args[8]->NumberValue() : 0;
-
-		//HANDLE hSimConnect = simConnections[connectionId];
+		int	objectId = args.Length() > 2 ? args[2]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	periodId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
+		int	flags = args.Length() > 4 ? args[4]->Int32Value() : 0;
+		int	origin = args.Length() > 5 ? args[5]->Int32Value() : 0;
+		int	interval = args.Length() > 6 ? args[6]->Int32Value() : 0;
+		DWORD limit = args.Length() > 7 ? args[7]->NumberValue() : 0;
 
 		int reqId = getUniqueRequestId();
 
@@ -366,15 +367,12 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 
-		int	connectionId = args[0]->Int32Value();
-		v8::String::Utf8Value name(args[1]->ToString());
-		v8::String::Utf8Value unit(args[2]->ToString());
-		double value = args[3]->NumberValue();
+		v8::String::Utf8Value name(args[0]->ToString());
+		v8::String::Utf8Value unit(args[1]->ToString());
+		double value = args[2]->NumberValue();
 
-		int	objectId = args.Length() > 4 ? args[4]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-		int	flags = args.Length() > 5 ? args[5]->Int32Value() : 0;
-
-		//HANDLE hSimConnect = simConnections[connectionId];
+		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	flags = args.Length() > 4 ? args[4]->Int32Value() : 0;
 
 		int defId = getUniqueDefineId();
 
@@ -428,6 +426,8 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName, datumType, epsilon, datumId);
 			}
 
+			//printf("Datum: %s, Unit: %s\n", datumName, unitsName);
+
 			dataTypes.push_back(datumType);
 		}
 	}
@@ -440,19 +440,16 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
-		//HANDLE hSimConnect = simConnections[args[0]->IntegerValue()];
-
-		Local<Array> obj = Local<Array>::Cast(args[1]);
 
 		SIMCONNECT_DATA_INITPOSITION init;
-		init.Altitude = args[1]->NumberValue();
-		init.Latitude = args[2]->NumberValue();
-		init.Longitude = args[3]->NumberValue();
-		init.Pitch = args[4]->NumberValue();
-		init.Bank = args[5]->NumberValue();
-		init.Heading = args[6]->NumberValue();
-		init.OnGround = args[7]->IntegerValue();
-		init.Airspeed = args[8]->IntegerValue();
+		init.Altitude = args[0]->NumberValue();
+		init.Latitude = args[1]->NumberValue();
+		init.Longitude = args[2]->NumberValue();
+		init.Pitch = args[3]->NumberValue();
+		init.Bank = args[4]->NumberValue();
+		init.Heading = args[5]->NumberValue();
+		init.OnGround = args[6]->IntegerValue();
+		init.Airspeed = args[7]->IntegerValue();
 
 		int id = getUniqueDefineId();
 		SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
