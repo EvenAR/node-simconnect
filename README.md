@@ -18,3 +18,6 @@ NOTE: If your app need to work with both FSX and P3D you must use the FSX SDK.
 
 To build native NW.JS addon:
 `nw-gyp rebuild --target=0.20.3 --arch=ia32` (where `--target` is the version of NW.JS)
+
+To build native Electron addon:
+`node-gyp rebuild --target=1.6.11 --arch=ia32 --msvs_version=2013` (where `--target` is the version of Electron)
