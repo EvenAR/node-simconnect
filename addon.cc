@@ -216,8 +216,6 @@ void handleReceived_Open(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 		String::NewFromUtf8(isolate, simconnVersion)
 	};
 
-	
-
 	systemEventCallbacks[openEventId]->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
 
@@ -400,35 +398,36 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 		if (value->IsArray()) {
 			int len = value->Length();
 
-			const char* datumName;
-			const char* unitsName;
-
-			SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64;	// Default type (double)
-			double epsilon;
-			float datumId;
-			
 			if (len > 1) {
-				datumName = *String::Utf8Value(value->Get(0)->ToString());
-				unitsName = (value->Get(1)->IsNull()) ? NULL : *String::Utf8Value(value->Get(1)->ToString());
-				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName);
-			}
-			if (len > 2) {
-				int t = value->Get(2)->Int32Value();
-				datumType = SIMCONNECT_DATATYPE(t);
-				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName, datumType);
-			}
-			if (len > 3) {
-				epsilon = value->Get(3)->Int32Value();
-				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName, datumType, epsilon);
-			}
-			if (len > 4) {
-				datumId = value->Get(4)->Int32Value();
-				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, datumName, unitsName, datumType, epsilon, datumId);
-			}
+				v8::String::Utf8Value datumName(value->Get(0)->ToString());
+				v8::String::Utf8Value unitsName(value->Get(1)->ToString());
+				const char* sDatumName = *datumName;
+				const char* sUnitsName = value->Get(1)->IsNull() ? NULL : *unitsName;
 
-			//printf("Datum: %s, Unit: %s\n", datumName, unitsName);
+				SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64;	// Default type (double)
+				double epsilon;
+				float datumId;
 
-			dataTypes.push_back(datumType);
+				if (len > 1) {
+
+					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName);
+				}
+				if (len > 2) {
+					int t = value->Get(2)->Int32Value();
+					datumType = SIMCONNECT_DATATYPE(t);
+					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType);
+				}
+				if (len > 3) {
+					epsilon = value->Get(3)->Int32Value();
+					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon);
+				}
+				if (len > 4) {
+					datumId = value->Get(4)->Int32Value();
+					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
+				}
+
+				dataTypes.push_back(datumType);
+			}
 		}
 	}
 
