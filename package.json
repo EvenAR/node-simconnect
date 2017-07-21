@@ -1,0 +1,16 @@
+{
+  "name": "node-simconnect",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp configure rebuild --target=1.6.11 --msvs_version=2013 --arch=ia32"
+  },
+  "author": "Even Arneberg Rognlien",
+  "license": "ISC",
+  "gypfile": true,
+  "dependencies": {
+    "nan": "^2.6.2"
+  }
+}
