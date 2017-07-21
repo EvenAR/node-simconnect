@@ -1,5 +1,5 @@
 # node-simconnect
-Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)
+Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows only!)
 
 This project is at a very early stage and only covers a few SimConnect function calls. Feel free to join the development :)
 
@@ -23,9 +23,8 @@ To build the native node module you must provide your own SDK files. For FSX:SE,
   * or if you installed the package with npm, run `node-gyp configure rebuild --msvs_version=2013 --arch=ia32`.
 * If everything went well you should be able to run the simple example program: `node examples/nodejs/example.js` (note: FSX/P3D must be already running).
 
+### Using the wrapper in a Electron or NW.JS project
+To use native node packages with Electron or NW.JS, the package must be built specifically for these frameworks. Read more here: [Electron](https://github.com/electron/electron/blob/master/docs/tutorial/using-native-node-modules.md),  [NW.JS](http://docs.nwjs.io/en/latest/For%20Users/Advanced/Use%20Native%20Node%20Modules/) 
 
-To build native Electron addon:
-`node-gyp rebuild --target=1.6.11 --arch=ia32 --msvs_version=2013` (where `--target` is the version of Electron).
-
-To build native NW.JS addon:
-`nw-gyp rebuild --target=0.20.3 --arch=ia32` (where `--target` is the version of NW.JS).
+* To build native Electron addon: `node-gyp rebuild --target=1.6.11 --arch=ia32 --msvs_version=2013` (where `--target` is the version of Electron).
+* To build native NW.JS addon: `nw-gyp rebuild --target=0.20.3 --arch=ia32 --msvs_version=2013` (where `--target` is the version of NW.JS).
