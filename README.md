@@ -18,8 +18,10 @@ To build the native node module you must provide your own SDK files. For FSX:SE,
 
 * Clone this repository (or use `npm install --save node-simconnect`).
 * Inside the new `node-simconnect` directory (or `node-modules/node-simconnect`), create a folder named `SimConnect` and copy the two folders `inc` and `lib` from the SimConnect SDK installation over to the new directory. These should include `SimConnect.h` and `SimConnect.lib`, respectively.
-* From the `node-simconnect` directory, run `node-gyp configure rebuild --msvs_version=2013 --arch=ia32`.
-* If everything went well you should be able to run the example program using: `node examples/nodejs/example.js`.
+* From the `node-simconnect` directory:
+  * if you cloned this repo with git, run `npm install`,
+  * or if you installed the package with npm, run `node-gyp configure rebuild --msvs_version=2013 --arch=ia32`.
+* If everything went well you should be able to run the simple example program: `node examples/nodejs/example.js` (note: FSX/P3D must be already running).
 
 
 To build native Electron addon:
