@@ -11,13 +11,19 @@ This project is at a very early stage and only covers a few SimConnect function 
 
 NOTE: If your app need to work with both FSX and P3D you must use the FSX SDK.
 
-### Setup
-* Create a folder named `SimConnect` and copy the two folders `inc` and `lib` from the SimConnect SDK installation over to the new directory. These should include `SimConnect.h` and `SimConnect.lib`, respectively.
-* Run `npm install`
-* If everything went well you should be able to run the example program using: `node example`
+### Manual build
+Due to the licensing of the Flight Simulator / Prepar3D SDK, those libraries are not included in this repository, so automatic build is not possible at the moment. 
 
-To build native NW.JS addon:
-`nw-gyp rebuild --target=0.20.3 --arch=ia32` (where `--target` is the version of NW.JS)
+To build the native node module you must provide your own SDK files. For FSX:SE, these can be found under `FSX\SDK\Core Utilities Kit\SimConnect SDK`. Follow these steps carefully:
+
+* Clone this repository (or use `npm install --save node-simconnect`).
+* Inside the new `node-simconnect` directory (or `node-modules/node-simconnect`), create a folder named `SimConnect` and copy the two folders `inc` and `lib` from the SimConnect SDK installation over to the new directory. These should include `SimConnect.h` and `SimConnect.lib`, respectively.
+* From the `node-simconnect` directory, run `node-gyp configure rebuild --msvs_version=2013 --arch=ia32`.
+* If everything went well you should be able to run the example program using: `node examples/nodejs/example.js`.
+
 
 To build native Electron addon:
-`node-gyp rebuild --target=1.6.11 --arch=ia32 --msvs_version=2013` (where `--target` is the version of Electron)
+`node-gyp rebuild --target=1.6.11 --arch=ia32 --msvs_version=2013` (where `--target` is the version of Electron).
+
+To build native NW.JS addon:
+`nw-gyp rebuild --target=0.20.3 --arch=ia32` (where `--target` is the version of NW.JS).
