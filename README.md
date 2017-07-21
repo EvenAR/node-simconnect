@@ -21,7 +21,7 @@ To build the native node module you must provide your own SDK files. For FSX:SE,
 * From the `node-simconnect` directory:
   * if you cloned this repo with git, run `npm install`,
   * or if you installed the package with npm, run `node-gyp configure rebuild --msvs_version=2013 --arch=ia32`.
-* If everything went well you should be able to run the simple example program: `node examples/nodejs/example.js` (note: FSX/P3D must be already running).
+* If everything went well you should be able to run the simple example program: `node examples/nodejs/example.js`.
 
 ### Using the wrapper in a Electron or NW.JS project
 To use native node packages with Electron or NW.JS, the package must be built specifically for these frameworks. Read more here: [Electron](https://github.com/electron/electron/blob/master/docs/tutorial/using-native-node-modules.md),  [NW.JS](http://docs.nwjs.io/en/latest/For%20Users/Advanced/Use%20Native%20Node%20Modules/) 

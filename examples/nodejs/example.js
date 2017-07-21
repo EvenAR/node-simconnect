@@ -11,23 +11,29 @@ const SIMCONNECT_PERIOD_SECOND = 4;
 const SIMCONNECT_DATA_REQUEST_FLAG_CHANGED = 1;
 
 
-
-
-
+connectToSim();
 
 
 // Open connection
-var res = simConnect.open("MyAppName", function(name) {
-    setupDataRequests(name);
-}, function() {
-    console.log("Quit.... :(");
-}, function(exception) {
-    console.log("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData);
-});
+function connectToSim() {
+    console.log("Trying to connect...")
 
-if(res < 0)
-    console.log("Failed to connect to sim");
+    var success = simConnect.open("MyAppName", function(name, version) {
+        console.log("\n-----------------------------------------------\nConnected to: " + name + "\nSimConnect version: " + version + "\n-----------------------------------------------");
+        setupDataRequests(name);
+    }, () => {
+        console.log("Quit.... :(");
+        connectToSim();
+    }, (exception) => {
+        console.log("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData);
+    });
 
+    if(!success) {
+        setTimeout(() => {
+            connectToSim();
+        }, 5000);
+    }
+}
 
 
 
@@ -40,8 +46,6 @@ if(res < 0)
 function setupDataRequests(name) {
     var vs = 0;
     var gnd = 1;
-
-    console.log("\n-----------------------------------------------\nConnected to: " + name + "\n-----------------------------------------------");
 
     // Set the aircraft's parking brake on
     simConnect.setDataOnSimObject("BRAKE PARKING POSITION:1", "Position", 1);
@@ -78,23 +82,7 @@ function setupDataRequests(name) {
         console.log("Engine state:  " + data[0] + "," + data[1] + ","  + data[2] + ","  + data[3]);
     }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
 
-    simConnect.requestDataOnSimObject([
-        ["LIGHT STROBE","Bool"],
-        ["LIGHT PANEL","Bool"],
-        ["LIGHT LANDING","Bool"],
-        ["LIGHT TAXI","Bool"],
-        ["LIGHT BEACON","Bool"],
-        ["LIGHT NAV","Bool"],
-        ["LIGHT LOGO","Bool"],
-        ["LIGHT WING","Bool"],
-        ["LIGHT RECOGNITION","Bool"],
-        ["LIGHT CABIN","Bool"],
-
-    ], function(data) {
-        console.log(data);
-    }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
-
-    // Continously check if sim is on ground. When aircraft hits the ground, get the vertical speed.
+    // Check if sim is on ground. When aircraft hits the ground, get the vertical speed.
     simConnect.requestDataOnSimObject([["SIM ON GROUND","Bool"], ["VERTICAL SPEED","feet per minute"]], function(data) {
         if(data[0] == 0)
             vs = data[1];
