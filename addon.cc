@@ -32,11 +32,11 @@ public:
 	~DispatchWorker() {}
 
 	void Execute() {
-		
+
 		uv_async_init(loop, &async, messageReceiver); // Must be called from worker thread
 
 		while (true) {
-			
+
 			if (ghSimConnect) {
 				SIMCONNECT_RECV* pData;
 				DWORD cbData;
@@ -121,7 +121,7 @@ void messageReceiver(uv_async_t* handle) {
 		printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
 		break;
 	}
-	
+
 	// The dispatch-worker can now continue
 	uv_mutex_unlock(&mutex);
 	uv_cond_signal(&cv);
@@ -144,8 +144,8 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 			DWORD cbString;
 			char * pStringv = ((char*)(&pObjData->dwData) + offset);
 			SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
-			
-			result_list->Set(i, String::NewFromUtf8(isolate, (const char*)pOutString));
+
+			result_list->Set(i, String::NewFromOneByte(isolate, (const uint8_t*)pOutString));
 			varSize = cbString;
 		}
 		else {
@@ -206,13 +206,14 @@ void handleReceived_Filename(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbD
 
 void handleReceived_Open(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	SIMCONNECT_RECV_OPEN *pOpen = (SIMCONNECT_RECV_OPEN*)pData;
-	
+
 	char simconnVersion[32];
 	sprintf(simconnVersion, "%d.%d.%d.%d", pOpen->dwSimConnectVersionMajor, pOpen->dwSimConnectVersionMinor, pOpen->dwSimConnectBuildMajor, pOpen->dwSimConnectBuildMinor);
 
 	const int argc = 2;
+
 	Local<Value> argv[argc] = {
-		String::NewFromUtf8(isolate, (const char*)pOpen->szApplicationName),
+		String::NewFromOneByte(isolate, (const uint8_t*)pOpen->szApplicationName),
 		String::NewFromUtf8(isolate, simconnVersion)
 	};
 
@@ -225,7 +226,7 @@ void handleReceived_SystemState(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD 
 	Local<Object> obj = Object::New(isolate);
 	obj->Set(String::NewFromUtf8(isolate, "integer"), Number::New(isolate, pState->dwInteger));
 	obj->Set(String::NewFromUtf8(isolate, "float"), Number::New(isolate, pState->fFloat));
-	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromUtf8(isolate, pState->szString));
+	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromOneByte(isolate, (const uint8_t*)pState->szString));
 
 	Local<Value> argv[1] = { obj };
 	systemStateCallbacks[pState->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), 1, argv);
@@ -380,7 +381,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
- 
+
 // Generates a SimConnect data definition for the collection of requests.
 DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
 
