@@ -1,16 +1,37 @@
 {
   "name": "node-simconnect",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp configure rebuild --target=1.6.11 --msvs_version=2013 --arch=ia32"
+    "install": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32"
   },
   "author": "Even Arneberg Rognlien",
   "license": "ISC",
   "gypfile": true,
   "dependencies": {
     "nan": "^2.6.2"
-  }
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvenAR/node-simconnect.git"
+  },
+  "keywords": [
+    "FSX",
+    "P3D",
+    "SDK",
+    "SimConnect",
+    "Prepar3D",
+    "FlightSimulator",
+    "Simulator"
+  ],
+  "bugs": {
+    "url": "https://github.com/EvenAR/node-simconnect/issues"
+  },
+  "homepage": "https://github.com/EvenAR/node-simconnect#readme"
 }
