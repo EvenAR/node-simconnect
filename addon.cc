@@ -268,15 +268,8 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	// Open connection
 	HRESULT hr = SimConnect_Open(&ghSimConnect, *appName, NULL, 0, 0, 0);
 
-	// Save connection handle if success
-	Local<Integer> retval;
-	if (SUCCEEDED(hr)) {
-		//simConnections.push_back(ghSimConnect);
-		retval = v8::Integer::New(isolate, 0);
-	}
-	else {
-		retval = v8::Integer::New(isolate, hr);
-	}
+	// Return true if success
+	Local<Boolean> retval = v8::Boolean::New(isolate, SUCCEEDED(hr));
 
 	args.GetReturnValue().Set(retval);
 }
