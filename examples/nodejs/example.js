@@ -25,7 +25,12 @@ function connectToSim() {
         console.log("Quit.... :(");
         connectToSim();
     }, (exception) => {
-        console.log("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData);
+        console.log("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData + ")");
+    }, (error) => {
+        // Happens for example when connection with SimConnect is lost unexpectedly. The connection must be re-opened.
+        // Look up error in ntstatus.h for crash details
+        console.log("SimConnect error: " + error);
+        connectToSim();
     });
 
     if(!success) {

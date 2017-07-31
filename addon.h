@@ -6,11 +6,13 @@
 #include <windows.h>
 #include <queue>
 #include "SimConnect.h"
+
 using namespace v8;
 
 struct CallbackData {
 	DWORD cbData;
 	SIMCONNECT_RECV* pData;
+	NTSTATUS ntstatus;
 };
 
 struct SystemEventRequest {
@@ -87,6 +89,7 @@ void handleReceived_Filename(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbD
 void handleReceived_Open(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_SystemState(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Quit(Isolate* isolate);
+void handle_Error(Isolate* isolate, NTSTATUS code);
 
 void messageReceiver(uv_async_t* handle);
-DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);
+DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);

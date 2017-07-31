@@ -1,4 +1,9 @@
 #include "addon.h"
+#include <iostream>
+#include <sstream>
+#include <windows.h>
+#include <winternl.h>
+#include <ntstatus.h>
 
 //HANDLE ghMutex;
 uv_loop_t *loop;
@@ -8,6 +13,7 @@ uv_async_t async;
 std::map<int, DataRequest> dataRequests;
 std::map<int, Nan::Callback*> systemEventCallbacks;
 std::map<int, Nan::Callback*> systemStateCallbacks;
+Nan::Callback* errorCallback;
 
 // Special events to listen for from the beginning
 int openEventId;
@@ -24,6 +30,7 @@ uv_mutex_t mutex;
 
 HANDLE ghSimConnect = NULL;
 
+
 class DispatchWorker : public Nan::AsyncWorker {
 public:
 	DispatchWorker(Nan::Callback *callback) : AsyncWorker(callback) {
@@ -32,10 +39,10 @@ public:
 	~DispatchWorker() {}
 
 	void Execute() {
-
+		bool run = true;
 		uv_async_init(loop, &async, messageReceiver); // Must be called from worker thread
 
-		while (true) {
+		while (run) {
 
 			if (ghSimConnect) {
 				SIMCONNECT_RECV* pData;
@@ -48,15 +55,22 @@ public:
 					CallbackData data;
 					data.pData = pData;
 					data.cbData = cbData;
+					data.ntstatus = STATUS_SUCCESS;
 					async.data = &data;
 					uv_mutex_lock(&mutex);
 					uv_async_send(&async);
-
-					// Wait for mainthread to process the dispatch
+					
+					// Wait for mainthread to process the dispatch 
 					uv_cond_wait(&cv, &mutex);
 				}
-				else {
-					Sleep(1);
+				else if (NT_ERROR(hr)) {
+					run = false;
+					CallbackData data;
+					data.ntstatus = (NTSTATUS)hr;
+					async.data = &data;
+					uv_mutex_lock(&mutex);
+					uv_async_send(&async);
+					uv_cond_wait(&cv, &mutex);
 				}
 			}
 			else {
@@ -93,33 +107,38 @@ void messageReceiver(uv_async_t* handle) {
 
 	CallbackData* data = (CallbackData*)handle->data; //receivedDataQueue.front();
 
-	switch (data->pData->dwID)
-	{
-	case SIMCONNECT_RECV_ID_EVENT:
-		handleReceived_Event(isolate, data->pData, data->cbData);
-		break;
-	case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
-		handleReceived_Data(isolate, data->pData, data->cbData);
-		break;
-	case SIMCONNECT_RECV_ID_QUIT:
-		handleReceived_Quit(isolate);
-		break;
-	case SIMCONNECT_RECV_ID_EXCEPTION:
-		handleReceived_Exception(isolate, data->pData, data->cbData);
-		break;
-	case SIMCONNECT_RECV_ID_EVENT_FILENAME:
-		handleReceived_Filename(isolate, data->pData, data->cbData);
-		break;
-	case SIMCONNECT_RECV_ID_OPEN:
-		handleReceived_Open(isolate, data->pData, data->cbData);
-		break;
-	case SIMCONNECT_RECV_ID_SYSTEM_STATE:
-		handleReceived_SystemState(isolate, data->pData, data->cbData);
-		break;
+	if (NT_SUCCESS(data->ntstatus)) {
+		switch (data->pData->dwID)
+		{
+		case SIMCONNECT_RECV_ID_EVENT:
+			handleReceived_Event(isolate, data->pData, data->cbData);
+			break;
+		case SIMCONNECT_RECV_ID_SIMOBJECT_DATA:
+			handleReceived_Data(isolate, data->pData, data->cbData);
+			break;
+		case SIMCONNECT_RECV_ID_QUIT:
+			handleReceived_Quit(isolate);
+			break;
+		case SIMCONNECT_RECV_ID_EXCEPTION:
+			handleReceived_Exception(isolate, data->pData, data->cbData);
+			break;
+		case SIMCONNECT_RECV_ID_EVENT_FILENAME:
+			handleReceived_Filename(isolate, data->pData, data->cbData);
+			break;
+		case SIMCONNECT_RECV_ID_OPEN:
+			handleReceived_Open(isolate, data->pData, data->cbData);
+			break;
+		case SIMCONNECT_RECV_ID_SYSTEM_STATE:
+			handleReceived_SystemState(isolate, data->pData, data->cbData);
+			break;
 
-	default:
-		printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
-		break;
+		default:
+			printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
+			break;
+		}
+	}
+	else {
+		handle_Error(isolate, data->ntstatus);
 	}
 
 	// The dispatch-worker can now continue
@@ -143,7 +162,11 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 			char *pOutString;
 			DWORD cbString;
 			char * pStringv = ((char*)(&pObjData->dwData) + offset);
-			SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
+			HRESULT hr = SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
+			if (NT_ERROR(hr)) {
+				handle_Error(isolate, hr);
+				return;
+			}
 
 			result_list->Set(i, String::NewFromOneByte(isolate, (const uint8_t*)pOutString));
 			varSize = cbString;
@@ -163,6 +186,19 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	};
 
 	dataRequests[pObjData->dwRequestID].jsCallback->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+}
+
+void handle_Error(Isolate* isolate, NTSTATUS code) {
+	// Codes found so far: 0xC000014B, 0xC000020D, 0xC000013C
+	char simconnVersion[32];
+	sprintf(simconnVersion, "0x%08X", code);
+
+	const int argc = 1;
+	Local<Value> argv[argc] = {
+		String::NewFromUtf8(isolate, simconnVersion)
+	};
+
+	errorCallback->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
 
 void handleReceived_Event(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
@@ -236,8 +272,9 @@ void handleReceived_Quit(Isolate* isolate) {
 	systemEventCallbacks[quitEventId]->Call(isolate->GetCurrentContext()->Global(), 0, NULL);
 }
 
+void handleSimDisconnect(Isolate* isolate) {
 
-
+}
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
 
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -260,6 +297,7 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	systemEventCallbacks[quitEventId] = { new Nan::Callback(args[2].As<Function>()) };
 	exceptionEventId = getUniqueEventId();
 	systemEventCallbacks[exceptionEventId] = { new Nan::Callback(args[3].As<Function>()) };
+	errorCallback = { new Nan::Callback(args[4].As<Function>()) };
 
 	// Create dispatch looper thread
 	loop = uv_default_loop();
@@ -277,8 +315,14 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
-
+		printf("Trying to close..\n");
 		HRESULT hr = SimConnect_Close(&ghSimConnect);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
+		printf("Closed: %i\n", hr);
 		ghSimConnect = NULL;
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
@@ -293,7 +337,10 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		int id = getUniqueRequestId();
 		systemStateCallbacks[id] = new Nan::Callback(args[1].As<Function>());
 		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, *stateName);
-
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
 		args.GetReturnValue().Set(v8::Number::New(isolate, id));
 	}
 }
@@ -306,8 +353,17 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		DWORD data = args.Length() > 1 ? args[1]->Int32Value() : 0;
 
 		int id = getUniqueEventId();
-		SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
-		HRESULT hr = SimConnect_TransmitClientEvent(ghSimConnect, SIMCONNECT_OBJECT_ID_USER, id, data, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+		HRESULT hr = SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
+		hr = SimConnect_TransmitClientEvent(ghSimConnect, SIMCONNECT_OBJECT_ID_USER, id, data, SIMCONNECT_GROUP_PRIORITY_HIGHEST, SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
@@ -324,6 +380,11 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		HANDLE hSimConnect = ghSimConnect;
 		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, *systemEventName);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
 		args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
 	}
 }
@@ -344,9 +405,13 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		int reqId = getUniqueRequestId();
 
-		DataRequest request = generateDataRequest(ghSimConnect, reqValues, callback);
+		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
 
 		HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, request.definition_id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
@@ -368,15 +433,24 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		int defId = getUniqueDefineId();
 
-		SimConnect_AddToDataDefinition(ghSimConnect, defId, *name, *unit);
-		HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
+		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, defId, *name, *unit);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
+		hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
 
 // Generates a SimConnect data definition for the collection of requests.
-DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
+DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
 
 	int definitionId = getUniqueDefineId();
 
@@ -403,21 +477,36 @@ DataRequest generateDataRequest(HANDLE hSimConnect, Local<Array> requestedValues
 				float datumId;
 
 				if (len > 1) {
-
 					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName);
+					if (NT_ERROR(hr)) {
+						handle_Error(isolate, hr);
+						break;
+					}
 				}
 				if (len > 2) {
 					int t = value->Get(2)->Int32Value();
 					datumType = SIMCONNECT_DATATYPE(t);
 					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType);
+					if (NT_ERROR(hr)) {
+						handle_Error(isolate, hr);
+						break;
+					}
 				}
 				if (len > 3) {
 					epsilon = value->Get(3)->Int32Value();
 					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon);
+					if (NT_ERROR(hr)) {
+						handle_Error(isolate, hr);
+						break;
+					}
 				}
 				if (len > 4) {
 					datumId = value->Get(4)->Int32Value();
 					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
+					if (NT_ERROR(hr)) {
+						handle_Error(isolate, hr);
+						break;
+					}
 				}
 
 				dataTypes.push_back(datumType);
@@ -445,8 +534,17 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 		init.Airspeed = args[7]->IntegerValue();
 
 		int id = getUniqueDefineId();
-		SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
-		HRESULT hr = SimConnect_SetDataOnSimObject(ghSimConnect, id, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(init), &init);
+		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
+		hr = SimConnect_SetDataOnSimObject(ghSimConnect, id, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(init), &init);
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
