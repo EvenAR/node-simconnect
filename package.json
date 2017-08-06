@@ -1,6 +1,6 @@
 {
   "name": "node-simconnect",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)",
   "main": "main.js",
   "scripts": {
