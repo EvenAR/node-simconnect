@@ -5,11 +5,9 @@
 #include <winternl.h>
 #include <ntstatus.h>
 
-//HANDLE ghMutex;
 uv_loop_t *loop;
 uv_async_t async;
 
-//std::vector<HANDLE> simConnections;
 std::map<int, DataRequest> dataRequests;
 std::map<int, Nan::Callback*> systemEventCallbacks;
 std::map<int, Nan::Callback*> systemStateCallbacks;
@@ -39,10 +37,9 @@ public:
 	~DispatchWorker() {}
 
 	void Execute() {
-		bool run = true;
 		uv_async_init(loop, &async, messageReceiver); // Must be called from worker thread
 
-		while (run) {
+		while (true) {
 
 			if (ghSimConnect) {
 				SIMCONNECT_RECV* pData;
@@ -64,7 +61,6 @@ public:
 					uv_cond_wait(&cv, &mutex);
 				}
 				else if (NT_ERROR(hr)) {
-					run = false;
 					CallbackData data;
 					data.ntstatus = (NTSTATUS)hr;
 					async.data = &data;
@@ -105,7 +101,7 @@ void messageReceiver(uv_async_t* handle) {
 	Nan::HandleScope scope;
 	v8::Isolate* isolate = v8::Isolate::GetCurrent();
 
-	CallbackData* data = (CallbackData*)handle->data; //receivedDataQueue.front();
+	CallbackData* data = (CallbackData*)handle->data;
 
 	if (NT_SUCCESS(data->ntstatus)) {
 		switch (data->pData->dwID)
@@ -190,12 +186,13 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 
 void handle_Error(Isolate* isolate, NTSTATUS code) {
 	// Codes found so far: 0xC000014B, 0xC000020D, 0xC000013C
-	char simconnVersion[32];
-	sprintf(simconnVersion, "0x%08X", code);
+	ghSimConnect = NULL;
+	char errorCode[32];
+	sprintf(errorCode, "0x%08X", code);
 
 	const int argc = 1;
 	Local<Value> argv[argc] = {
-		String::NewFromUtf8(isolate, simconnVersion)
+		String::NewFromUtf8(isolate, errorCode)
 	};
 
 	errorCallback->Call(isolate->GetCurrentContext()->Global(), argc, argv);
@@ -214,7 +211,6 @@ void handleReceived_Event(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData
 
 void handleReceived_Exception(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	SIMCONNECT_RECV_EXCEPTION *except = (SIMCONNECT_RECV_EXCEPTION*)pData;
-	// printf("\n\n***** EXCEPTION=%d  SendID=%d  uOffset=%d  cbData=%d\n", except->dwException, except->dwSendID, except->dwIndex, cbData);
 
 	Local<Object> obj = Object::New(isolate);
 	obj->Set(String::NewFromUtf8(isolate, "dwException"), Number::New(isolate, except->dwException));
@@ -269,14 +265,15 @@ void handleReceived_SystemState(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD 
 }
 
 void handleReceived_Quit(Isolate* isolate) {
+	ghSimConnect = NULL;
 	systemEventCallbacks[quitEventId]->Call(isolate->GetCurrentContext()->Global(), 0, NULL);
 }
 
 void handleSimDisconnect(Isolate* isolate) {
 
 }
-// Wrapped SimConnect-functions //////////////////////////////////////////////////////
 
+// Wrapped SimConnect-functions //////////////////////////////////////////////////////
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	uv_mutex_init(&mutex);
 	uv_cond_init(&cv);
@@ -301,6 +298,7 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	// Create dispatch looper thread
 	loop = uv_default_loop();
+
 	Nan::AsyncQueueWorker(new DispatchWorker(NULL));
 
 	// Open connection
@@ -311,6 +309,7 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 	args.GetReturnValue().Set(retval);
 }
+
 
 void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
