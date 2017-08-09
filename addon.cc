@@ -23,9 +23,7 @@ int defineIdCounter;
 int eventIdCounter;
 int requestIdCounter;
 
-uv_cond_t cv;
-uv_mutex_t mutex;
-
+uv_sem_t sem;					// semaphore
 HANDLE ghSimConnect = NULL;
 
 
@@ -42,6 +40,8 @@ public:
 		while (true) {
 
 			if (ghSimConnect) {
+				uv_sem_wait(&sem);	// Wait for mainthread to process the previous dispatch
+
 				SIMCONNECT_RECV* pData;
 				DWORD cbData;
 
@@ -54,20 +54,19 @@ public:
 					data.cbData = cbData;
 					data.ntstatus = STATUS_SUCCESS;
 					async.data = &data;
-					uv_mutex_lock(&mutex);
-					uv_async_send(&async);
-					
-					// Wait for mainthread to process the dispatch 
-					uv_cond_wait(&cv, &mutex);
+					uv_async_send(&async);					
 				}
 				else if (NT_ERROR(hr)) {
 					CallbackData data;
 					data.ntstatus = (NTSTATUS)hr;
 					async.data = &data;
-					uv_mutex_lock(&mutex);
 					uv_async_send(&async);
-					uv_cond_wait(&cv, &mutex);
 				}
+				else {
+					uv_sem_post(&sem);	// Continue
+					Sleep(1);
+				}
+				
 			}
 			else {
 				Sleep(10);
@@ -129,17 +128,15 @@ void messageReceiver(uv_async_t* handle) {
 			break;
 
 		default:
-			printf("Unexpected message received!!!!!!!!!!!!!!!!!-> %i\n", data->pData->dwID);
+			printf("Unexpected message received (dwId: %i)\n", data->pData->dwID);
 			break;
 		}
 	}
 	else {
 		handle_Error(isolate, data->ntstatus);
 	}
-
-	// The dispatch-worker can now continue
-	uv_mutex_unlock(&mutex);
-	uv_cond_signal(&cv);
+	
+	uv_sem_post(&sem);	// The dispatch-worker can now continue
 }
 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
@@ -275,9 +272,7 @@ void handleSimDisconnect(Isolate* isolate) {
 
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	uv_mutex_init(&mutex);
-	uv_cond_init(&cv);
-
+	uv_sem_init(&sem, 1);
 
 	defineIdCounter = 0;
 	eventIdCounter = 0;

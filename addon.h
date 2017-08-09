@@ -5,6 +5,7 @@
 #include <node.h>
 #include <windows.h>
 #include <queue>
+#include <ntstatus.h>
 #include "SimConnect.h"
 
 using namespace v8;
