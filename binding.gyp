@@ -2,7 +2,7 @@
     "targets": [
         {
             "target_name": "node-simconnect",
-            "sources": [ "addon.cc" ],
+            "sources": [ "src/addon.cc" ],
             "include_dirs": [
                 "SimConnect/Inc",
 				"<!(node -e \"require('nan')\")"
