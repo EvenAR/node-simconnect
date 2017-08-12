@@ -9,7 +9,7 @@
   },
   "author": "Even Arneberg Rognlien",
   "license": "ISC",
-  "gypfile": true,
+  "gypfile": false,
   "dependencies": {
     "nan": "^2.6.2"
   },

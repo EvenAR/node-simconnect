@@ -1,4 +1,4 @@
-const simConnect = require('../../build/Release/node-simconnect');
+const simConnect = require('../../');
 
 
 // From SimConnect.h:
