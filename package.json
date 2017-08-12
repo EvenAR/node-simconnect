@@ -2,10 +2,10 @@
   "name": "node-simconnect",
   "version": "1.0.5",
   "description": "Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)",
-  "main": "main.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32"
+    "build": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32"
   },
   "author": "Even Arneberg Rognlien",
   "license": "ISC",
