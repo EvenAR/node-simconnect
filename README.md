@@ -6,7 +6,10 @@ This project is at a very early stage and wraps only a few basic SimConnect func
 ## Installation
 **Important: node-simconnect can only be used with Node.js 32 bit**
 
-`npm install node-simconnect`
+Use `--ignore-scripts` to prevent automatic build
+
+`npm install node-simconnect --ignore-scripts`  
+
 
 A pre-built binary file for SimConnect 10.0.61259.0 (FSX SP2) is included. This is compatible with all simulators from FSX SP2 up to Prepar3D v4.
 
