@@ -26,7 +26,6 @@ int requestIdCounter;
 uv_sem_t sem;					// semaphore
 HANDLE ghSimConnect = NULL;
 
-
 class DispatchWorker : public Nan::AsyncWorker {
 public:
 	DispatchWorker(Nan::Callback *callback) : AsyncWorker(callback) {
@@ -126,7 +125,6 @@ void messageReceiver(uv_async_t* handle) {
 		case SIMCONNECT_RECV_ID_SYSTEM_STATE:
 			handleReceived_SystemState(isolate, data->pData, data->cbData);
 			break;
-
 		default:
 			printf("Unexpected message received (dwId: %i)\n", data->pData->dwID);
 			break;
@@ -140,37 +138,39 @@ void messageReceiver(uv_async_t* handle) {
 }
 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
+	
 	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
 	int numVars = dataRequests[pObjData->dwRequestID].num_values;
-	std::vector<SIMCONNECT_DATATYPE> valTypes = dataRequests[pObjData->dwRequestID].value_types;
+	std::vector<SIMCONNECT_DATATYPE> valTypes = dataRequests[pObjData->dwRequestID].datum_types;
+	std::vector<std::string> valIds = dataRequests[pObjData->dwRequestID].datum_names;
 
 	Local<Array> result_list = Array::New(isolate);
-	int offset = 0;
+	int dataValueOffset = 0;
 
 	for (int i = 0; i < numVars; i++) {
 		int varSize = 0;
 
 		if (valTypes[i] == SIMCONNECT_DATATYPE_STRINGV) {
-			offset += 8;		// just a quick and ugly fix to this problem: "F-22 RapF-22 Raptor - 525th Fighter Squadron" (for example)
+			dataValueOffset += 8;		// Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
 			char *pOutString;
 			DWORD cbString;
-			char * pStringv = ((char*)(&pObjData->dwData) + offset);
+			char * pStringv = ((char*)(&pObjData->dwData) + dataValueOffset);
 			HRESULT hr = SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
 			if (NT_ERROR(hr)) {
 				handle_Error(isolate, hr);
 				return;
 			}
-
-			result_list->Set(i, String::NewFromOneByte(isolate, (const uint8_t*)pOutString));
+			result_list->Set(String::NewFromUtf8(isolate, valIds.at(i).c_str()), String::NewFromOneByte(isolate, (const uint8_t*)pOutString));
 			varSize = cbString;
 		}
 		else {
+			//printf("------ %s -----\n", valIds.at(i).c_str());
 			varSize = sizeMap[valTypes[i]];
-			char* p = ((char*)(&pObjData->dwData) + offset);
+			char* p = ((char*)(&pObjData->dwData) + dataValueOffset);
 			double *var = (double*)p;
-			result_list->Set(i, Number::New(isolate, *var));
+			result_list->Set(String::NewFromUtf8(isolate, valIds.at(i).c_str()), Number::New(isolate, *var));
 		}
-		offset += varSize;
+		dataValueOffset += varSize;
 	}
 
 	const int argc = 1;
@@ -420,6 +420,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		v8::String::Utf8Value name(args[0]->ToString());
 		v8::String::Utf8Value unit(args[1]->ToString());
+
 		double value = args[2]->NumberValue();
 
 		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
@@ -433,7 +434,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			return;
 		}
 
-		hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, NULL, 0, sizeof(value), &value);
+		hr = SimConnect_SetDataOnSimObject(ghSimConnect, defId, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(value), &value);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
 			return;
@@ -452,7 +453,9 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 	bool success = true;
 	int numValues = requestedValues->Length();
 
-	std::vector<SIMCONNECT_DATATYPE> dataTypes;
+	std::vector<std::string> datumNames;
+	std::vector<SIMCONNECT_DATATYPE> datumTypes;
+	
 
 	for (int i = 0; i < requestedValues->Length(); i++) {
 		Local<Array> value = v8::Local<v8::Array>::Cast(requestedValues->Get(i));
@@ -465,6 +468,8 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 				v8::String::Utf8Value unitsName(value->Get(1)->ToString());
 				const char* sDatumName = *datumName;
 				const char* sUnitsName = value->Get(1)->IsNull() ? NULL : *unitsName;
+
+				
 
 				SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64;	// Default type (double)
 				double epsilon;
@@ -503,12 +508,14 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 					}
 				}
 
-				dataTypes.push_back(datumType);
+				std::string datumNameStr(sDatumName);
+				datumNames.push_back(datumNameStr);
+				datumTypes.push_back(datumType);
 			}
 		}
 	}
 
-	return{ definitionId, numValues, callback, dataTypes };
+	return{ definitionId, numValues, callback, datumNames, datumTypes };
 }
 
 
@@ -518,15 +525,27 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 		Isolate* isolate = args.GetIsolate();
 
 		SIMCONNECT_DATA_INITPOSITION init;
-		init.Altitude = args[0]->NumberValue();
-		init.Latitude = args[1]->NumberValue();
-		init.Longitude = args[2]->NumberValue();
-		init.Pitch = args[3]->NumberValue();
-		init.Bank = args[4]->NumberValue();
-		init.Heading = args[5]->NumberValue();
-		init.OnGround = args[6]->IntegerValue();
-		init.Airspeed = args[7]->IntegerValue();
+		Local<Object> json = args[0]->ToObject(isolate);
 
+		v8::Local<v8::String> altProp = Nan::New("altitude").ToLocalChecked();
+		v8::Local<v8::String> latProp = Nan::New("latitude").ToLocalChecked();
+		v8::Local<v8::String> lngProp = Nan::New("longitude").ToLocalChecked();
+		v8::Local<v8::String> pitchProp = Nan::New("pitch").ToLocalChecked();
+		v8::Local<v8::String> bankProp = Nan::New("bank").ToLocalChecked();
+		v8::Local<v8::String> hdgProp = Nan::New("heading").ToLocalChecked();
+		v8::Local<v8::String> gndProp = Nan::New("onGround").ToLocalChecked();
+		v8::Local<v8::String> iasProp = Nan::New("airspeed").ToLocalChecked();
+
+
+		init.Altitude = json->HasOwnProperty(altProp)	? json->Get(altProp)->NumberValue()		: 0;
+		init.Latitude = json->HasOwnProperty(latProp)	? json->Get(latProp)->NumberValue()		: 0;
+		init.Longitude = json->HasOwnProperty(lngProp)	? json->Get(lngProp)->NumberValue()		: 0;
+		init.Pitch = json->HasOwnProperty(pitchProp)	? json->Get(pitchProp)->NumberValue()	: 0;
+		init.Bank = json->HasOwnProperty(bankProp)		? json->Get(bankProp)->NumberValue()	: 0;
+		init.Heading = json->HasOwnProperty(hdgProp)	? json->Get(hdgProp)->NumberValue()		: 0;
+		init.OnGround = json->HasOwnProperty(gndProp)	? json->Get(gndProp)->IntegerValue()	: 0;
+		init.Airspeed = json->HasOwnProperty(iasProp)	? json->Get(iasProp)->IntegerValue()	: 0;
+		
 		int id = getUniqueDefineId();
 		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
 		if (NT_ERROR(hr)) {

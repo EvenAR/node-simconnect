@@ -6,10 +6,7 @@ This project is at a very early stage and wraps only a few basic SimConnect func
 ## Installation
 **Important: node-simconnect can only be used with Node.js 32 bit**
 
-Use `--ignore-scripts` to prevent automatic build
-
-`npm install node-simconnect --ignore-scripts`  
-
+`npm install node-simconnect`
 
 A pre-built binary file for SimConnect 10.0.61259.0 (FSX SP2) is included. This is compatible with all simulators from FSX SP2 up to Prepar3D v4.
 
@@ -27,9 +24,6 @@ const SIMCONNECT_PERIOD_ONCE = 1
 const SIMCONNECT_PERIOD_VISUAL_FRAME = 2
 const SIMCONNECT_PERIOD_SIM_FRAME = 3
 const SIMCONNECT_PERIOD_SECOND = 4
-
-const SIMCONNECT_DATA_REQUEST_FLAG_CHANGED = 1
-const SIMCONNECT_DATA_REQUEST_FLAG_TAGGED  = 2
 ```
 
 ### open
@@ -61,15 +55,17 @@ Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/libr
 Full example:
 ```javascript
 simConnect.requestDataOnSimObject([
+        ["TITLE", null, SIMCONNECT_DATATYPE_STRINGV],
         ["Plane Latitude", "degrees"],
         ["Plane Longitude", "degrees"],  
         ["PLANE ALTITUDE", "feet"]
     ], (data) => {
         // Called when data is received
         console.log(
+            "Aircraft:  " + data[0] + "\n" +
             "Latitude:  " + data[1] + "\n" +
             "Longitude: " + data[2] + "\n" +
-            "Altitude:  " + data[3] + " feet\n"
+            "Altitude:  " + data[3] + " feet"
         );
     }, 
     SIMCONNECT_OBJECT_ID_USER,                // User aircraft
@@ -93,13 +89,6 @@ simConnect.subscribeToSystemEvent("Pause", (paused) => {
     console.log(paused ? "Sim paused" : "Sim un-paused");
 });
 ```
-
-### transmitClientEvent
-Find event name [here](https://msdn.microsoft.com/en-us/library/cc526980.aspx) (use the value under "String Name")
-```javascript
-simConnect.transmitClientEvent("PARKING_BRAKES");
-```
-
 ### close
 Manually close the connection to SimConnect. Returns `false` if it fails.
 ```javascript
