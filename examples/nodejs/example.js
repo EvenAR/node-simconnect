@@ -2,6 +2,8 @@ const simConnect = require('../../');
 
 
 // From SimConnect.h:
+const SIMCONNECT_OBJECT_ID_USER = 0;
+
 const SIMCONNECT_PERIOD_NEVER = 0;
 const SIMCONNECT_PERIOD_ONCE = 1;
 const SIMCONNECT_PERIOD_VISUAL_FRAME = 2;
@@ -81,7 +83,7 @@ function doStuffWithSimconnect() {
             console.log("Aircraft Name:    " + data["TITLE"]);
             console.log("Aircraft Path:    " + obj.string);
             console.log("Aircraft number of engines: " + data["NUMBER OF ENGINES"]);
-        }, 0, SIMCONNECT_PERIOD_ONCE);
+        }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_ONCE);
     });
 
     // Subscribe to paused/unpaused event
@@ -92,10 +94,15 @@ function doStuffWithSimconnect() {
             console.log("Sim un-paused"); 
     });
 
+    // Subscribe to aircraft change
+	simConnect.subscribeToSystemEvent("AircraftLoaded", (filePath) => {
+        console.log("New aircraft loaded: " + filePath);
+	});
+
     // Request pushback state and get updates whenever it changes
     simConnect.requestDataOnSimObject([["LIGHT CABIN","Bool"], ["PUSHBACK STATE","Enum"]], function(data) {
         console.log(data);
-    }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
 
     // Get updates when the combustion (running or not) state of each engine changes
     simConnect.requestDataOnSimObject([
@@ -105,7 +112,7 @@ function doStuffWithSimconnect() {
         ["ENG COMBUSTION:4","bool"]
     ], function(data) {
         console.log("Engine state:  " + data["ENG COMBUSTION:1"] + "," + data["ENG COMBUSTION:2"] + ","  + data["ENG COMBUSTION:3"] + ","  + data["ENG COMBUSTION:4"]);
-    }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
 
     // Check if sim is on ground. When aircraft hits the ground, print the vertical speed.
     simConnect.requestDataOnSimObject([
@@ -118,5 +125,5 @@ function doStuffWithSimconnect() {
         else if(gnd != onGndNow)
             console.log("Landed with " + vs + " feet/min");
         gnd = onGndNow;
-    }, 0, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
 }

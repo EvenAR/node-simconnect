@@ -55,20 +55,18 @@ Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/libr
 Full example:
 ```javascript
 simConnect.requestDataOnSimObject([
-        ["TITLE", null, SIMCONNECT_DATATYPE_STRINGV],
         ["Plane Latitude", "degrees"],
         ["Plane Longitude", "degrees"],  
         ["PLANE ALTITUDE", "feet"]
     ], (data) => {
         // Called when data is received
         console.log(
-            "Aircraft:  " + data[0] + "\n" +
-            "Latitude:  " + data[1] + "\n" +
-            "Longitude: " + data[2] + "\n" +
-            "Altitude:  " + data[3] + " feet"
+            "Latitude:  " + data["Plane Latitude"] + "\n" +
+            "Longitude: " + data["Plane Longitude"] + "\n" +
+            "Altitude:  " + data["PLANE ALTITUDE"] + " feet"
         );
     }, 
-    SIMCONNECT_OBJECT_ID_USER,                // User aircraft
+    SIMCONNECT_OBJECT_ID_USER,                // User aircraft = 0
     SIMCONNECT_PERIOD_SIM_FRAME,              // Get data every sim frame...
     SIMCONNECT_DATA_REQUEST_FLAG_CHANGED      // ...but only if one of the variables have changed
 );
@@ -78,7 +76,7 @@ simConnect.requestDataOnSimObject([
 ### setDataOnSimObject
 Set a single [Simulation Variable](https://msdn.microsoft.com/en-us/library/cc526981.aspx) on user aircraft. First parameter is the datum name, second is the units name and last is the value.
 ```javascript
-simConnect.setDataOnSimObject("BRAKE PARKING POSITION:1", "Position", 1);
+simConnect.setDataOnSimObject("GENERAL ENG THROTTLE LEVER POSITION:1", "Percent", 50);
 ```
 
 ### subscribeToSystemEvent
