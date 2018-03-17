@@ -144,7 +144,7 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	std::vector<SIMCONNECT_DATATYPE> valTypes = dataRequests[pObjData->dwRequestID].datum_types;
 	std::vector<std::string> valIds = dataRequests[pObjData->dwRequestID].datum_names;
 
-	Local<Array> result_list = Array::New(isolate);
+	Local<Object> result_list = Object::New(isolate);
 	int dataValueOffset = 0;
 
 	for (int i = 0; i < numVars; i++) {
@@ -164,7 +164,6 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 			varSize = cbString;
 		}
 		else {
-			//printf("------ %s -----\n", valIds.at(i).c_str());
 			varSize = sizeMap[valTypes[i]];
 			char* p = ((char*)(&pObjData->dwData) + dataValueOffset);
 			double *var = (double*)p;
@@ -271,25 +270,25 @@ void handleSimDisconnect(Isolate* isolate) {
 }
 
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
-void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(open) {
 	uv_sem_init(&sem, 1);
 
 	defineIdCounter = 0;
 	eventIdCounter = 0;
 	requestIdCounter = 0;
 
-	Isolate* isolate = args.GetIsolate();
+	Isolate* isolate = info.GetIsolate();
 
 	// Get arguments
-	v8::String::Utf8Value appName(args[0]->ToString());
+	v8::String::Utf8Value appName(info[0]->ToString());
 
 	openEventId = getUniqueEventId();
-	systemEventCallbacks[openEventId] = { new Nan::Callback(args[1].As<Function>()) };
+	systemEventCallbacks[openEventId] = { new Nan::Callback(info[1].As<Function>()) };
 	quitEventId = getUniqueEventId();
-	systemEventCallbacks[quitEventId] = { new Nan::Callback(args[2].As<Function>()) };
+	systemEventCallbacks[quitEventId] = { new Nan::Callback(info[2].As<Function>()) };
 	exceptionEventId = getUniqueEventId();
-	systemEventCallbacks[exceptionEventId] = { new Nan::Callback(args[3].As<Function>()) };
-	errorCallback = { new Nan::Callback(args[4].As<Function>()) };
+	systemEventCallbacks[exceptionEventId] = { new Nan::Callback(info[3].As<Function>()) };
+	errorCallback = { new Nan::Callback(info[4].As<Function>()) };
 
 	// Create dispatch looper thread
 	loop = uv_default_loop();
@@ -302,13 +301,13 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	// Return true if success
 	Local<Boolean> retval = v8::Boolean::New(isolate, SUCCEEDED(hr));
 
-	args.GetReturnValue().Set(retval);
+	info.GetReturnValue().Set(retval);
 }
 
 
-void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(close) {
 	if (ghSimConnect) {
-		Isolate* isolate = args.GetIsolate();
+		Isolate* isolate = info.GetIsolate();
 		printf("Trying to close..\n");
 		HRESULT hr = SimConnect_Close(&ghSimConnect);
 		if (NT_ERROR(hr)) {
@@ -318,33 +317,33 @@ void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		printf("Closed: %i\n", hr);
 		ghSimConnect = NULL;
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		info.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
 
-void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(requestSystemState) {
 	if (ghSimConnect) {
-		Isolate* isolate = args.GetIsolate();
+		Isolate* isolate = info.GetIsolate();
 
-		v8::String::Utf8Value stateName(args[0]->ToString());
+		v8::String::Utf8Value stateName(info[0]->ToString());
 
 		int id = getUniqueRequestId();
-		systemStateCallbacks[id] = new Nan::Callback(args[1].As<Function>());
+		systemStateCallbacks[id] = new Nan::Callback(info[1].As<Function>());
 		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, *stateName);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
 			return;
 		}
-		args.GetReturnValue().Set(v8::Number::New(isolate, id));
+		info.GetReturnValue().Set(v8::Number::New(isolate, id));
 	}
 }
 
-void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(transmitClientEvent) {
 	if (ghSimConnect) {
-		Isolate* isolate = args.GetIsolate();
+		Isolate* isolate = info.GetIsolate();
 
-		v8::String::Utf8Value eventName(args[0]->ToString());
-		DWORD data = args.Length() > 1 ? args[1]->Int32Value() : 0;
+		v8::String::Utf8Value eventName(info[0]->ToString());
+		DWORD data = info.Length() > 1 ? info[1]->Int32Value() : 0;
 
 		int id = getUniqueEventId();
 		HRESULT hr = SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
@@ -359,18 +358,18 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			return;
 		}
 
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		info.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
 
-void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(subscribeToSystemEvent) {
 	if (ghSimConnect) {
-		v8::Isolate* isolate = args.GetIsolate();
+		v8::Isolate* isolate = info.GetIsolate();
 
 		int eventId = getUniqueEventId();
 
-		v8::String::Utf8Value systemEventName(args[0]->ToString());
-		systemEventCallbacks[eventId] = { new Nan::Callback(args[1].As<Function>()) };
+		v8::String::Utf8Value systemEventName(info[0]->ToString());
+		systemEventCallbacks[eventId] = { new Nan::Callback(info[1].As<Function>()) };
 
 		HANDLE hSimConnect = ghSimConnect;
 		HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, eventId, *systemEventName);
@@ -379,23 +378,25 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			return;
 		}
 
-		args.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
+		info.GetReturnValue().Set(v8::Integer::New(isolate, eventId));
 	}
 }
 
-void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(requestDataOnSimObject) {
+
+
 	if (ghSimConnect) {
-		v8::Isolate* isolate = args.GetIsolate();
+		v8::Isolate* isolate = info.GetIsolate();
 
-		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
-		auto callback = new Nan::Callback(args[1].As<Function>());
+		Local<Array> reqValues = v8::Local<v8::Array>::Cast(info[0]);
+		auto callback = new Nan::Callback(info[1].As<Function>());
 
-		int	objectId = args.Length() > 2 ? args[2]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-		int	periodId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
-		int	flags = args.Length() > 4 ? args[4]->Int32Value() : 0;
-		int	origin = args.Length() > 5 ? args[5]->Int32Value() : 0;
-		int	interval = args.Length() > 6 ? args[6]->Int32Value() : 0;
-		DWORD limit = args.Length() > 7 ? args[7]->NumberValue() : 0;
+		int	objectId = info.Length() > 2 ? info[2]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	periodId = info.Length() > 3 ? info[3]->Int32Value() : SIMCONNECT_PERIOD_SIM_FRAME;
+		int	flags = info.Length() > 4 ? info[4]->Int32Value() : 0;
+		int	origin = info.Length() > 5 ? info[5]->Int32Value() : 0;
+		int	interval = info.Length() > 6 ? info[6]->Int32Value() : 0;
+		DWORD limit = info.Length() > 7 ? info[7]->NumberValue() : 0;
 
 		int reqId = getUniqueRequestId();
 
@@ -407,24 +408,27 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			return;
 		}
 
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		info.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
 		dataRequests[reqId] = request;
+		
+
 	}
+	
 }
 
 
-void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(setDataOnSimObject) {
 	if (ghSimConnect) {
-		v8::Isolate* isolate = args.GetIsolate();
+		v8::Isolate* isolate = info.GetIsolate();
 
-		v8::String::Utf8Value name(args[0]->ToString());
-		v8::String::Utf8Value unit(args[1]->ToString());
+		v8::String::Utf8Value name(info[0]->ToString());
+		v8::String::Utf8Value unit(info[1]->ToString());
 
-		double value = args[2]->NumberValue();
+		double value = info[2]->NumberValue();
 
-		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
-		int	flags = args.Length() > 4 ? args[4]->Int32Value() : 0;
+		int	objectId = info.Length() > 3 ? info[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
+		int	flags = info.Length() > 4 ? info[4]->Int32Value() : 0;
 
 		int defId = getUniqueDefineId();
 
@@ -440,7 +444,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 			return;
 		}
 
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		info.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
 
@@ -520,12 +524,12 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 
 
 // Custom useful functions ////////////////////////////////////////////////////////////////////
-void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args) {
+NAN_METHOD(setAircraftInitialPosition) {
 	if (ghSimConnect) {
-		Isolate* isolate = args.GetIsolate();
+		Isolate* isolate = info.GetIsolate();
 
 		SIMCONNECT_DATA_INITPOSITION init;
-		Local<Object> json = args[0]->ToObject(isolate);
+		Local<Object> json = info[0]->ToObject(isolate);
 
 		v8::Local<v8::String> altProp = Nan::New("altitude").ToLocalChecked();
 		v8::Local<v8::String> latProp = Nan::New("latitude").ToLocalChecked();
@@ -559,19 +563,19 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 			return;
 		}
 
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+		info.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 	}
 }
 
-void Initialize(v8::Local<v8::Object> exports) {
-	NODE_SET_METHOD(exports, "open", Open);
-	NODE_SET_METHOD(exports, "close", Close);
-	NODE_SET_METHOD(exports, "subscribeToSystemEvent", SubscribeToSystemEvent);
-	NODE_SET_METHOD(exports, "requestDataOnSimObject", RequestDataOnSimObject);
-	NODE_SET_METHOD(exports, "setDataOnSimObject", SetDataOnSimObject);
-	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
-	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
-	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
+NAN_MODULE_INIT(Initialize) {
+	NAN_EXPORT(target, open);
+	NAN_EXPORT(target, close);
+	NAN_EXPORT(target, subscribeToSystemEvent);
+	NAN_EXPORT(target, requestDataOnSimObject);
+	NAN_EXPORT(target, setDataOnSimObject);
+	NAN_EXPORT(target, setAircraftInitialPosition);
+	NAN_EXPORT(target, transmitClientEvent);
+	NAN_EXPORT(target, requestSystemState);
 }
 
 NODE_MODULE(addon, Initialize);
