@@ -12,19 +12,7 @@ A pre-built binary file for SimConnect 10.0.61259.0 (FSX SP2) is included. This 
 
 
 ## Usage
-For better readability, start by defining these constants in your code. More values can be found here: [SIMCONNECT_DATATYPE](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SIMCONNECT_DATATYPE), and here: [SIMCONNECT_CLIENT_DATA_PERIOD](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SIMCONNECT_CLIENT_DATA_PERIOD) (first item has value 0, next item has value 1, then 2, etc).
-```javascript
-const SIMCONNECT_OBJECT_ID_USER = 0;
-
-const SIMCONNECT_DATATYPE_FLOAT64 = 4
-const SIMCONNECT_DATATYPE_STRINGV = 11
-
-const SIMCONNECT_PERIOD_NEVER = 0
-const SIMCONNECT_PERIOD_ONCE = 1
-const SIMCONNECT_PERIOD_VISUAL_FRAME = 2
-const SIMCONNECT_PERIOD_SIM_FRAME = 3
-const SIMCONNECT_PERIOD_SECOND = 4
-```
+The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
 
 ### open
 Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open`.
@@ -43,12 +31,14 @@ var success = simConnect.open("MyAppName",
 ```
 
 ### requestDataOnSimObject
-Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. Each simulation variable is defined by an array. Example:
+Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject) for more details.
+
+Each simulation variable is defined by an array. Example:
 ```javascript
 [
     "Plane Latitude",              // Datum name
     "degrees",                     // Units name
-    SIMCONNECT_DATATYPE_FLOAT64,   // Datum type (optional, FLOAT64 is default and works for most data types)
+    simConnect.datatype.FLOAT64,   // Datum type (optional, FLOAT64 is default and works for most data types)
     0                              // Epsilon (optional, 0 is default)
 ]    
 ```
@@ -66,13 +56,40 @@ simConnect.requestDataOnSimObject([
             "Altitude:  " + data["PLANE ALTITUDE"] + " feet"
         );
     }, 
-    SIMCONNECT_OBJECT_ID_USER,                // User aircraft = 0
-    SIMCONNECT_PERIOD_SIM_FRAME,              // Get data every sim frame...
-    SIMCONNECT_DATA_REQUEST_FLAG_CHANGED      // ...but only if one of the variables have changed
+    simConnect.objectId.USER,               // User aircraft
+    simConnect.period.SIM_FRAME,            // Get data every sim frame...
+    simConnect.dataRequestFlag.CHANGED      // ...but only if one of the variables have changed
 );
 ```
-[SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject)
 
+
+### requestDataOnSimObjectType
+Similar to `requestDataOnSimObject`. Used to retrieve information about simulation objects of a given type that are within a specified radius of the user's aircraft. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObjectType) for more details.
+
+Examples:
+This will receive info about the user's aircraft. For this, a radius of 0 is used. Notice that when `STRINGV` is requested, the unit should be `null`.
+```javascript
+simConnect.requestDataOnSimObjectType([
+    ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
+    ["NAV NAME:1", null, simConnect.datatype.STRINGV],
+    ["NAV DME:1","Nautical miles"],
+], function(data) {
+    console.log(data);
+},
+0,                              // Radius 0
+simConnect.simobjectType.USER);
+```
+
+This will receive info about all aircraft within a 10 km radius. The callback will one time for each identified aircraft:
+```javascript
+simConnect.requestDataOnSimObjectType([
+    ["ATC MODEL",null,simConnect.datatype.STRINGV],
+    ["Plane Latitude", "degrees"],
+    ["Plane Longitude", "degrees"]
+], function(data) {
+    console.log(data);
+}, 10000, simConnect.simobjectType.AIRCRAFT);
+```
 ### setDataOnSimObject
 Set a single [Simulation Variable](https://msdn.microsoft.com/en-us/library/cc526981.aspx) on user aircraft. First parameter is the datum name, second is the units name and last is the value.
 ```javascript
