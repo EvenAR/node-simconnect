@@ -1,20 +1,4 @@
 const simConnect = require('../../');
-
-
-// From SimConnect.h:
-const SIMCONNECT_OBJECT_ID_USER = 0;
-
-const SIMCONNECT_PERIOD_NEVER = 0;
-const SIMCONNECT_PERIOD_ONCE = 1;
-const SIMCONNECT_PERIOD_VISUAL_FRAME = 2;
-const SIMCONNECT_PERIOD_SIM_FRAME = 3;
-const SIMCONNECT_PERIOD_SECOND = 4;
-
-const SIMCONNECT_DATA_REQUEST_FLAG_CHANGED = 1;
-const SIMCONNECT_DATA_REQUEST_FLAG_TAGGED = 2;
-
-const SIMCONNECT_DATATYPE_STRINGV = 11
-
 connectToSim();
 
 
@@ -49,11 +33,6 @@ function connectToSim() {
 
 
 
-
-
-
-
-
 function doStuffWithSimconnect() {
     var vs = 0;
     var gnd = 1;
@@ -79,11 +58,11 @@ function doStuffWithSimconnect() {
 
     // Get the .air file name of the loaded aircraft. Then get the aircraft title.
     simConnect.requestSystemState("AircraftLoaded", function(obj) {
-        simConnect.requestDataOnSimObject([["NUMBER OF ENGINES", "Number"], ["TITLE", null, SIMCONNECT_DATATYPE_STRINGV]], function(data) {
+        simConnect.requestDataOnSimObject([["NUMBER OF ENGINES", "Number"], ["TITLE", null, simConnect.datatype.STRINGV]], function(data) {
             console.log("Aircraft Name:    " + data["TITLE"]);
             console.log("Aircraft Path:    " + obj.string);
             console.log("Aircraft number of engines: " + data["NUMBER OF ENGINES"]);
-        }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_ONCE);
+        }, simConnect.objectId.USER, simConnect.period.ONCE);
     });
 
     // Subscribe to paused/unpaused event
@@ -102,7 +81,17 @@ function doStuffWithSimconnect() {
     // Request pushback state and get updates whenever it changes
     simConnect.requestDataOnSimObject([["LIGHT CABIN","Bool"], ["PUSHBACK STATE","Enum"]], function(data) {
         console.log(data);
-    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, simConnect.objectId.USER, simConnect.period.SIM_FRAME, simConnect.dataRequestFlag.CHANGED);
+
+    // Get positions of all aircraft within a 10 km radius
+    simConnect.requestDataOnSimObjectType([
+        ["ATC MODEL",null,simConnect.datatype.STRINGV],
+        ["Plane Latitude", "degrees"],
+        ["Plane Longitude", "degrees"]
+    ], function(data) {
+        console.log(data);
+    }, 10000, simConnect.simobjectType.AIRCRAFT);
+
 
     // Get updates when the combustion (running or not) state of each engine changes
     simConnect.requestDataOnSimObject([
@@ -112,7 +101,7 @@ function doStuffWithSimconnect() {
         ["ENG COMBUSTION:4","bool"]
     ], function(data) {
         console.log("Engine state:  " + data["ENG COMBUSTION:1"] + "," + data["ENG COMBUSTION:2"] + ","  + data["ENG COMBUSTION:3"] + ","  + data["ENG COMBUSTION:4"]);
-    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, simConnect.objectId.USER, simConnect.period.SIM_FRAME, simConnect.dataRequestFlag.CHANGED);
 
     // Check if sim is on ground. When aircraft hits the ground, print the vertical speed.
     simConnect.requestDataOnSimObject([
@@ -125,5 +114,5 @@ function doStuffWithSimconnect() {
         else if(gnd != onGndNow)
             console.log("Landed with " + vs + " feet/min");
         gnd = onGndNow;
-    }, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SIM_FRAME, SIMCONNECT_DATA_REQUEST_FLAG_CHANGED);
+    }, simConnect.objectId.USER, simConnect.period.SIM_FRAME, simConnect.dataRequestFlag.CHANGED);
 }
