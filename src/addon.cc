@@ -125,6 +125,9 @@ void messageReceiver(uv_async_t* handle) {
 		case SIMCONNECT_RECV_ID_SYSTEM_STATE:
 			handleReceived_SystemState(isolate, data->pData, data->cbData);
 			break;
+		case SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE:
+			handleReceived_Data(isolate, data->pData, data->cbData);
+			break;
 		default:
 			printf("Unexpected message received (dwId: %i)\n", data->pData->dwID);
 			break;
@@ -137,6 +140,7 @@ void messageReceiver(uv_async_t* handle) {
 	uv_sem_post(&sem);	// The dispatch-worker can now continue
 }
 
+// Handles data requested with requestDataOnSimObject or requestDataOnSimObjectType 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	
 	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
@@ -154,13 +158,23 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 			dataValueOffset += 8;		// Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
 			char *pOutString;
 			DWORD cbString;
-			char * pStringv = ((char*)(&pObjData->dwData) + dataValueOffset);
-			HRESULT hr = SimConnect_RetrieveString(pData, cbData, pStringv, &pOutString, &cbString);
+			char * pStringv = ((char*)(&pObjData->dwData));
+			HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
 			if (NT_ERROR(hr)) {
 				handle_Error(isolate, hr);
 				return;
 			}
-			result_list->Set(String::NewFromUtf8(isolate, valIds.at(i).c_str()), String::NewFromOneByte(isolate, (const uint8_t*)pOutString));
+
+			v8::Local<v8::String> key = String::NewFromUtf8(isolate, valIds.at(i).c_str());
+			try {
+				v8::Local<v8::String> value = String::NewFromOneByte(isolate, (const uint8_t*)pOutString);
+				result_list->Set(key, value);
+			}
+			catch (...) {
+				v8::Local<v8::String> value = String::NewFromUtf8(isolate, "ERROR");
+				result_list->Set(key, value);
+			}
+
 			varSize = cbString;
 		}
 		else {
@@ -177,9 +191,9 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	Local<Value> argv[argc] = {
 		result_list
 	};
-
 	dataRequests[pObjData->dwRequestID].jsCallback->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
+
 
 void handle_Error(Isolate* isolate, NTSTATUS code) {
 	// Codes found so far: 0xC000014B, 0xC000020D, 0xC000013C
@@ -413,6 +427,36 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 }
 
+/*
+	Example use:
+		requestDataOnSimObjectType(['']);
+*/
+void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	if (ghSimConnect) {
+		v8::Isolate* isolate = args.GetIsolate();
+
+		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
+		auto callback = new Nan::Callback(args[1].As<Function>());
+
+		DWORD radius = args.Length() > 2 ? args[2]->Int32Value() : 0;
+		int typeId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_SIMOBJECT_TYPE_USER;
+
+		int reqId = getUniqueRequestId();
+
+		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
+
+		HRESULT hr = SimConnect_RequestDataOnSimObjectType(ghSimConnect, reqId, request.definition_id, radius, SIMCONNECT_SIMOBJECT_TYPE(typeId));
+		if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
+
+		dataRequests[reqId] = request;
+	}
+}
+
 
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
@@ -465,9 +509,13 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 
 			if (len > 1) {
 				v8::String::Utf8Value datumName(value->Get(0)->ToString());
-				v8::String::Utf8Value unitsName(value->Get(1)->ToString());
 				const char* sDatumName = *datumName;
-				const char* sUnitsName = value->Get(1)->IsNull() ? NULL : *unitsName;
+				const char* sUnitsName = NULL;	
+
+				if (!value->Get(1)->IsNull()) {		// Should be NULL for string
+					v8::String::Utf8Value unitsName(value->Get(1)->ToString());
+					sUnitsName = *unitsName;
+				}
 
 				
 
@@ -569,9 +617,10 @@ void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "subscribeToSystemEvent", SubscribeToSystemEvent);
 	NODE_SET_METHOD(exports, "requestDataOnSimObject", RequestDataOnSimObject);
 	NODE_SET_METHOD(exports, "setDataOnSimObject", SetDataOnSimObject);
+	NODE_SET_METHOD(exports, "requestDataOnSimObjectType", RequestDataOnSimObjectType);
 	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
 	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
-	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
+	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);	
 }
 
 NODE_MODULE(addon, Initialize);
