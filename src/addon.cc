@@ -414,7 +414,7 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 
-		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, callback);
+		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues);
 
 		HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, definition.id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
 		if (NT_ERROR(hr)) {
@@ -433,16 +433,22 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 
-		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
+		DataDefinition definition;
+
+		if (args[0]->IsArray()) {
+			Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
+			definition = generateDataDefinition(isolate, ghSimConnect, reqValues);
+		}
+		else if (args[0]->IsNumber()) {
+			definition = dataDefinitions[args[2]->NumberValue()];
+		}
+		
 		auto callback = new Nan::Callback(args[1].As<Function>());
 
 		DWORD radius = args.Length() > 2 ? args[2]->Int32Value() : 0;
 		int typeId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_SIMOBJECT_TYPE_USER;
 
 		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
-
-		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, callback);
-
 		HRESULT hr = SimConnect_RequestDataOnSimObjectType(ghSimConnect, reqId, definition.id, radius, SIMCONNECT_SIMOBJECT_TYPE(typeId));
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
@@ -455,19 +461,17 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 		dataRequestCallbacks[reqId] = callback;
 	}
 }
-/*
+
 void CreateDataDefinition(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
-		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, NULL);
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, definition.id));
-
+		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues);
 		dataDefinitions[definition.id] = definition;
-		dataRequestCallbacks[reqId] = callback;
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, definition.id));
 	}
 }
-*/
+
 
 
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -501,7 +505,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 // Generates a SimConnect data definition for the collection of requests.
-DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
+DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues) {
 
 	SIMCONNECT_DATA_DEFINITION_ID definitionId = getUniqueDefineId();
 
@@ -632,7 +636,8 @@ void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "requestDataOnSimObjectType", RequestDataOnSimObjectType);
 	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
 	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
-	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);	
+	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
+	NODE_SET_METHOD(exports, "createDataDefinition", CreateDataDefinition);
 }
 
 NODE_MODULE(addon, Initialize);
