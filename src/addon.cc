@@ -145,9 +145,9 @@ void messageReceiver(uv_async_t* handle) {
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	
 	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
-	int numVars = dataDefinitions[pObjData->dwRequestID].num_values;
-	std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwRequestID].datum_types;
-	std::vector<std::string> valIds = dataDefinitions[pObjData->dwRequestID].datum_names;
+	int numVars = dataDefinitions[pObjData->dwDefineID].num_values;
+	std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwDefineID].datum_types;
+	std::vector<std::string> valIds = dataDefinitions[pObjData->dwDefineID].datum_names;
 
 	Local<Object> result_list = Object::New(isolate);
 	int dataValueOffset = 0;
@@ -424,7 +424,7 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
-		dataDefinitions[reqId] = definition;
+		dataDefinitions[definition.id] = definition;
 		dataRequestCallbacks[reqId] = callback;
 	}
 }
@@ -451,10 +451,23 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
-		dataDefinitions[reqId] = definition;
+		dataDefinitions[definition.id] = definition;
 		dataRequestCallbacks[reqId] = callback;
 	}
 }
+/*
+void CreateDataDefinition(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	if (ghSimConnect) {
+		v8::Isolate* isolate = args.GetIsolate();
+		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
+		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, NULL);
+		args.GetReturnValue().Set(v8::Boolean::New(isolate, definition.id));
+
+		dataDefinitions[definition.id] = definition;
+		dataRequestCallbacks[reqId] = callback;
+	}
+}
+*/
 
 
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
