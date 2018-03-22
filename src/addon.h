@@ -93,4 +93,4 @@ void handleReceived_Quit(Isolate* isolate);
 void handle_Error(Isolate* isolate, NTSTATUS code);
 
 void messageReceiver(uv_async_t* handle);
-DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);
+DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues);
