@@ -8,9 +8,10 @@
 uv_loop_t *loop;
 uv_async_t async;
 
-std::map<DWORD, DataRequest> dataRequests;
+std::map<DWORD, DataDefinition> dataDefinitions;
 std::map<DWORD, Nan::Callback*> systemEventCallbacks;
 std::map<DWORD, Nan::Callback*> systemStateCallbacks;
+std::map<DWORD, Nan::Callback*> dataRequestCallbacks;
 Nan::Callback* errorCallback;
 
 // Special events to listen for from the beginning
@@ -144,9 +145,9 @@ void messageReceiver(uv_async_t* handle) {
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
 	
 	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
-	int numVars = dataRequests[pObjData->dwRequestID].num_values;
-	std::vector<SIMCONNECT_DATATYPE> valTypes = dataRequests[pObjData->dwRequestID].datum_types;
-	std::vector<std::string> valIds = dataRequests[pObjData->dwRequestID].datum_names;
+	int numVars = dataDefinitions[pObjData->dwRequestID].num_values;
+	std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwRequestID].datum_types;
+	std::vector<std::string> valIds = dataDefinitions[pObjData->dwRequestID].datum_names;
 
 	Local<Object> result_list = Object::New(isolate);
 	int dataValueOffset = 0;
@@ -191,7 +192,7 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	Local<Value> argv[argc] = {
 		result_list
 	};
-	dataRequests[pObjData->dwRequestID].jsCallback->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+	dataRequestCallbacks[pObjData->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
 
 
@@ -413,9 +414,9 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 
-		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
+		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, callback);
 
-		HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, request.definition_id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
+		HRESULT hr = SimConnect_RequestDataOnSimObject(ghSimConnect, reqId, definition.id, objectId, SIMCONNECT_PERIOD(periodId), flags, origin, interval, limit);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
 			return;
@@ -423,7 +424,8 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
-		dataRequests[reqId] = request;
+		dataDefinitions[reqId] = definition;
+		dataRequestCallbacks[reqId] = callback;
 	}
 }
 
@@ -439,9 +441,9 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 
-		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
+		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues, callback);
 
-		HRESULT hr = SimConnect_RequestDataOnSimObjectType(ghSimConnect, reqId, request.definition_id, radius, SIMCONNECT_SIMOBJECT_TYPE(typeId));
+		HRESULT hr = SimConnect_RequestDataOnSimObjectType(ghSimConnect, reqId, definition.id, radius, SIMCONNECT_SIMOBJECT_TYPE(typeId));
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
 			return;
@@ -449,7 +451,8 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 		args.GetReturnValue().Set(v8::Boolean::New(isolate, SUCCEEDED(hr)));
 
-		dataRequests[reqId] = request;
+		dataDefinitions[reqId] = definition;
+		dataRequestCallbacks[reqId] = callback;
 	}
 }
 
@@ -485,7 +488,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 // Generates a SimConnect data definition for the collection of requests.
-DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
+DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
 
 	SIMCONNECT_DATA_DEFINITION_ID definitionId = getUniqueDefineId();
 
@@ -559,7 +562,7 @@ DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Arra
 		}
 	}
 
-	return{ definitionId, numValues, callback, datumNames, datumTypes };
+	return{ definitionId, numValues, datumNames, datumTypes };
 }
 
 

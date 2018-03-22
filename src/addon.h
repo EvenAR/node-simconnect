@@ -20,11 +20,9 @@ struct SystemEventRequest {
 	Nan::Callback* jsCallback;
 };
 
-struct DataRequest {
-	SIMCONNECT_DATA_REQUEST_ID definition_id;
+struct DataDefinition {
+	SIMCONNECT_DATA_DEFINITION_ID id;
 	unsigned int num_values;
-	Nan::Callback* jsCallback;
-	
 	std::vector<std::string> datum_names;
 	std::vector<SIMCONNECT_DATATYPE> datum_types;
 };
@@ -95,4 +93,4 @@ void handleReceived_Quit(Isolate* isolate);
 void handle_Error(Isolate* isolate, NTSTATUS code);
 
 void messageReceiver(uv_async_t* handle);
-DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);
+DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);
