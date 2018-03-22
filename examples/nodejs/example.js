@@ -79,9 +79,23 @@ function doStuffWithSimconnect() {
 	});
 
     // Request pushback state and get updates whenever it changes
-    simConnect.requestDataOnSimObject([["LIGHT CABIN","Bool"], ["PUSHBACK STATE","Enum"]], function(data) {
+    simConnect.requestDataOnSimObject([
+        ["LIGHT CABIN","Bool"],
+        ["PUSHBACK STATE","Enum"]
+    ], function(data) {
         console.log(data);
     }, simConnect.objectId.USER, simConnect.period.SIM_FRAME, simConnect.dataRequestFlag.CHANGED);
+
+    var reqid = null;
+    setInterval(() => {
+        reqid = simConnect.requestDataOnSimObjectType([
+            ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
+            ["NAV GSI:1", "number", simConnect.datatype.STRINGV]
+        ], function(data) {
+            console.log(data)
+        }, 0, simConnect.simobjectType.USER)
+    },1000)
+    
 
     // Get positions of all aircraft within a 10 km radius
     simConnect.requestDataOnSimObjectType([
@@ -91,7 +105,6 @@ function doStuffWithSimconnect() {
     ], function(data) {
         console.log(data);
     }, 10000, simConnect.simobjectType.AIRCRAFT);
-
 
     // Get updates when the combustion (running or not) state of each engine changes
     simConnect.requestDataOnSimObject([

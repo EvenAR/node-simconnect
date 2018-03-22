@@ -21,8 +21,8 @@ struct SystemEventRequest {
 };
 
 struct DataRequest {
-	int definition_id;
-	int num_values;
+	SIMCONNECT_DATA_REQUEST_ID definition_id;
+	unsigned int num_values;
 	Nan::Callback* jsCallback;
 	
 	std::vector<std::string> datum_names;
