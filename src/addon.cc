@@ -8,20 +8,20 @@
 uv_loop_t *loop;
 uv_async_t async;
 
-std::map<int, DataRequest> dataRequests;
-std::map<int, Nan::Callback*> systemEventCallbacks;
-std::map<int, Nan::Callback*> systemStateCallbacks;
+std::map<DWORD, DataRequest> dataRequests;
+std::map<DWORD, Nan::Callback*> systemEventCallbacks;
+std::map<DWORD, Nan::Callback*> systemStateCallbacks;
 Nan::Callback* errorCallback;
 
 // Special events to listen for from the beginning
-int openEventId;
-int quitEventId;
-int exceptionEventId;
+SIMCONNECT_CLIENT_EVENT_ID openEventId;
+SIMCONNECT_CLIENT_EVENT_ID quitEventId;
+SIMCONNECT_CLIENT_EVENT_ID exceptionEventId;
 
 // Counters for creating unique IDs for SimConnect
-int defineIdCounter;
-int eventIdCounter;
-int requestIdCounter;
+SIMCONNECT_DATA_DEFINITION_ID defineIdCounter;
+SIMCONNECT_CLIENT_EVENT_ID eventIdCounter;
+SIMCONNECT_DATA_REQUEST_ID requestIdCounter;
 
 uv_sem_t sem;					// semaphore
 HANDLE ghSimConnect = NULL;
@@ -75,20 +75,20 @@ public:
 };
 
 
-int getUniqueDefineId() {
-	int id = defineIdCounter;
+SIMCONNECT_DATA_DEFINITION_ID getUniqueDefineId() {
+	SIMCONNECT_DATA_DEFINITION_ID id = defineIdCounter;
 	defineIdCounter++;
 	return id;
 }
 
-int getUniqueEventId() {
-	int id = eventIdCounter;
+SIMCONNECT_CLIENT_EVENT_ID getUniqueEventId() {
+	SIMCONNECT_CLIENT_EVENT_ID id = eventIdCounter;
 	eventIdCounter++;
 	return id;
 }
 
-int getUniqueRequestId() {
-	int id = requestIdCounter;
+SIMCONNECT_DATA_REQUEST_ID getUniqueRequestId() {
+	SIMCONNECT_DATA_REQUEST_ID id = requestIdCounter;
 	requestIdCounter++;
 	return id;
 }
@@ -342,14 +342,14 @@ void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 		v8::String::Utf8Value stateName(args[0]->ToString());
 
-		int id = getUniqueRequestId();
-		systemStateCallbacks[id] = new Nan::Callback(args[1].As<Function>());
-		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, id, *stateName);
+		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
+		systemStateCallbacks[reqId] = new Nan::Callback(args[1].As<Function>());
+		HRESULT hr = SimConnect_RequestSystemState(ghSimConnect, reqId, *stateName);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
 			return;
 		}
-		args.GetReturnValue().Set(v8::Number::New(isolate, id));
+		args.GetReturnValue().Set(v8::Number::New(isolate, reqId));
 	}
 }
 
@@ -360,7 +360,7 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		v8::String::Utf8Value eventName(args[0]->ToString());
 		DWORD data = args.Length() > 1 ? args[1]->Int32Value() : 0;
 
-		int id = getUniqueEventId();
+		SIMCONNECT_CLIENT_EVENT_ID id = getUniqueEventId();
 		HRESULT hr = SimConnect_MapClientEventToSimEvent(ghSimConnect, id, *eventName);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
@@ -381,7 +381,7 @@ void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
 
-		int eventId = getUniqueEventId();
+		SIMCONNECT_CLIENT_EVENT_ID eventId = getUniqueEventId();
 
 		v8::String::Utf8Value systemEventName(args[0]->ToString());
 		systemEventCallbacks[eventId] = { new Nan::Callback(args[1].As<Function>()) };
@@ -411,7 +411,7 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		int	interval = args.Length() > 6 ? args[6]->Int32Value() : 0;
 		DWORD limit = args.Length() > 7 ? args[7]->NumberValue() : 0;
 
-		int reqId = getUniqueRequestId();
+		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 
 		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
 
@@ -427,10 +427,6 @@ void RequestDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	}
 }
 
-/*
-	Example use:
-		requestDataOnSimObjectType(['']);
-*/
 void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
@@ -441,7 +437,7 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 		DWORD radius = args.Length() > 2 ? args[2]->Int32Value() : 0;
 		int typeId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_SIMOBJECT_TYPE_USER;
 
-		int reqId = getUniqueRequestId();
+		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 
 		DataRequest request = generateDataRequest(isolate, ghSimConnect, reqValues, callback);
 
@@ -470,7 +466,7 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		int	objectId = args.Length() > 3 ? args[3]->Int32Value() : SIMCONNECT_OBJECT_ID_USER;
 		int	flags = args.Length() > 4 ? args[4]->Int32Value() : 0;
 
-		int defId = getUniqueDefineId();
+		SIMCONNECT_DATA_DEFINITION_ID defId = getUniqueDefineId();
 
 		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, defId, *name, *unit);
 		if (NT_ERROR(hr)) {
@@ -491,11 +487,11 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 // Generates a SimConnect data definition for the collection of requests.
 DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback) {
 
-	int definitionId = getUniqueDefineId();
+	SIMCONNECT_DATA_DEFINITION_ID definitionId = getUniqueDefineId();
 
 	HRESULT hr = -1;
 	bool success = true;
-	int numValues = requestedValues->Length();
+	unsigned int numValues = requestedValues->Length();
 
 	std::vector<std::string> datumNames;
 	std::vector<SIMCONNECT_DATATYPE> datumTypes;
@@ -594,7 +590,7 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 		init.OnGround = json->HasOwnProperty(gndProp)	? json->Get(gndProp)->IntegerValue()	: 0;
 		init.Airspeed = json->HasOwnProperty(iasProp)	? json->Get(iasProp)->IntegerValue()	: 0;
 		
-		int id = getUniqueDefineId();
+		SIMCONNECT_DATA_DEFINITION_ID id = getUniqueDefineId();
 		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
 		if (NT_ERROR(hr)) {
 			handle_Error(isolate, hr);
