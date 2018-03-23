@@ -75,7 +75,7 @@
     "FlightSimulator",
     "Simulator"
   ],
-  "license": "ISC",
+  "license": "MIT",
   "main": "index.js",
   "maintainers": [
     {
