@@ -7,19 +7,19 @@ This project is at a very early stage and wraps only a few basic SimConnect func
 
 node-simconnect is a native NodeJS addon written in C++ and must be compiled to a dynamic C++ library before it can be loaded as a module in NodeJS. Included in this repository is a prebuilt binary built with SimConnect 10.0.61259.0 (FSX SP2), which is compatible with FSX SP2, FSX:SE and all versions of Prepar3D. Because SimConnect 10.0.61259.0 is a 32 bit library, you must use the 32 bit version of NodeJS in order to import the module.
 
-To install node-simconnect using the included binary: 
+To install node-simconnect using the included binary:
 `npm install node-simconnect --ignore-scripts`
 
 **Note: The included binary requires the 32 bit version of NodeJS.**
 
-Then import the module:
+## Usage
 `const simConnect = require('node-simconnect');`
 
-## Usage
 The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
 
 ### open
 `requestDataOnSimObject(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
+
 Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open` (eg. if sim is not running).
 ```javascript
 var success = simConnect.open("MyAppName", 
@@ -37,6 +37,7 @@ var success = simConnect.open("MyAppName",
 
 ### requestDataOnSimObject
 `requestDataOnSimObject(reqData, callback, objectId, period, dataRequestFlag)`
+
 Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject) for more details.
 
 Each simulation variable is defined by an array. Example:
@@ -71,6 +72,7 @@ simConnect.requestDataOnSimObject([
 
 ### requestDataOnSimObjectType
 `requestDataOnSimObjectType(reqData, callback, radius, simobjectType)`
+
 Similar to `requestDataOnSimObject`. Used to retrieve information about simulation objects of a given type that are within a specified radius of the user's aircraft. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObjectType) for more details.
 
 **Example**:
@@ -99,6 +101,7 @@ simConnect.requestDataOnSimObjectType([
 
 ### createDataDefinition
 `createDataDefinition(reqData)`
+
 Used to create a data definition. Returns an id which can be used with `requestDataOnSimObjectType` in place of the array. This should be used when you have multiple requests for the same data - otherwise the app will crash after receiving too many requests. 
 
 **Example**:
@@ -118,6 +121,7 @@ setInterval(() => {
 
 ### setDataOnSimObject
 `setDataOnSimObject(variableName, unit, value)`
+
 Set a single [Simulation Variable](https://msdn.microsoft.com/en-us/library/cc526981.aspx) on user aircraft. First parameter is the datum name, second is the units name and last is the value.
 
 **Example**:
@@ -127,6 +131,7 @@ simConnect.setDataOnSimObject("GENERAL ENG THROTTLE LEVER POSITION:1", "Percent"
 
 ### subscribeToSystemEvent
 `subscribeToSystemEvent(eventName, callback)`
+
 Subscribe to a system event. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_SubscribeToSystemEvent) for available events.
 
 **Example**:
@@ -138,6 +143,7 @@ simConnect.subscribeToSystemEvent("Pause", (paused) => {
 ```
 ### close
 `close()`
+
 Manually close the connection to SimConnect. Returns `false` if it fails.
 
 **Example**:
