@@ -8,19 +8,24 @@ This project is at a very early stage and wraps only a few basic SimConnect func
 node-simconnect is a native NodeJS addon written in C++ and must be compiled to a dynamic C++ library before it can be loaded as a module in NodeJS. Included in this repository is a prebuilt binary built with SimConnect 10.0.61259.0 (FSX SP2), which is compatible with FSX SP2, FSX:SE and all versions of Prepar3D. Because SimConnect 10.0.61259.0 is a 32 bit library, you must use the 32 bit version of NodeJS in order to import the module.
 
 To install node-simconnect using the included binary:
+
 `npm install node-simconnect --ignore-scripts`
 
 **Note: The included binary requires the 32 bit version of NodeJS.**
 
 ## Usage
+Import the module:
+
 `const simConnect = require('node-simconnect');`
 
 The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
 
 ### open
-`requestDataOnSimObject(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
+`open(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
 
 Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open` (eg. if sim is not running).
+
+**Example**
 ```javascript
 var success = simConnect.open("MyAppName", 
     function(name, version) {
@@ -40,7 +45,9 @@ var success = simConnect.open("MyAppName",
 
 Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject) for more details.
 
-Each simulation variable is defined by an array. Example:
+Each simulation variable is defined by an array. 
+
+**Example:**
 ```javascript
 [
     "Plane Latitude",              // Datum name
@@ -49,7 +56,7 @@ Each simulation variable is defined by an array. Example:
     0                              // Epsilon (optional, 0 is default)
 ]    
 ```
-Full example:
+**Full example:**
 ```javascript
 simConnect.requestDataOnSimObject([
         ["Plane Latitude", "degrees"],
@@ -88,7 +95,7 @@ simConnect.requestDataOnSimObjectType([
 ```
 
 **Example**:
-This will receive info about all aircraft within a 10 km radius. The callback will one time for each identified aircraft.
+This will receive info about all aircraft within a 10 km radius. The callback will run one time for each identified aircraft.
 ```javascript
 simConnect.requestDataOnSimObjectType([
     ["ATC MODEL",null,simConnect.datatype.STRINGV],
