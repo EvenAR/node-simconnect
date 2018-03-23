@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <winternl.h>
 #include <ntstatus.h>
+#include <stack>
 
 uv_loop_t *loop;
 uv_async_t async;
@@ -23,6 +24,8 @@ SIMCONNECT_CLIENT_EVENT_ID exceptionEventId;
 SIMCONNECT_DATA_DEFINITION_ID defineIdCounter;
 SIMCONNECT_CLIENT_EVENT_ID eventIdCounter;
 SIMCONNECT_DATA_REQUEST_ID requestIdCounter;
+
+std::stack<SIMCONNECT_DATA_REQUEST_ID> unusedReqIds;
 
 uv_sem_t sem;					// semaphore
 HANDLE ghSimConnect = NULL;
@@ -89,8 +92,15 @@ SIMCONNECT_CLIENT_EVENT_ID getUniqueEventId() {
 }
 
 SIMCONNECT_DATA_REQUEST_ID getUniqueRequestId() {
-	SIMCONNECT_DATA_REQUEST_ID id = requestIdCounter;
-	requestIdCounter++;
+	SIMCONNECT_DATA_REQUEST_ID id;
+	if (!unusedReqIds.empty()) {
+		id = unusedReqIds.top();
+		unusedReqIds.pop();
+	}
+	else {
+		id = requestIdCounter;
+		requestIdCounter++;
+	}
 	return id;
 }
 
@@ -127,7 +137,7 @@ void messageReceiver(uv_async_t* handle) {
 			handleReceived_SystemState(isolate, data->pData, data->cbData);
 			break;
 		case SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE:
-			handleReceived_Data(isolate, data->pData, data->cbData);
+			handleReceived_DataByType(isolate, data->pData, data->cbData);
 			break;
 		default:
 			printf("Unexpected message received (dwId: %i)\n", data->pData->dwID);
@@ -195,6 +205,11 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	dataRequestCallbacks[pObjData->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), argc, argv);
 }
 
+void handleReceived_DataByType(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
+	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
+	handleReceived_Data(isolate, pData, cbData);
+	unusedReqIds.push(pObjData->dwRequestID);	// The id can be re-used in next request
+}
 
 void handle_Error(Isolate* isolate, NTSTATUS code) {
 	// Codes found so far: 0xC000014B, 0xC000020D, 0xC000013C
@@ -440,7 +455,7 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 			definition = generateDataDefinition(isolate, ghSimConnect, reqValues);
 		}
 		else if (args[0]->IsNumber()) {
-			definition = dataDefinitions[args[2]->NumberValue()];
+			definition = dataDefinitions[args[0]->NumberValue()];
 		}
 		
 		auto callback = new Nan::Callback(args[1].As<Function>());
@@ -467,8 +482,8 @@ void CreateDataDefinition(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		v8::Isolate* isolate = args.GetIsolate();
 		Local<Array> reqValues = v8::Local<v8::Array>::Cast(args[0]);
 		DataDefinition definition = generateDataDefinition(isolate, ghSimConnect, reqValues);
+		args.GetReturnValue().Set(v8::Number::New(isolate, definition.id));
 		dataDefinitions[definition.id] = definition;
-		args.GetReturnValue().Set(v8::Boolean::New(isolate, definition.id));
 	}
 }
 

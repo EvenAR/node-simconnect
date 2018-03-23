@@ -86,15 +86,16 @@ function doStuffWithSimconnect() {
         console.log(data);
     }, simConnect.objectId.USER, simConnect.period.SIM_FRAME, simConnect.dataRequestFlag.CHANGED);
 
-    var reqid = null;
+    var navInfoDefId = simConnect.createDataDefinition([
+        ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
+        ["NAV GSI:1", "number"]
+    ]);
+    
     setInterval(() => {
-        reqid = simConnect.requestDataOnSimObjectType([
-            ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
-            ["NAV GSI:1", "number", simConnect.datatype.STRINGV]
-        ], function(data) {
+        simConnect.requestDataOnSimObjectType(navInfoDefId, function(data) {
             console.log(data)
         }, 0, simConnect.simobjectType.USER)
-    },1000)
+    },100)
     
 
     // Get positions of all aircraft within a 10 km radius
