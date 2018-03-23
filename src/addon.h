@@ -20,11 +20,11 @@ struct SystemEventRequest {
 	Nan::Callback* jsCallback;
 };
 
-struct DataRequest {
-	int definition_id;
-	int num_values;
-	Nan::Callback* jsCallback;
-	std::vector<SIMCONNECT_DATATYPE> value_types;
+struct DataDefinition {
+	SIMCONNECT_DATA_DEFINITION_ID id;
+	unsigned int num_values;
+	std::vector<std::string> datum_names;
+	std::vector<SIMCONNECT_DATATYPE> datum_types;
 };
 
 
@@ -84,6 +84,7 @@ std::map<SIMCONNECT_DATATYPE, int> sizeMap =
 
 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
+void handleReceived_DataByType(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Event(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Exception(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Filename(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
@@ -93,4 +94,4 @@ void handleReceived_Quit(Isolate* isolate);
 void handle_Error(Isolate* isolate, NTSTATUS code);
 
 void messageReceiver(uv_async_t* handle);
-DataRequest generateDataRequest(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues, Nan::Callback* callback);
+DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Local<Array> requestedValues);

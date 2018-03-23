@@ -1,14 +1,15 @@
 {
   "name": "node-simconnect",
-  "version": "1.1.1",
-  "description": "Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)",
+  "version": "1.2.0",
+  "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32"
+    "build": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32",
+    "install": "node-gyp rebuild",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Even Arneberg Rognlien",
-  "license": "ISC",
+  "license": "MIT",
   "gypfile": false,
   "dependencies": {
     "nan": "^2.6.2"
