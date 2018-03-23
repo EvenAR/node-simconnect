@@ -27,7 +27,12 @@ SIMCONNECT_DATA_REQUEST_ID requestIdCounter;
 
 std::stack<SIMCONNECT_DATA_REQUEST_ID> unusedReqIds;
 
-uv_sem_t sem;					// semaphore
+// Semaphores
+uv_sem_t workerSem;
+uv_sem_t defineIdSem;
+uv_sem_t eventIdSem;
+uv_sem_t reqIdSem;
+
 HANDLE ghSimConnect = NULL;
 
 class DispatchWorker : public Nan::AsyncWorker {
@@ -43,7 +48,7 @@ public:
 		while (true) {
 
 			if (ghSimConnect) {
-				uv_sem_wait(&sem);	// Wait for mainthread to process the previous dispatch
+				uv_sem_wait(&workerSem);	// Wait for mainthread to process the previous dispatch
 
 				SIMCONNECT_RECV* pData;
 				DWORD cbData;
@@ -66,7 +71,7 @@ public:
 					uv_async_send(&async);
 				}
 				else {
-					uv_sem_post(&sem);	// Continue
+					uv_sem_post(&workerSem);	// Continue
 					Sleep(1);
 				}
 				
@@ -80,18 +85,23 @@ public:
 
 
 SIMCONNECT_DATA_DEFINITION_ID getUniqueDefineId() {
+	uv_sem_wait(&defineIdSem);
 	SIMCONNECT_DATA_DEFINITION_ID id = defineIdCounter;
 	defineIdCounter++;
+	uv_sem_post(&defineIdSem);
 	return id;
 }
 
 SIMCONNECT_CLIENT_EVENT_ID getUniqueEventId() {
+	uv_sem_wait(&eventIdSem);
 	SIMCONNECT_CLIENT_EVENT_ID id = eventIdCounter;
 	eventIdCounter++;
+	uv_sem_post(&eventIdSem);
 	return id;
 }
 
 SIMCONNECT_DATA_REQUEST_ID getUniqueRequestId() {
+	uv_sem_wait(&reqIdSem);
 	SIMCONNECT_DATA_REQUEST_ID id;
 	if (!unusedReqIds.empty()) {
 		id = unusedReqIds.top();
@@ -101,6 +111,7 @@ SIMCONNECT_DATA_REQUEST_ID getUniqueRequestId() {
 		id = requestIdCounter;
 		requestIdCounter++;
 	}
+	uv_sem_post(&reqIdSem);
 	return id;
 }
 
@@ -148,7 +159,7 @@ void messageReceiver(uv_async_t* handle) {
 		handle_Error(isolate, data->ntstatus);
 	}
 	
-	uv_sem_post(&sem);	// The dispatch-worker can now continue
+	uv_sem_post(&workerSem);	// The dispatch-worker can now continue
 }
 
 // Handles data requested with requestDataOnSimObject or requestDataOnSimObjectType 
@@ -302,7 +313,10 @@ void handleSimDisconnect(Isolate* isolate) {
 
 // Wrapped SimConnect-functions //////////////////////////////////////////////////////
 void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
-	uv_sem_init(&sem, 1);
+	uv_sem_init(&workerSem, 1);
+	uv_sem_init(&defineIdSem, 1);
+	uv_sem_init(&eventIdSem, 1);
+	uv_sem_init(&reqIdSem, 1);
 
 	defineIdCounter = 0;
 	eventIdCounter = 0;
