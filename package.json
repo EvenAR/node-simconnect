@@ -1,71 +1,27 @@
 {
-  "_args": [
-    [
-      {
-        "raw": "node-simconnect@^1.1.1",
-        "scope": null,
-        "escapedName": "node-simconnect",
-        "name": "node-simconnect",
-        "rawSpec": "^1.1.1",
-        "spec": ">=1.1.1 <2.0.0",
-        "type": "range"
-      },
-      "C:\\Users\\Even\\Documents\\VNPCv2\\vnpc_electron"
-    ]
-  ],
-  "_from": "node-simconnect@>=1.1.1 <2.0.0",
-  "_id": "node-simconnect@1.1.1",
-  "_inCache": true,
-  "_location": "/node-simconnect",
-  "_nodeVersion": "8.2.1",
-  "_npmOperationalInternal": {
-    "host": "s3://npm-registry-packages",
-    "tmp": "tmp/node-simconnect-1.1.1.tgz_1502549913062_0.5748662080150098"
+  "name": "node-simconnect",
+  "version": "1.2.0",
+  "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
+  "main": "index.js",
+  "scripts": {
+    "build": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32",
+    "install": "node-gyp rebuild",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "_npmUser": {
-    "name": "evenar",
-    "email": "even.rognlien@gmail.com"
-  },
-  "_npmVersion": "3.10.9",
-  "_phantomChildren": {},
-  "_requested": {
-    "raw": "node-simconnect@^1.1.1",
-    "scope": null,
-    "escapedName": "node-simconnect",
-    "name": "node-simconnect",
-    "rawSpec": "^1.1.1",
-    "spec": ">=1.1.1 <2.0.0",
-    "type": "range"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/node-simconnect/-/node-simconnect-1.1.1.tgz",
-  "_shasum": "41e6f8c4069a27b033ca13d15f206a9df871c68d",
-  "_shrinkwrap": null,
-  "_spec": "node-simconnect@^1.1.1",
-  "_where": "C:\\Users\\Even\\Documents\\VNPCv2\\vnpc_electron",
-  "author": {
-    "name": "Even Arneberg Rognlien"
-  },
-  "bugs": {
-    "url": "https://github.com/EvenAR/node-simconnect/issues"
-  },
+  "author": "Even Arneberg Rognlien",
+  "license": "MIT",
+  "gypfile": false,
   "dependencies": {
     "nan": "^2.6.2"
   },
-  "description": "Wrapper for the SimConnect SDK for FSX and Prepar3D (Windows)",
-  "devDependencies": {},
   "directories": {
     "example": "examples"
   },
-  "dist": {
-    "shasum": "41e6f8c4069a27b033ca13d15f206a9df871c68d",
-    "tarball": "https://registry.npmjs.org/node-simconnect/-/node-simconnect-1.1.1.tgz"
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvenAR/node-simconnect.git"
   },
-  "gypfile": true,
-  "homepage": "https://github.com/EvenAR/node-simconnect#readme",
   "keywords": [
     "FSX",
     "P3D",
@@ -75,25 +31,8 @@
     "FlightSimulator",
     "Simulator"
   ],
-  "license": "MIT",
-  "main": "index.js",
-  "maintainers": [
-    {
-      "name": "evenar",
-      "email": "even.rognlien@gmail.com"
-    }
-  ],
-  "name": "node-simconnect",
-  "optionalDependencies": {},
-  "readme": "ERROR: No README data found!",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/EvenAR/node-simconnect.git"
+  "bugs": {
+    "url": "https://github.com/EvenAR/node-simconnect/issues"
   },
-  "scripts": {
-    "build": "node-gyp configure rebuild --msvs_version=2013 --arch=ia32",
-    "install": "node-gyp rebuild",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "version": "1.1.1"
+  "homepage": "https://github.com/EvenAR/node-simconnect#readme"
 }
