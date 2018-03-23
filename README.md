@@ -19,6 +19,7 @@ Then import the module:
 The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
 
 ### open
+`requestDataOnSimObject(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
 Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open` (eg. if sim is not running).
 ```javascript
 var success = simConnect.open("MyAppName", 
@@ -35,6 +36,7 @@ var success = simConnect.open("MyAppName",
 ```
 
 ### requestDataOnSimObject
+`requestDataOnSimObject(reqData, callback, objectId, period, dataRequestFlag)`
 Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject) for more details.
 
 Each simulation variable is defined by an array. Example:
@@ -68,9 +70,10 @@ simConnect.requestDataOnSimObject([
 
 
 ### requestDataOnSimObjectType
+`requestDataOnSimObjectType(reqData, callback, radius, simobjectType)`
 Similar to `requestDataOnSimObject`. Used to retrieve information about simulation objects of a given type that are within a specified radius of the user's aircraft. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObjectType) for more details.
 
-Examples:
+**Example**:
 This will receive info about the user's aircraft. For this, a radius of 0 is used. Notice that when `STRINGV` is requested, the unit should be `null`.
 ```javascript
 simConnect.requestDataOnSimObjectType([
@@ -79,12 +82,11 @@ simConnect.requestDataOnSimObjectType([
     ["NAV DME:1","Nautical miles"],
 ], function(data) {
     console.log(data);
-},
-0,                              // Radius 0
-simConnect.simobjectType.USER);
+}, 0 /* radius=0 */, simConnect.simobjectType.USER);
 ```
 
-This will receive info about all aircraft within a 10 km radius. The callback will one time for each identified aircraft:
+**Example**:
+This will receive info about all aircraft within a 10 km radius. The callback will one time for each identified aircraft.
 ```javascript
 simConnect.requestDataOnSimObjectType([
     ["ATC MODEL",null,simConnect.datatype.STRINGV],
@@ -94,14 +96,40 @@ simConnect.requestDataOnSimObjectType([
     console.log(data);
 }, 10000, simConnect.simobjectType.AIRCRAFT);
 ```
+
+### createDataDefinition
+`createDataDefinition(reqData)`
+Used to create a data definition. Returns an id which can be used with `requestDataOnSimObjectType` in place of the array. This should be used when you have multiple requests for the same data - otherwise the app will crash after receiving too many requests. 
+
+**Example**:
+```javascript
+var navInfoDefId = simConnect.createDataDefinition([
+    ["NAV DME:1", "Nautical miles"],
+    ["NAV GLIDE SLOPE ERROR:1", "Degrees"],
+    ["NAV RADIAL ERROR:1", "Degrees"],
+]);
+
+setInterval(() => {
+    simConnect.requestDataOnSimObjectType(navInfoDefId, function(data) {
+        console.log(data)
+    }, 0, simConnect.simobjectType.USER)
+},100)
+```
+
 ### setDataOnSimObject
+`setDataOnSimObject(variableName, unit, value)`
 Set a single [Simulation Variable](https://msdn.microsoft.com/en-us/library/cc526981.aspx) on user aircraft. First parameter is the datum name, second is the units name and last is the value.
+
+**Example**:
 ```javascript
 simConnect.setDataOnSimObject("GENERAL ENG THROTTLE LEVER POSITION:1", "Percent", 50);
 ```
 
 ### subscribeToSystemEvent
+`subscribeToSystemEvent(eventName, callback)`
 Subscribe to a system event. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_SubscribeToSystemEvent) for available events.
+
+**Example**:
 ```javascript
 simConnect.subscribeToSystemEvent("Pause", (paused) => { 
     // Called when the system event occurs
@@ -109,7 +137,10 @@ simConnect.subscribeToSystemEvent("Pause", (paused) => {
 });
 ```
 ### close
+`close()`
 Manually close the connection to SimConnect. Returns `false` if it fails.
+
+**Example**:
 ```javascript
 var success = simConnect.close();
 ```
