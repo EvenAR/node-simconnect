@@ -182,6 +182,4 @@ To use `node-simconnect` with Electron or NW.JS, the package must be built speci
 * To build native NW.JS addon: `nw-gyp rebuild --target=0.20.3 --arch=ia32 --msvs_version=2013` (where `--target` is the version of NW.JS).
 
 ## Licence
-
-### License
 [MIT](https://opensource.org/licenses/MIT)
