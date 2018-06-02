@@ -28,7 +28,7 @@ Open connection and provide callback functions for handling critical events. Ret
 **Example**
 ```javascript
 var success = simConnect.open("MyAppName", 
-    function(name, version) {
+    (name, version) => {
         console.log("Connected to: " + name + "\nSimConnect version: " + version);
         // Safe to start interacting with SimConnect here (request data, etc)
     }, () => {
@@ -89,7 +89,7 @@ simConnect.requestDataOnSimObjectType([
     ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
     ["NAV NAME:1", null, simConnect.datatype.STRINGV],
     ["NAV DME:1","Nautical miles"],
-], function(data) {
+], (data) => {
     console.log(data);
 }, 0 /* radius=0 */, simConnect.simobjectType.USER);
 ```
@@ -101,7 +101,7 @@ simConnect.requestDataOnSimObjectType([
     ["ATC MODEL",null,simConnect.datatype.STRINGV],
     ["Plane Latitude", "degrees"],
     ["Plane Longitude", "degrees"]
-], function(data) {
+], (data) => {
     console.log(data);
 }, 10000, simConnect.simobjectType.AIRCRAFT);
 ```
@@ -120,7 +120,7 @@ var navInfoDefId = simConnect.createDataDefinition([
 ]);
 
 setInterval(() => {
-    simConnect.requestDataOnSimObjectType(navInfoDefId, function(data) {
+    simConnect.requestDataOnSimObjectType(navInfoDefId, (data) => {
         console.log(data)
     }, 0, simConnect.simobjectType.USER)
 },100)
