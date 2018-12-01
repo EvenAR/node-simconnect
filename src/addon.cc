@@ -189,7 +189,7 @@ void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 
 			v8::Local<v8::String> key = String::NewFromUtf8(isolate, valIds.at(i).c_str());
 			try {
-				v8::Local<v8::String> value = String::NewFromOneByte(isolate, (const uint8_t*)pOutString);
+				v8::Local<v8::String> value = String::NewFromOneByte(isolate, (const uint8_t*)pOutString, v8::NewStringType::kNormal).ToLocalChecked();
 				result_list->Set(key, value);
 			}
 			catch (...) {
@@ -283,7 +283,7 @@ void handleReceived_Open(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData)
 	const int argc = 2;
 
 	Local<Value> argv[argc] = {
-		String::NewFromOneByte(isolate, (const uint8_t*)pOpen->szApplicationName),
+		String::NewFromOneByte(isolate, (const uint8_t*)pOpen->szApplicationName, v8::NewStringType::kNormal).ToLocalChecked(),
 		String::NewFromUtf8(isolate, simconnVersion)
 	};
 
@@ -296,7 +296,7 @@ void handleReceived_SystemState(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD 
 	Local<Object> obj = Object::New(isolate);
 	obj->Set(String::NewFromUtf8(isolate, "integer"), Number::New(isolate, pState->dwInteger));
 	obj->Set(String::NewFromUtf8(isolate, "float"), Number::New(isolate, pState->fFloat));
-	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromOneByte(isolate, (const uint8_t*)pState->szString));
+	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromUtf8(isolate, "string"));
 
 	Local<Value> argv[1] = { obj };
 	systemStateCallbacks[pState->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), 1, argv);
@@ -628,16 +628,15 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 		v8::Local<v8::String> hdgProp = Nan::New("heading").ToLocalChecked();
 		v8::Local<v8::String> gndProp = Nan::New("onGround").ToLocalChecked();
 		v8::Local<v8::String> iasProp = Nan::New("airspeed").ToLocalChecked();
-
-
-		init.Altitude = json->HasOwnProperty(altProp)	? json->Get(altProp)->NumberValue()		: 0;
-		init.Latitude = json->HasOwnProperty(latProp)	? json->Get(latProp)->NumberValue()		: 0;
-		init.Longitude = json->HasOwnProperty(lngProp)	? json->Get(lngProp)->NumberValue()		: 0;
-		init.Pitch = json->HasOwnProperty(pitchProp)	? json->Get(pitchProp)->NumberValue()	: 0;
-		init.Bank = json->HasOwnProperty(bankProp)		? json->Get(bankProp)->NumberValue()	: 0;
-		init.Heading = json->HasOwnProperty(hdgProp)	? json->Get(hdgProp)->NumberValue()		: 0;
-		init.OnGround = json->HasOwnProperty(gndProp)	? json->Get(gndProp)->IntegerValue()	: 0;
-		init.Airspeed = json->HasOwnProperty(iasProp)	? json->Get(iasProp)->IntegerValue()	: 0;
+		
+		init.Altitude = json->HasRealNamedProperty(altProp)	? json->Get(altProp)->NumberValue()		: 0;
+		init.Latitude = json->HasRealNamedProperty(latProp) ? json->Get(latProp)->NumberValue()		: 0;
+		init.Longitude = json->HasRealNamedProperty(lngProp) ? json->Get(lngProp)->NumberValue()		: 0;
+		init.Pitch = json->HasRealNamedProperty(pitchProp) ? json->Get(pitchProp)->NumberValue()	: 0;
+		init.Bank = json->HasRealNamedProperty(bankProp) ? json->Get(bankProp)->NumberValue()	: 0;
+		init.Heading = json->HasRealNamedProperty(hdgProp) ? json->Get(hdgProp)->NumberValue()		: 0;
+		init.OnGround = json->HasRealNamedProperty(gndProp) ? json->Get(gndProp)->IntegerValue()	: 0;
+		init.Airspeed = json->HasRealNamedProperty(iasProp) ? json->Get(iasProp)->IntegerValue()	: 0;
 		
 		SIMCONNECT_DATA_DEFINITION_ID id = getUniqueDefineId();
 		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
