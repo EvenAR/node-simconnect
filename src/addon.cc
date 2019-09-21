@@ -1,9 +1,6 @@
 #include "addon.h"
-#include <iostream>
-#include <sstream>
-#include <windows.h>
+
 #include <winternl.h>
-#include <ntstatus.h>
 #include <stack>
 
 uv_loop_t *loop;
@@ -60,7 +57,7 @@ public:
 					CallbackData data;
 					data.pData = pData;
 					data.cbData = cbData;
-					data.ntstatus = STATUS_SUCCESS;
+					data.ntstatus = 0;
 					async.data = &data;
 					uv_async_send(&async);					
 				}
