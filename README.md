@@ -9,7 +9,7 @@ node-simconnect is a native NodeJS addon written in C++ and must be compiled to 
 
 To install node-simconnect using the included binary:
 
-`npm install node-simconnect --ignore-scripts`
+`npm install node-simconnect`
 
 **Note: The included binary requires the 32 bit version of NodeJS.**
 

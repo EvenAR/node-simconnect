@@ -4,9 +4,8 @@
   "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
   "main": "index.js",
   "scripts": {
-    "build": "node-gyp configure rebuild --msvs_version=2015 --arch=ia32",
-    "install": "node-gyp rebuild",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "rebuild": "node-gyp configure rebuild --msvs_version=2015 --arch=ia32",
+    "start": "node ./examples/nodejs/example.js"
   },
   "author": "Even Arneberg Rognlien",
   "license": "MIT",
