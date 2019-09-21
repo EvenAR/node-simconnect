@@ -59,7 +59,7 @@ public:
 					data.cbData = cbData;
 					data.ntstatus = 0;
 					async.data = &data;
-					uv_async_send(&async);					
+					uv_async_send(&async);
 				}
 				else if (NT_ERROR(hr)) {
 					CallbackData data;
@@ -71,7 +71,7 @@ public:
 					uv_sem_post(&workerSem);	// Continue
 					Sleep(1);
 				}
-				
+
 			}
 			else {
 				Sleep(10);
@@ -155,13 +155,13 @@ void messageReceiver(uv_async_t* handle) {
 	else {
 		handle_Error(isolate, data->ntstatus);
 	}
-	
+
 	uv_sem_post(&workerSem);	// The dispatch-worker can now continue
 }
 
 // Handles data requested with requestDataOnSimObject or requestDataOnSimObjectType 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData) {
-	
+
 	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*)pData;
 	int numVars = dataDefinitions[pObjData->dwDefineID].num_values;
 	std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwDefineID].datum_types;
@@ -320,9 +320,10 @@ void Open(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	requestIdCounter = 0;
 
 	Isolate* isolate = args.GetIsolate();
+	v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
 	// Get arguments
-	v8::String::Utf8Value appName(isolate, args[0]->ToString());
+	v8::String::Utf8Value appName(isolate, args[0]->ToString(ctx).ToLocalChecked());
 
 	openEventId = getUniqueEventId();
 	systemEventCallbacks[openEventId] = { new Nan::Callback(args[1].As<Function>()) };
@@ -366,8 +367,9 @@ void Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void RequestSystemState(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		Isolate* isolate = args.GetIsolate();
+		v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
-		v8::String::Utf8Value stateName(isolate, args[0]->ToString());
+		v8::String::Utf8Value stateName(isolate, args[0]->ToString(ctx).ToLocalChecked());
 
 		SIMCONNECT_DATA_REQUEST_ID reqId = getUniqueRequestId();
 		systemStateCallbacks[reqId] = new Nan::Callback(args[1].As<Function>());
@@ -385,7 +387,7 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		Isolate* isolate = args.GetIsolate();
 		v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
-		v8::String::Utf8Value eventName(isolate,  args[0]->ToString());
+		v8::String::Utf8Value eventName(isolate, args[0]->ToString(ctx).ToLocalChecked());
 		DWORD data = args.Length() > 1 ? args[1]->Int32Value(ctx).ToChecked() : 0;
 
 		SIMCONNECT_CLIENT_EVENT_ID id = getUniqueEventId();
@@ -408,10 +410,11 @@ void TransmitClientEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void SubscribeToSystemEvent(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
+		v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
 		SIMCONNECT_CLIENT_EVENT_ID eventId = getUniqueEventId();
 
-		v8::String::Utf8Value systemEventName(isolate, args[0]->ToString());
+		v8::String::Utf8Value systemEventName(isolate, args[0]->ToString(ctx).ToLocalChecked());
 		systemEventCallbacks[eventId] = { new Nan::Callback(args[1].As<Function>()) };
 
 		HANDLE hSimConnect = ghSimConnect;
@@ -471,7 +474,7 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 		else if (args[0]->IsNumber()) {
 			definition = dataDefinitions[args[0]->NumberValue(ctx).ToChecked()];
 		}
-		
+
 		auto callback = new Nan::Callback(args[1].As<Function>());
 
 		DWORD radius = args.Length() > 2 ? args[2]->Int32Value(ctx).ToChecked() : 0;
@@ -508,8 +511,8 @@ void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		v8::Isolate* isolate = args.GetIsolate();
 		v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
 
-		v8::String::Utf8Value name(isolate, args[0]->ToString());
-		v8::String::Utf8Value unit(isolate, args[1]->ToString());
+		v8::String::Utf8Value name(isolate, args[0]->ToString(ctx).ToLocalChecked());
+		v8::String::Utf8Value unit(isolate, args[1]->ToString(ctx).ToLocalChecked());
 
 		double value = args[2]->NumberValue(ctx).ToChecked();
 
@@ -546,7 +549,7 @@ DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Loca
 
 	std::vector<std::string> datumNames;
 	std::vector<SIMCONNECT_DATATYPE> datumTypes;
-	
+
 
 	for (unsigned int i = 0; i < requestedValues->Length(); i++) {
 		Local<Array> value = v8::Local<v8::Array>::Cast(requestedValues->Get(i));
@@ -555,16 +558,16 @@ DataDefinition generateDataDefinition(Isolate* isolate, HANDLE hSimConnect, Loca
 			int len = value->Length();
 
 			if (len > 1) {
-				v8::String::Utf8Value datumName(isolate, value->Get(0)->ToString());
+				v8::String::Utf8Value datumName(isolate, value->Get(0)->ToString(ctx).ToLocalChecked());
 				const char* sDatumName = *datumName;
-				const char* sUnitsName = NULL;	
+				const char* sUnitsName = NULL;
 
 				if (!value->Get(1)->IsNull()) {		// Should be NULL for string
-					v8::String::Utf8Value unitsName(isolate, value->Get(1)->ToString());
+					v8::String::Utf8Value unitsName(isolate, value->Get(1)->ToString(ctx).ToLocalChecked());
 					sUnitsName = *unitsName;
 				}
 
-				
+
 
 				SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64;	// Default type (double)
 				double epsilon;
@@ -631,16 +634,16 @@ void SetAircraftInitialPosition(const v8::FunctionCallbackInfo<v8::Value>& args)
 		v8::Local<v8::String> hdgProp = Nan::New("heading").ToLocalChecked();
 		v8::Local<v8::String> gndProp = Nan::New("onGround").ToLocalChecked();
 		v8::Local<v8::String> iasProp = Nan::New("airspeed").ToLocalChecked();
-		
-		init.Altitude = json->HasRealNamedProperty(altProp)		? json->Get(altProp)->NumberValue(ctx).ToChecked()		: 0;
-		init.Latitude = json->HasRealNamedProperty(latProp)		? json->Get(latProp)->NumberValue(ctx).ToChecked()		: 0;
-		init.Longitude = json->HasRealNamedProperty(lngProp)	? json->Get(lngProp)->NumberValue(ctx).ToChecked()		: 0;
-		init.Pitch = json->HasRealNamedProperty(pitchProp)		? json->Get(pitchProp)->NumberValue(ctx).ToChecked()	: 0;
-		init.Bank = json->HasRealNamedProperty(bankProp)		? json->Get(bankProp)->NumberValue(ctx).ToChecked()		: 0;
-		init.Heading = json->HasRealNamedProperty(hdgProp)		? json->Get(hdgProp)->NumberValue(ctx).ToChecked()		: 0;
-		init.OnGround = json->HasRealNamedProperty(gndProp)		? json->Get(gndProp)->IntegerValue(ctx).ToChecked()		: 0;
-		init.Airspeed = json->HasRealNamedProperty(iasProp)		? json->Get(iasProp)->IntegerValue(ctx).ToChecked()		: 0;
-		
+
+		init.Altitude = json->HasRealNamedProperty(ctx, altProp).ToChecked() ? json->Get(altProp)->NumberValue(ctx).ToChecked() : 0;
+		init.Latitude = json->HasRealNamedProperty(ctx, latProp).ToChecked() ? json->Get(latProp)->NumberValue(ctx).ToChecked() : 0;
+		init.Longitude = json->HasRealNamedProperty(ctx, lngProp).ToChecked() ? json->Get(lngProp)->NumberValue(ctx).ToChecked() : 0;
+		init.Pitch = json->HasRealNamedProperty(ctx, pitchProp).ToChecked() ? json->Get(pitchProp)->NumberValue(ctx).ToChecked() : 0;
+		init.Bank = json->HasRealNamedProperty(ctx, bankProp).ToChecked() ? json->Get(bankProp)->NumberValue(ctx).ToChecked() : 0;
+		init.Heading = json->HasRealNamedProperty(ctx, hdgProp).ToChecked() ? json->Get(hdgProp)->NumberValue(ctx).ToChecked() : 0;
+		init.OnGround = json->HasRealNamedProperty(ctx, gndProp).ToChecked() ? json->Get(gndProp)->IntegerValue(ctx).ToChecked() : 0;
+		init.Airspeed = json->HasRealNamedProperty(ctx, iasProp).ToChecked() ? json->Get(iasProp)->IntegerValue(ctx).ToChecked() : 0;
+
 		SIMCONNECT_DATA_DEFINITION_ID id = getUniqueDefineId();
 		HRESULT hr = SimConnect_AddToDataDefinition(ghSimConnect, id, "Initial Position", NULL, SIMCONNECT_DATATYPE_INITPOSITION);
 		if (NT_ERROR(hr)) {
