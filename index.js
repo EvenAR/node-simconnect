@@ -11,7 +11,14 @@ if(process.platform === "win32" && process.arch === "ia32") {
 		console.info("node-simconnect: Pre-built binary loaded: " + ex);
 	}
 } else if(process.platform === "win32" && process.arch === "x64") {
-	console.error("node-simconnect: Node.js 64 bit is not supported. Please install Node.js 32 bit.")
+	try {
+		// Try loading manual build first
+		nodeSimconnect = require('./build/Release/node-simconnect');
+		console.info("node-simconnect: Manual build loaded");
+	} catch(ex) {
+		console.error("node-simconnect: Node.js 64 bit is not supported. Please install Node.js 32 bit.")
+
+	}
 } else if(process.platform !== "win32") {
     console.error("node-simconnect: The only supported platform is Windows (win32). Found: " + process.platform)
 }

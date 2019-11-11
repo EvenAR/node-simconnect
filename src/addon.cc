@@ -494,6 +494,20 @@ void RequestDataOnSimObjectType(const v8::FunctionCallbackInfo<v8::Value>& args)
 	}
 }
 
+void FlightLoad(const v8::FunctionCallbackInfo<v8::Value>& args) {
+	if (ghSimConnect) {
+		Isolate* isolate = args.GetIsolate();
+		v8::Local<v8::Context> ctx = Nan::GetCurrentContext();
+
+		v8::String::Utf8Value szFileName(isolate, args[0]->ToString(ctx).ToLocalChecked());
+		HRESULT hr = SimConnect_FlightLoad(ghSimConnect, *szFileName);
+				if (NT_ERROR(hr)) {
+			handle_Error(isolate, hr);
+			return;
+		}
+	}
+}
+
 void CreateDataDefinition(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
 		v8::Isolate* isolate = args.GetIsolate();
@@ -503,8 +517,6 @@ void CreateDataDefinition(const v8::FunctionCallbackInfo<v8::Value>& args) {
 		dataDefinitions[definition.id] = definition;
 	}
 }
-
-
 
 void SetDataOnSimObject(const v8::FunctionCallbackInfo<v8::Value>& args) {
 	if (ghSimConnect) {
@@ -671,6 +683,7 @@ void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
 	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
 	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
+	NODE_SET_METHOD(exports, "FlightLoad", FlightLoad);
 	NODE_SET_METHOD(exports, "createDataDefinition", CreateDataDefinition);
 }
 
