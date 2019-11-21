@@ -683,7 +683,7 @@ void Initialize(v8::Local<v8::Object> exports) {
 	NODE_SET_METHOD(exports, "setAircraftInitialPosition", SetAircraftInitialPosition);
 	NODE_SET_METHOD(exports, "transmitClientEvent", TransmitClientEvent);
 	NODE_SET_METHOD(exports, "requestSystemState", RequestSystemState);
-	NODE_SET_METHOD(exports, "FlightLoad", FlightLoad);
+	NODE_SET_METHOD(exports, "flightLoad", FlightLoad);
 	NODE_SET_METHOD(exports, "createDataDefinition", CreateDataDefinition);
 }
 

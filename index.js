@@ -1,26 +1,20 @@
 var nodeSimconnect = null;
 
-if(process.platform === "win32" && process.arch === "ia32") {
-	try {
-		// Try loading manual build first
-		nodeSimconnect = require('./build/Release/node-simconnect');
-		console.info("node-simconnect: Manual build loaded");
-	} catch(ex) {
-		// If it fails, load the included binary
-		nodeSimconnect = require('./bin/win_ia32/node-simconnect');
-		console.info("node-simconnect: Pre-built binary loaded: " + ex);
-	}
-} else if(process.platform === "win32" && process.arch === "x64") {
-	try {
-		// Try loading manual build first
-		nodeSimconnect = require('./build/Release/node-simconnect');
-		console.info("node-simconnect: Manual build loaded");
-	} catch(ex) {
-		console.error("node-simconnect: Node.js 64 bit is not supported. Please install Node.js 32 bit.")
-
-	}
-} else if(process.platform !== "win32") {
-    console.error("node-simconnect: The only supported platform is Windows (win32). Found: " + process.platform)
+if (process.platform !== `win32`) {
+    throw `node-simconnect: The only supported platform is Windows (win32). Found: ${process.platform}`;
+}
+try {
+    // Try loading manual build first
+    nodeSimconnect = require(`./build/Release/node-simconnect`);
+    console.info(`node-simconnect: Manual build loaded`);
+} catch (ex) {
+    // If it fails, load the included binary
+    console.info(`node-simconnect: Loading pre-built binary`);
+    if (process.arch === `x64`) {
+        throw `node-simconnect: The pre-built binary only works with the 32-bit version of Node.js`;
+    }
+    nodeSimconnect = require(`./bin/win_ia32/node-simconnect`);
+    console.info(`node-simconnect: Pre-built binary loaded: ${ex}`);
 }
 
 nodeSimconnect.objectId = {
