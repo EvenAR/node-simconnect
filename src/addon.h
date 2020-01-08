@@ -81,6 +81,7 @@ std::map<SIMCONNECT_DATATYPE, int> sizeMap =
 
 void handleReceived_Data(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_DataByType(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
+void handleReceived_Frame(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Event(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Exception(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
 void handleReceived_Filename(Isolate* isolate, SIMCONNECT_RECV* pData, DWORD cbData);
