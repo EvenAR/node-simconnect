@@ -1,23 +1,22 @@
 {
   "name": "node-simconnect",
-  "version": "1.2.0",
+  "version": "1.3.0-canary.9",
   "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
   "main": "index.js",
   "scripts": {
-    "build": "node-gyp configure rebuild --msvs_version=2015 --arch=ia32",
-    "install": "node-gyp rebuild",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "rebuild": "node-gyp configure rebuild --msvs_version=2015 --arch=ia32",
+    "install": "node scripts/install.js",
+    "start": "node examples/nodejs/example.js"
   },
   "author": "Even Arneberg Rognlien",
   "license": "MIT",
   "gypfile": false,
   "dependencies": {
-    "nan": "^2.6.2"
+    "nan": "^2.14.0"
   },
   "directories": {
     "example": "examples"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/EvenAR/node-simconnect.git"
