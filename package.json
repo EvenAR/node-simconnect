@@ -1,6 +1,6 @@
 {
   "name": "node-simconnect",
-  "version": "1.3.0-canary.8",
+  "version": "1.3.0-canary.9",
   "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
   "main": "index.js",
   "scripts": {
