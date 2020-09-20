@@ -7,9 +7,20 @@
 
 using namespace Napi;
 
-SimConnectHandler* gpSimConnect;
+// Napi utils
+#define getOptionalProp(object, name, type, conversion, fallback) \
+    object.Has(name) ? object.Get(name).As<type>().conversion() : fallback
+
+#define getOptionalElement(array, index, type, conversion, fallback) \
+    array.Length() > index ? array[index].As<type>().conversion() : fallback;
+// Napi utils
+
+SimConnectHandler* gpSimConnect = NULL;
 std::map<unsigned int, FunctionReference> systemEventCallbacks;
 std::map<unsigned int, FunctionReference> dataRequestCallbacks;
+
+
+bool gIsConnected = false;
 
 class EchoWorker : public AsyncProgressQueueWorker<Data> {
 
@@ -35,7 +46,15 @@ public:
 
     void OnProgress(const Data* dispatch, size_t /* count */) {
         switch (dispatch->type) {
+            case PayloadType::Nothing: break;
+            case PayloadType::Error: {
+                ExceptionInfo* pEvent = (ExceptionInfo *)dispatch->payload;
+                std::cout << pEvent->exceptionName << std::endl;
+                delete pEvent;
+            }
+            break;
             case PayloadType::Open: {
+                gIsConnected = true;
                 SimInfo* pSimInfo = (SimInfo *)dispatch->payload;
                 
                 Object obj = Object::New(Env());
@@ -45,6 +64,24 @@ public:
                 Callback().Call({ String::New(Env(), "open"), obj });
 
                 delete pSimInfo;
+            }
+            break;
+            case PayloadType::Quit: {
+                gIsConnected = false;
+                Callback().Call({ String::New(Env(), "quit") });
+            }
+            break;
+            case PayloadType::SystemState: {
+                SimSystemState* pSystemState = (SimSystemState *)dispatch->payload;
+
+                Object obj = Object::New(Env());
+                obj.Set("integer", Number::New(Env(), pSystemState->integerValue));
+                obj.Set("float", Number::New(Env(), pSystemState->floatValue));
+                obj.Set("string", String::New(Env(), pSystemState->stringValue.c_str()));
+
+                dataRequestCallbacks[pSystemState->requestId].Call({obj});
+
+                delete pSystemState;
             }
             break;
             case PayloadType::EventId: {
@@ -82,7 +119,7 @@ public:
             }
             break;
             default: {
-                Callback().Call({String::New(Env(), "HOOO")});
+                std::cout << "Got unknown event " << std::endl;
             }
             break;
         }
@@ -95,7 +132,7 @@ Value SubscribeToSystemEvent(const CallbackInfo& info) {
         String eventName = info[0].As<String>();
         Function callback = info[1].As<Function>();
         
-        unsigned int eventId = gpSimConnect->SubscribeToSystemEvent(eventName);
+        auto eventId = gpSimConnect->SubscribeToSystemEvent(eventName);
         systemEventCallbacks[eventId] = Persistent(callback);
     }
     return info.Env().Undefined();
@@ -103,18 +140,14 @@ Value SubscribeToSystemEvent(const CallbackInfo& info) {
 
 std::vector<DatumRequest> ToDatumRequests(Array requestedValues) {
     std::vector<DatumRequest> datumRequests;
-    for (unsigned int i = 0; i < requestedValues.Length(); i++) {
+    for (uint32_t i = 0; i < requestedValues.Length(); i++) {
         if(requestedValues.Get(i).IsArray()) {
             auto options = requestedValues.Get(i).As<Array>();
-            
-            DatumRequest newRequest;
-            newRequest.datumName = options.Get("0").As<String>().Utf8Value();
-            newRequest.unitName = options.Get("1").As<String>().Utf8Value();
-            newRequest.datumType = options.Get("2").IsNumber() ? options.Get("2").As<Number>().Uint32Value() : 0; 
-            newRequest.epsilon = options.Get("3").IsNumber() ? options.Get("3").As<Number>().Uint32Value() : 0; 
-            newRequest.datumId = options.Get("4").IsNumber() ? options.Get("4").As<Number>().Uint32Value() : 0; 
-
-            datumRequests.push_back(newRequest);
+            datumRequests.push_back({
+                options.Get("0").As<String>().Utf8Value(),                      // Name
+                options.Get("1").As<String>().Utf8Value(),                      // Unit name
+                getOptionalProp(options, "2", Number, Number::Uint32Value, 4)   // Type (4 = SIMCONNECT_DATATYPE_FLOAT64)
+            });
         }
     }
     return datumRequests;
@@ -122,21 +155,21 @@ std::vector<DatumRequest> ToDatumRequests(Array requestedValues) {
 
 Value RequestDataOnSimObject(const CallbackInfo& info) {
     if (gpSimConnect) {
-        unsigned int eventId;
+        Function callback = info[1].As<Function>();
+        auto objectId = getOptionalElement(info, 2, Number, Number::Uint32Value, 0);
+		auto period = getOptionalElement(info, 3, Number, Number::Uint32Value, 0);
+		auto flags = getOptionalElement(info, 4, Number, Number::Uint32Value, 0);
 
+        unsigned int requestId;
         if (info[0].IsNumber()) {
-            unsigned int existingDataDefinitionId = info[0].As<Number>().Uint32Value();
-            std::cout << "Data ID requested " << existingDataDefinitionId << std::endl;
-            eventId = gpSimConnect->RequestDataOnSimObject(existingDataDefinitionId);
+            auto existingDataDefinitionId = info[0].As<Number>().Uint32Value();
+            requestId = gpSimConnect->RequestDataOnSimObject(existingDataDefinitionId, objectId, period, flags);
         } else {
             Array requestedValues = info[0].As<Array>();
-            eventId = gpSimConnect->RequestDataOnSimObject(ToDatumRequests(requestedValues));
+            requestId = gpSimConnect->RequestDataOnSimObject(ToDatumRequests(requestedValues), objectId, period, flags);
         }
         
-        Function callback = info[1].As<Function>();
-        dataRequestCallbacks[eventId] = Persistent(callback);
-        
-        std::cout << "Event ID requested " << eventId << std::endl;
+        dataRequestCallbacks[requestId] = Persistent(callback);
     }
     return info.Env().Undefined();
 }
@@ -145,15 +178,16 @@ Value RequestDataOnSimObjectType(const CallbackInfo& info) {
     if (gpSimConnect) {
         Array requestedValues = info[0].As<Array>();
         Function callback = info[1].As<Function>();
-        unsigned int radius = info.Length() > 2 ? info[2].As<Number>().Uint32Value()  : 0;
-		unsigned int typeId = info.Length() > 3 ? info[3].As<Number>().Uint32Value() : 0; // 0 = SIMCONNECT_SIMOBJECT_TYPE_USER
+        auto radius = getOptionalElement(info, 2, Number, Number::Uint32Value, 0);
+		auto typeId = getOptionalElement(info, 3, Number, Number::Uint32Value, 0); // 0 = SIMCONNECT_SIMOBJECT_TYPE_USER
 
-        unsigned int eventId = gpSimConnect->RequestDataOnSimObjectType(
+        auto requestId = gpSimConnect->RequestDataOnSimObjectType(
             ToDatumRequests(requestedValues),
             radius,
             typeId
         );
-        dataRequestCallbacks[eventId] = Persistent(callback);
+        
+        dataRequestCallbacks[requestId] = Persistent(callback);
     }
     return info.Env().Undefined();
 }
@@ -161,7 +195,7 @@ Value RequestDataOnSimObjectType(const CallbackInfo& info) {
 Value CreateDataDefinition(const CallbackInfo& info) {
     if (gpSimConnect) {
         Array requestedValues = info[0].As<Array>();
-        unsigned int definitionId = gpSimConnect->CreateDataDefinition(ToDatumRequests(requestedValues));
+        auto definitionId = gpSimConnect->CreateDataDefinition(ToDatumRequests(requestedValues));
         return Number::New(info.Env(), definitionId);
     }
     return info.Env().Undefined();
@@ -175,6 +209,56 @@ Value SetDataOnSimObject(const CallbackInfo& info) {
     gpSimConnect->SetDataOnSimObject(name, unit, value);
 
     return info.Env().Undefined();
+}
+
+Value SetAircraftInitialPosition(const CallbackInfo& info) {
+    if (gpSimConnect) {
+        Object object = info[0].As<Object>();
+        gpSimConnect->SetAircraftInitialPosition(
+            getOptionalProp(object, "latitude", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "longitude", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "altitude", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "pitch", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "bank", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "heading", Number, Number::DoubleValue, 0.0F),
+            getOptionalProp(object, "onGround", Boolean, Boolean::Value, false),
+            getOptionalProp(object, "airspeed", Number, Number::Int64Value, 0.0F)
+        );
+    }
+    return info.Env().Undefined();
+}
+
+Value RequestSystemState(const CallbackInfo& info) {
+    if (gpSimConnect) {
+        std::string stateName = info[0].As<String>();
+        Function callback = info[1].As<Function>();
+        auto requestId = gpSimConnect->RequestSystemState(stateName);
+        dataRequestCallbacks[requestId] = Persistent(callback);
+    }
+	return info.Env().Undefined();
+}
+
+Value FlightLoad(const CallbackInfo& info) {
+	if (gpSimConnect) {
+		std::string filename = info[0].As<String>().Utf8Value();
+        gpSimConnect->FlightLoad(filename);
+	}
+    return info.Env().Undefined();
+}
+
+Value TransmitClientEvent(const CallbackInfo& info) {
+    if (gpSimConnect) {
+        gpSimConnect->TransmitClientEvent(
+            info[0].As<String>(),
+            0, // SIMCONNECT_OBJECT_ID_USER
+            info[1].As<Number>().Int32Value()
+        );
+    }
+    return info.Env().Undefined();
+}
+
+Value IsConnected(const CallbackInfo& info) {
+    return Boolean::New(info.Env(), gIsConnected);
 }
 
 Value RunCallback(const CallbackInfo& info) {
@@ -203,7 +287,31 @@ Object Init(Env env, Object exports) {
         Function::New(env, SetDataOnSimObject)
     );
     exports.Set(
+        String::New(env, "requestDataOnSimObjectType"),
+        Function::New(env, RequestDataOnSimObjectType)
+    );
+    exports.Set(
+        String::New(env, "setAircraftInitialPosition"),
+        Function::New(env, SetAircraftInitialPosition)
+    );
+    exports.Set(
+        String::New(env, "requestSystemState"),
+        Function::New(env, RequestSystemState)
+    );
+    exports.Set(
+        String::New(env, "flightLoad"),
+        Function::New(env, FlightLoad)
+    );
+    exports.Set(
+        String::New(env, "transmitClientEvent"),
+        Function::New(env, TransmitClientEvent)
+    );
+    exports.Set(
         String::New(env, "createDataDefinition"),
+        Function::New(env, CreateDataDefinition)
+    );
+    exports.Set(
+        String::New(env, "isConnected"),
         Function::New(env, CreateDataDefinition)
     );
     return exports;

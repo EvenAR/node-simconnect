@@ -5,9 +5,60 @@
 
 #include "simconnect-handler.h"
 
-HANDLE ghSimConnect = NULL;
+std::map<SIMCONNECT_EXCEPTION, const char*> exceptionNames = {
+	{ SIMCONNECT_EXCEPTION_NONE, "SIMCONNECT_EXCEPTION_NONE" },
+	{ SIMCONNECT_EXCEPTION_ERROR, "SIMCONNECT_EXCEPTION_ERROR" },
+	{ SIMCONNECT_EXCEPTION_SIZE_MISMATCH, "SIMCONNECT_EXCEPTION_SIZE_MISMATCH" },
+	{ SIMCONNECT_EXCEPTION_UNRECOGNIZED_ID, "SIMCONNECT_EXCEPTION_UNRECOGNIZED_ID" },
+	{ SIMCONNECT_EXCEPTION_UNOPENED, "SIMCONNECT_EXCEPTION_UNOPENED" },
+	{ SIMCONNECT_EXCEPTION_VERSION_MISMATCH, "SIMCONNECT_EXCEPTION_VERSION_MISMATCH" },
+	{ SIMCONNECT_EXCEPTION_TOO_MANY_GROUPS, "SIMCONNECT_EXCEPTION_TOO_MANY_GROUPS" },
+	{ SIMCONNECT_EXCEPTION_NAME_UNRECOGNIZED, "SIMCONNECT_EXCEPTION_NAME_UNRECOGNIZED" },
+	{ SIMCONNECT_EXCEPTION_TOO_MANY_EVENT_NAMES, "SIMCONNECT_EXCEPTION_TOO_MANY_EVENT_NAMES" },
+	{ SIMCONNECT_EXCEPTION_EVENT_ID_DUPLICATE, "SIMCONNECT_EXCEPTION_EVENT_ID_DUPLICATE" },
+	{ SIMCONNECT_EXCEPTION_TOO_MANY_MAPS, "SIMCONNECT_EXCEPTION_TOO_MANY_MAPS" },
+	{ SIMCONNECT_EXCEPTION_TOO_MANY_OBJECTS, "SIMCONNECT_EXCEPTION_TOO_MANY_OBJECTS" },
+	{ SIMCONNECT_EXCEPTION_TOO_MANY_REQUESTS, "SIMCONNECT_EXCEPTION_TOO_MANY_REQUESTS" },
+	{ SIMCONNECT_EXCEPTION_WEATHER_INVALID_PORT, "SIMCONNECT_EXCEPTION_WEATHER_INVALID_PORT" },
+	{ SIMCONNECT_EXCEPTION_WEATHER_INVALID_METAR, "SIMCONNECT_EXCEPTION_WEATHER_INVALID_METAR" },
+	{ SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_GET_OBSERVATION, "SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_GET_OBSERVATION" },
+	{ SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_CREATE_STATION, "SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_CREATE_STATION" },
+	{ SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_REMOVE_STATION, "SIMCONNECT_EXCEPTION_WEATHER_UNABLE_TO_REMOVE_STATION" },
+	{ SIMCONNECT_EXCEPTION_INVALID_DATA_TYPE, "SIMCONNECT_EXCEPTION_INVALID_DATA_TYPE" },
+	{ SIMCONNECT_EXCEPTION_INVALID_DATA_SIZE, "SIMCONNECT_EXCEPTION_INVALID_DATA_SIZE" },
+	{ SIMCONNECT_EXCEPTION_DATA_ERROR, "SIMCONNECT_EXCEPTION_DATA_ERROR" },
+	{ SIMCONNECT_EXCEPTION_INVALID_ARRAY, "SIMCONNECT_EXCEPTION_INVALID_ARRAY" },
+	{ SIMCONNECT_EXCEPTION_CREATE_OBJECT_FAILED, "SIMCONNECT_EXCEPTION_CREATE_OBJECT_FAILED" },
+	{ SIMCONNECT_EXCEPTION_OPERATION_INVALID_FOR_OBJECT_TYPE, "SIMCONNECT_EXCEPTION_OPERATION_INVALID_FOR_OBJECT_TYPE" },
+	{ SIMCONNECT_EXCEPTION_ILLEGAL_OPERATION, "SIMCONNECT_EXCEPTION_ILLEGAL_OPERATION" },
+	{ SIMCONNECT_EXCEPTION_ALREADY_SUBSCRIBED, "SIMCONNECT_EXCEPTION_ALREADY_SUBSCRIBED" },
+	{ SIMCONNECT_EXCEPTION_INVALID_ENUM, "SIMCONNECT_EXCEPTION_INVALID_ENUM" },
+	{ SIMCONNECT_EXCEPTION_DEFINITION_ERROR, "SIMCONNECT_EXCEPTION_DEFINITION_ERROR" },
+	{ SIMCONNECT_EXCEPTION_DUPLICATE_ID, "SIMCONNECT_EXCEPTION_DUPLICATE_ID" },
+	{ SIMCONNECT_EXCEPTION_DATUM_ID, "SIMCONNECT_EXCEPTION_DATUM_ID" },
+	{ SIMCONNECT_EXCEPTION_OUT_OF_BOUNDS, "SIMCONNECT_EXCEPTION_OUT_OF_BOUNDS" },
+	{ SIMCONNECT_EXCEPTION_ALREADY_CREATED, "SIMCONNECT_EXCEPTION_ALREADY_CREATED" },
+	{ SIMCONNECT_EXCEPTION_OBJECT_OUTSIDE_REALITY_BUBBLE, "SIMCONNECT_EXCEPTION_OBJECT_OUTSIDE_REALITY_BUBBLE" },
+	{ SIMCONNECT_EXCEPTION_OBJECT_CONTAINER, "SIMCONNECT_EXCEPTION_OBJECT_CONTAINER" },
+	{ SIMCONNECT_EXCEPTION_OBJECT_AI, "SIMCONNECT_EXCEPTION_OBJECT_AI" },
+	{ SIMCONNECT_EXCEPTION_OBJECT_ATC, "SIMCONNECT_EXCEPTION_OBJECT_ATC" },
+	{ SIMCONNECT_EXCEPTION_OBJECT_SCHEDULE, "SIMCONNECT_EXCEPTION_OBJECT_SCHEDULE" }
+};
 
-unsigned int eventIdCounter = 0;
+std::map<SIMCONNECT_DATATYPE, int> sizeMap = {
+	{ SIMCONNECT_DATATYPE_INT32, 4 },
+	{ SIMCONNECT_DATATYPE_INT64, 8 },
+	{ SIMCONNECT_DATATYPE_FLOAT32, 4 },
+	{ SIMCONNECT_DATATYPE_FLOAT64, 8 },
+	{ SIMCONNECT_DATATYPE_STRING8, 8 },
+	{ SIMCONNECT_DATATYPE_STRING32, 32 },
+	{ SIMCONNECT_DATATYPE_STRING64, 64 },
+	{ SIMCONNECT_DATATYPE_STRING128, 128 },
+	{ SIMCONNECT_DATATYPE_STRING256, 256 },
+	{ SIMCONNECT_DATATYPE_STRING260, 260 }
+};
+
+unsigned int nextEventId = 0;
 unsigned int nextRequestId = 0;
 unsigned int nextDataDefinitionId = 0;
 
@@ -23,7 +74,7 @@ std::map<DWORD, DataBatchDefinition> dataDefinitions;
 SimConnectHandler::SimConnectHandler() { }
 
 bool SimConnectHandler::Open(std::string appName) {
-    HRESULT hr = SimConnect_Open(&ghSimConnect, appName.c_str(), NULL, 0, 0, 0);
+    HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
     return SUCCEEDED(hr);
 };
 
@@ -31,13 +82,13 @@ Data SimConnectHandler::NextDispatch() {
     SIMCONNECT_RECV *pData;
     DWORD cbData;
 
-    HRESULT hr = SimConnect_GetNextDispatch(ghSimConnect, &pData, &cbData);
+    HRESULT hr = SimConnect_GetNextDispatch(hSimConnect, &pData, &cbData);
     if (SUCCEEDED(hr)) {
         return this->Process(pData, cbData);
-    } else if(NT_ERROR(hr)) {
+    } else if (NT_ERROR(hr)) {
         return { PayloadType::Error, nullptr };
     } else {
-        return { PayloadType::Unkn, nullptr };
+        return { PayloadType::Nothing, nullptr };
     }    
 }
 
@@ -45,25 +96,64 @@ Data SimConnectHandler::Process(SIMCONNECT_RECV* pData, DWORD cbData) {
     SIMCONNECT_RECV_ID eventId = (SIMCONNECT_RECV_ID)pData->dwID;
 
     switch (eventId) {
+        case SIMCONNECT_RECV_ID_NULL:
+            return { PayloadType::Nothing, nullptr };
+        case SIMCONNECT_RECV_ID_EXCEPTION: 
+            return { PayloadType::Error, this->GetExceptionInfo(pData) };
         case SIMCONNECT_RECV_ID_OPEN:
             return { PayloadType::Open, this->GetSimInfo(pData) };
+        case SIMCONNECT_RECV_ID_QUIT:
+            return { PayloadType::Quit, nullptr };
+        case SIMCONNECT_RECV_ID_SYSTEM_STATE:
+            return { PayloadType::SystemState, this->GetSystemState(pData) };
         case SIMCONNECT_RECV_ID_EVENT:
             return { PayloadType::EventId, this->GetEvent(pData) };
         case SIMCONNECT_RECV_ID_SIMOBJECT_DATA: 
             return { PayloadType::SimobjectData, this->GetSimObjectData(pData, cbData) };
-        default:
-            return { PayloadType::Unkn, &eventId };
+        case SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE: 
+            return { PayloadType::SimobjectData, this->GetSimObjectData(pData, cbData) };
+        default: {
+            return { PayloadType::Unkn, nullptr };
+        }
     }
 }
 
 unsigned int SimConnectHandler::SubscribeToSystemEvent(std::string eventName) {
-    HRESULT hr = SimConnect_SubscribeToSystemEvent(ghSimConnect, eventIdCounter, eventName.c_str());
+    HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, nextEventId, eventName.c_str());
 
     // TODO: error handling
 
-    return eventIdCounter++;
+    return nextEventId++;
 }
 
+unsigned int SimConnectHandler::RequestSystemState(std::string stateName) {
+    HRESULT hr = SimConnect_RequestSystemState(hSimConnect, nextRequestId, stateName.c_str());
+    return nextRequestId++;
+}
+
+unsigned int SimConnectHandler::FlightLoad(std::string fileName) {
+    HRESULT hr = SimConnect_FlightLoad(hSimConnect, fileName.c_str());
+    return SUCCEEDED(hr);
+}
+
+unsigned int SimConnectHandler::TransmitClientEvent(std::string eventName, unsigned int objectId, int data) {
+    HRESULT hr = SimConnect_MapClientEventToSimEvent(hSimConnect, nextEventId, eventName.c_str());
+    
+    // TODO: error handling
+
+    hr = SimConnect_TransmitClientEvent(
+        hSimConnect, 
+        objectId, 
+        nextEventId, 
+        data, 
+        SIMCONNECT_GROUP_PRIORITY_HIGHEST, 
+        SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY
+    );
+
+    // TODO: error handling
+
+    return nextEventId++;
+}
 
 unsigned int SimConnectHandler::CreateDataDefinition(std::vector<DatumRequest> datumRequests) {
     DataBatchDefinition newDefinition = this->GenerateDataDefinition(datumRequests);
@@ -71,33 +161,34 @@ unsigned int SimConnectHandler::CreateDataDefinition(std::vector<DatumRequest> d
     return newDefinition.id;
 }
 
-unsigned int SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests) {
+unsigned int SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags) {
     
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
     
     dataDefinitions[newDataDefinition.id] = newDataDefinition;
 
     HRESULT hr = SimConnect_RequestDataOnSimObject(
-        ghSimConnect, 
+        hSimConnect, 
         nextRequestId, 
         newDataDefinition.id, 
-        SIMCONNECT_OBJECT_ID_USER, 
-        SIMCONNECT_PERIOD_SIM_FRAME
+        objectId, 
+        SIMCONNECT_PERIOD(period),
+        flags
     );
 
     // TODO: error handling
-
     return nextRequestId++;
 }
 
-unsigned int SimConnectHandler::RequestDataOnSimObject(unsigned int existingDataDefinitionId) {
+unsigned int SimConnectHandler::RequestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags) {
     
     HRESULT hr = SimConnect_RequestDataOnSimObject(
-        ghSimConnect, 
+        hSimConnect, 
         nextRequestId, 
         dataDefinitions[existingDataDefinitionId].id, 
-        SIMCONNECT_OBJECT_ID_USER, 
-        SIMCONNECT_PERIOD_SIM_FRAME
+        objectId, 
+        SIMCONNECT_PERIOD(period),
+        flags
     );
 
     // TODO: error handling
@@ -108,21 +199,21 @@ unsigned int SimConnectHandler::RequestDataOnSimObject(unsigned int existingData
 unsigned int SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType) {
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
 
+    dataDefinitions[newDataDefinition.id] = newDataDefinition;
     SimConnect_RequestDataOnSimObjectType(
-        ghSimConnect, 
+        hSimConnect, 
         nextRequestId, 
         newDataDefinition.id, 
         radius, 
         SIMCONNECT_SIMOBJECT_TYPE(simobjectType)
     );
-    
     return nextRequestId++;
 }
 
 unsigned int SimConnectHandler::SetDataOnSimObject(std::string datumName, std::string unitsName, double value) {
 
     HRESULT hr = SimConnect_AddToDataDefinition(
-        ghSimConnect, 
+        hSimConnect, 
         nextDataDefinitionId, 
         datumName.c_str(), 
         unitsName.c_str()
@@ -131,7 +222,7 @@ unsigned int SimConnectHandler::SetDataOnSimObject(std::string datumName, std::s
     // TODO: error handling
 
     hr = SimConnect_SetDataOnSimObject(
-        ghSimConnect, 
+        hSimConnect, 
         nextDataDefinitionId, 
         SIMCONNECT_OBJECT_ID_USER, 
         0, 
@@ -145,12 +236,67 @@ unsigned int SimConnectHandler::SetDataOnSimObject(std::string datumName, std::s
     return nextDataDefinitionId++;
 }
 
+unsigned int SimConnectHandler::SetAircraftInitialPosition(
+    double lat,
+    double lng,
+    double altitude,
+    double pitch,
+    double bank,
+    double heading,
+    bool onGround,
+    unsigned long airspeed
+) {
+    SIMCONNECT_DATA_INITPOSITION init = {
+        lat,
+        lng, 
+        altitude,
+        pitch,
+        bank,
+        heading,
+        onGround ? 1UL : 0UL,
+        airspeed
+    };
+
+    HRESULT hr = SimConnect_AddToDataDefinition(
+        hSimConnect, 
+        nextDataDefinitionId, 
+        "Initial Position", 
+        NULL, 
+        SIMCONNECT_DATATYPE_INITPOSITION
+    );
+
+    hr = SimConnect_SetDataOnSimObject(
+        hSimConnect, 
+        nextDataDefinitionId,
+        SIMCONNECT_OBJECT_ID_USER,
+        0, 
+        0, 
+        sizeof(init), 
+        &init
+    );
+
+    nextDataDefinitionId++;
+
+    return SUCCEEDED(hr);
+}
+
 SimEvent* SimConnectHandler::GetEvent(SIMCONNECT_RECV *pData) {
     SIMCONNECT_RECV_EVENT *myEvent = (SIMCONNECT_RECV_EVENT *)pData;
     SimEvent* info = new SimEvent;
     info->type = myEvent->uEventID;
     info->value = myEvent->dwData;
     return info;
+}
+
+SimSystemState* SimConnectHandler::GetSystemState(SIMCONNECT_RECV *pData) {
+    SIMCONNECT_RECV_SYSTEM_STATE *pState = (SIMCONNECT_RECV_SYSTEM_STATE *)pData;
+
+    return new SimSystemState{
+        pState->dwRequestID,
+        pState->dwInteger,
+        pState->fFloat,
+        std::string(pState->szString)
+    };
 }
 
 SimInfo* SimConnectHandler::GetSimInfo(SIMCONNECT_RECV *pData) {
@@ -169,68 +315,59 @@ SimInfo* SimConnectHandler::GetSimInfo(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-std::map<SIMCONNECT_DATATYPE, int> sizeMap = {
-	{ SIMCONNECT_DATATYPE_INT32, 4 },
-	{ SIMCONNECT_DATATYPE_INT64, 8 },
-	{ SIMCONNECT_DATATYPE_FLOAT32, 4 },
-	{ SIMCONNECT_DATATYPE_FLOAT64, 8 },
-	{ SIMCONNECT_DATATYPE_STRING8, 8 },
-	{ SIMCONNECT_DATATYPE_STRING32, 32 },
-	{ SIMCONNECT_DATATYPE_STRING64, 64 },
-	{ SIMCONNECT_DATATYPE_STRING128, 128 },
-	{ SIMCONNECT_DATATYPE_STRING256, 256 },
-	{ SIMCONNECT_DATATYPE_STRING260, 260 }
-};
+ExceptionInfo* SimConnectHandler::GetExceptionInfo(SIMCONNECT_RECV *pData) {
+    SIMCONNECT_RECV_EXCEPTION *exception = (SIMCONNECT_RECV_EXCEPTION *)pData; 
 
+    ExceptionInfo* info = new ExceptionInfo;
+    info->exception = exception->dwException;
+    info->packetId = exception->dwSendID;
+    info->parameterIndex = exception->dwIndex;
+    info->exceptionName = exceptionNames[SIMCONNECT_EXCEPTION(info->exception)];
+
+    return info;
+}
 
 SimobjectDataBatch* SimConnectHandler::GetSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData) {
     SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pData;
-    int numVars = dataDefinitions[pObjData->dwDefineID].num_values;
-    std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwDefineID].datum_types;
-	std::vector<std::string> valIds = dataDefinitions[pObjData->dwDefineID].datum_names;
+    DataBatchDefinition batch = dataDefinitions[pObjData->dwDefineID];
 
-    int dataValueOffset = 0;
+    std::vector<SIMCONNECT_DATATYPE> datumTypes = batch.datum_types;
+	std::vector<std::string> datumNames = batch.datum_names;
     std::map<std::string, std::pair<DatumType, void*>> output;
 
-    for (int i = 0; i < numVars; i++) {
-        int varSize = 0;
-        std::string datumName = valIds.at(i);
+    unsigned int dataValueOffset = 0;
 
-        if (valTypes[i] == SIMCONNECT_DATATYPE_STRINGV) {
-            dataValueOffset += 8; // Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
+    for (unsigned int i = 0; i < batch.num_values; i++) {
+        unsigned int datumSize = 0;
+        std::string datumName = datumNames.at(i);
+        SIMCONNECT_DATATYPE datumType = datumTypes.at(i);
+
+        if (datumType == SIMCONNECT_DATATYPE_STRINGV) {
+            //dataValueOffset += 8; // Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
 			char *pOutString;
 			DWORD cbString;
 			char *pStringv = ((char *)(&pObjData->dwData));
-			HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
 
-			// TODO: error handling
+            HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
             
-			try {
-				output[datumName] = std::make_pair(
-                    DatumType::Str, 
-                    new std::string(pOutString)
-                );
-			}
-			catch (...) {
-				output[datumName] = std::make_pair(
-                    DatumType::Str, 
-                    new std::string("ERROR")
-                );
-			}
+            output[datumName] = std::make_pair(
+                DatumType::Str, 
+                new std::string(NT_ERROR(hr) ? "ERROR" : pOutString)
+            );
 
-			varSize = cbString;
+			datumSize = cbString;
         } else {
-			varSize = sizeMap[valTypes[i]];
+			datumSize = sizeMap[datumType];
 			char *p = ((char *)(&pObjData->dwData) + dataValueOffset);
 			double *var = (double *)p;
             output[datumName] = std::make_pair(DatumType::Num, var);
 		}
-		dataValueOffset += varSize;
+		dataValueOffset += datumSize;
     }
-    SimobjectDataBatch* info = new SimobjectDataBatch;
-    info->id = pObjData->dwDefineID;
-    info->values = output;
-    return info;
+    return new SimobjectDataBatch {
+        pObjData->dwRequestID,
+        output
+    };
 }
 
 DataBatchDefinition SimConnectHandler::GenerateDataDefinition(std::vector<DatumRequest> datumRequests) {
@@ -238,14 +375,19 @@ DataBatchDefinition SimConnectHandler::GenerateDataDefinition(std::vector<DatumR
     std::vector<SIMCONNECT_DATATYPE> requestedDatumTypes;
 
     for (auto &datumRequest : datumRequests) {
+        const char* datumName = datumRequest.datumName.c_str();
+        const char* unitsName = datumRequest.unitName.c_str();
+
         SimConnect_AddToDataDefinition(
-            ghSimConnect, 
+            hSimConnect, 
             nextDataDefinitionId, 
-            datumRequest.datumName.c_str(), 
-            datumRequest.unitName.c_str()
+            datumName, 
+            unitsName,
+            SIMCONNECT_DATATYPE(datumRequest.datumType)
         );
-        requestedDatumNames.push_back(datumRequest.datumName);
-        requestedDatumTypes.push_back(SIMCONNECT_DATATYPE_FLOAT64);
+
+        requestedDatumNames.push_back(datumName);
+        requestedDatumTypes.push_back(SIMCONNECT_DATATYPE(datumRequest.datumType));
     }
     
     return { 

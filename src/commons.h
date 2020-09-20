@@ -4,11 +4,14 @@
 #include <map>
 
 enum PayloadType {
+    Nothing,
     Error,
     Unkn,
     Open,
+    Quit,
     EventId,
-    SimobjectData
+    SimobjectData,
+    SystemState
 };
 
 enum DatumType {
@@ -21,17 +24,29 @@ struct SimInfo {
     std::string version;
 };
 
+struct ExceptionInfo {
+    int exception;
+    int packetId;
+    int parameterIndex;
+    std::string exceptionName;
+};
+
 struct DatumRequest {
     std::string datumName;
     std::string unitName;
     unsigned int datumType;
-    unsigned int epsilon;
-    unsigned int datumId;
 };
 
 struct SimEvent {
     unsigned long type;
     unsigned long value;
+};
+
+struct SimSystemState {
+    unsigned int requestId;
+    unsigned int integerValue;
+    float floatValue;
+    std::string stringValue;
 };
 
 struct Data {
