@@ -6,6 +6,7 @@
 #include <map>
 
 #include "commons.h"
+#include <windows.h>
 
 struct SIMCONNECT_RECV;
 struct DataBatchDefinition;

@@ -6,6 +6,8 @@
                 "src/node-simconnect.cc",
                 "src/simconnect-handler.cc",
                 "src/simconnect-handler.h",
+                "src/dispatch-worker.h",
+                "src/dispatch-worker.cc",
                 "src/commons.h"
             ],
             'include_dirs': [

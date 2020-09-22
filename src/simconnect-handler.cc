@@ -74,7 +74,7 @@ std::map<DWORD, DataBatchDefinition> dataDefinitions;
 SimConnectHandler::SimConnectHandler() { }
 
 bool SimConnectHandler::Open(std::string appName) {
-    HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
+    HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, SIMCONNECT_OPEN_CONFIGINDEX_LOCAL);
     return SUCCEEDED(hr);
 };
 

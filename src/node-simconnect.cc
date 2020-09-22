@@ -13,6 +13,9 @@ using namespace Napi;
 
 #define getOptionalElement(array, index, type, conversion, fallback) \
     array.Length() > index ? array[index].As<type>().conversion() : fallback;
+
+#define setFunction(env, object, name, function) \
+    object.Set(String::New(env, name), Function::New(env, function));
 // Napi utils
 
 SimConnectHandler* gpSimConnect = NULL;
@@ -23,24 +26,19 @@ std::map<unsigned int, FunctionReference> dataRequestCallbacks;
 bool gIsConnected = false;
 
 class EchoWorker : public AsyncProgressQueueWorker<Data> {
-
+private: 
+    SimConnectHandler *pSimConnect;
 public:
-    EchoWorker(Function& callback) : AsyncProgressQueueWorker(callback) { }
+    EchoWorker(Function& callback, SimConnectHandler *pSimConnect) : AsyncProgressQueueWorker(callback), pSimConnect(pSimConnect) { }
 
     ~EchoWorker() { }
     
     // This code will be executed on the worker thread
     void Execute(const ExecutionProgress& progress) {
-        gpSimConnect = new SimConnectHandler();
-        
-        if (gpSimConnect->Open("My app")) {
-            while (true) {
-                Data nextDispatch = gpSimConnect->NextDispatch();
-                progress.Send(&nextDispatch, 1);
-                Sleep(1);
-            }
-        } else {
-            std::cout << "Not ok D:" << std::endl;
+        while (true) {
+            Data nextDispatch = pSimConnect->NextDispatch();
+            progress.Send(&nextDispatch, 1);
+            Sleep(1);
         }
     }
 
@@ -263,57 +261,32 @@ Value IsConnected(const CallbackInfo& info) {
 
 Value RunCallback(const CallbackInfo& info) {
     Env env = info.Env();
-    Function emit = info[0].As<Function>();
-    EchoWorker* wk = new EchoWorker(emit);
-    wk->Queue();
-    return env.Undefined();
+    String appName = info[0].As<String>();
+    Function emit = info[1].As<Function>();
+    
+    gpSimConnect = new SimConnectHandler();
+
+    if (gpSimConnect->Open(appName.Utf8Value().c_str())) {
+        EchoWorker* wk = new EchoWorker(emit, gpSimConnect);
+        wk->Queue();
+        return Boolean::New(env, true);
+    }
+    std::cout << "Failed to open connection with SimConnect" << std::endl;
+    return Boolean::New(env, false);
 };
 
 Object Init(Env env, Object exports) {
-    exports.Set(
-        String::New(env, "init"),
-        Function::New(env, RunCallback)
-    );
-    exports.Set(
-        String::New(env, "subscribeToSystemEvent"),
-        Function::New(env, SubscribeToSystemEvent)
-    );
-    exports.Set(
-        String::New(env, "requestDataOnSimObject"),
-        Function::New(env, RequestDataOnSimObject)
-    );
-    exports.Set(
-        String::New(env, "setDataOnSimObject"),
-        Function::New(env, SetDataOnSimObject)
-    );
-    exports.Set(
-        String::New(env, "requestDataOnSimObjectType"),
-        Function::New(env, RequestDataOnSimObjectType)
-    );
-    exports.Set(
-        String::New(env, "setAircraftInitialPosition"),
-        Function::New(env, SetAircraftInitialPosition)
-    );
-    exports.Set(
-        String::New(env, "requestSystemState"),
-        Function::New(env, RequestSystemState)
-    );
-    exports.Set(
-        String::New(env, "flightLoad"),
-        Function::New(env, FlightLoad)
-    );
-    exports.Set(
-        String::New(env, "transmitClientEvent"),
-        Function::New(env, TransmitClientEvent)
-    );
-    exports.Set(
-        String::New(env, "createDataDefinition"),
-        Function::New(env, CreateDataDefinition)
-    );
-    exports.Set(
-        String::New(env, "isConnected"),
-        Function::New(env, CreateDataDefinition)
-    );
+    setFunction(env, exports, "init", RunCallback)
+    setFunction(env, exports, "subscribeToSystemEvent", SubscribeToSystemEvent)
+    setFunction(env, exports, "requestDataOnSimObject", RequestDataOnSimObject)
+    setFunction(env, exports, "requestDataOnSimObjectType", RequestDataOnSimObjectType)
+    setFunction(env, exports, "setDataOnSimObject", SetDataOnSimObject)
+    setFunction(env, exports, "setAircraftInitialPosition", SetAircraftInitialPosition)
+    setFunction(env, exports, "requestSystemState", RequestSystemState)
+    setFunction(env, exports, "flightLoad", FlightLoad)
+    setFunction(env, exports, "transmitClientEvent", TransmitClientEvent)
+    setFunction(env, exports, "createDataDefinition", CreateDataDefinition)
+    setFunction(env, exports, "isConnected", IsConnected)
     return exports;
 }
 
