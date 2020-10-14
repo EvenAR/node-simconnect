@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <windows.h>
 
 #include "commons.h"
-#include <windows.h>
 
 struct SIMCONNECT_RECV;
 struct DataBatchDefinition;
@@ -15,10 +15,10 @@ class SimConnectHandler {
 
 public:
     SimConnectHandler();
-    bool Open(std::string appName);
+    bool Open(const std::string& appName);
     Data NextDispatch();
 
-    unsigned int SubscribeToSystemEvent(std::string eventName);
+    unsigned int SubscribeToSystemEvent(const std::string& eventName);
     unsigned int RequestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
     unsigned int RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags);
     unsigned int RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType);
@@ -39,7 +39,7 @@ public:
     unsigned int CreateDataDefinition(std::vector<DatumRequest> datumRequests);
    
 private:
-    HANDLE hSimConnect = NULL;
+    HANDLE hSimConnect;
 
     Data Process(SIMCONNECT_RECV* pData, DWORD cbData);
 

@@ -3,12 +3,16 @@
         {
             "target_name": "node_simconnect",
             "sources": [ 
-                "src/node-simconnect.cc",
                 "src/simconnect-handler.cc",
                 "src/simconnect-handler.h",
-                "src/dispatch-worker.h",
-                "src/dispatch-worker.cc",
-                "src/commons.h"
+                "src/commons.h",
+                "src/NodeSimconnect.h",
+                "src/NodeSimconnect.cc",
+                "src/NodeSimconnectHandler.h",
+                "src/NodeSimconnectHandler.cc",
+                "src/NodeSimconnectHandler.cc",
+                "src/DispatchProgressWorker.h",
+                "src/DispatchProgressWorker.cc",
             ],
             'include_dirs': [
                 "SimConnect/Inc",

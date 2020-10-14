@@ -71,10 +71,13 @@ struct DataBatchDefinition {
 
 std::map<DWORD, DataBatchDefinition> dataDefinitions;
 
-SimConnectHandler::SimConnectHandler() { }
+SimConnectHandler::SimConnectHandler() { 
+    hSimConnect = NULL;
+}
 
-bool SimConnectHandler::Open(std::string appName) {
-    HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, SIMCONNECT_OPEN_CONFIGINDEX_LOCAL);
+bool SimConnectHandler::Open(const std::string& appName) {
+    HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
+    std::cout << hSimConnect << std::endl;
     return SUCCEEDED(hr);
 };
 
@@ -118,11 +121,12 @@ Data SimConnectHandler::Process(SIMCONNECT_RECV* pData, DWORD cbData) {
     }
 }
 
-unsigned int SimConnectHandler::SubscribeToSystemEvent(std::string eventName) {
-    HRESULT hr = SimConnect_SubscribeToSystemEvent(hSimConnect, nextEventId, eventName.c_str());
-
-    // TODO: error handling
-
+unsigned int SimConnectHandler::SubscribeToSystemEvent(const std::string& eventName) {
+    HRESULT hr = SimConnect_SubscribeToSystemEvent(this->hSimConnect, nextEventId, eventName.c_str());
+    if (hr != S_OK) {
+        std::cout << "ERR " << hr << std::endl;
+    }
+    
     return nextEventId++;
 }
 

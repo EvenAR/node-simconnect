@@ -9,9 +9,7 @@
   "author": "",
   "license": "MIT",
   "gypfile": false,
-  "dependencies": {
-    "node-addon-api": "^3.0.0"
-  },
+  "dependencies": {},
   "directories": {
     "example": "examples"
   },
@@ -31,5 +29,10 @@
   "bugs": {
     "url": "https://github.com/EvenAR/node-simconnect/issues"
   },
-  "homepage": "https://github.com/EvenAR/node-simconnect#readme"
+  "homepage": "https://github.com/EvenAR/node-simconnect#readme",
+  "devDependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^3.0.2",
+    "node-gyp": "^7.1.0"
+  }
 }
