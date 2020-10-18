@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-enum PayloadType {
+enum DispatchContentType {
     Nothing,
     Error,
     Unkn,
@@ -14,9 +14,19 @@ enum PayloadType {
     SystemState
 };
 
+struct DispatchContent {
+    DispatchContentType type;
+    void* payload;
+};
+
 enum DatumType {
     Str,
     Num
+};
+
+struct SimobjectDataBatch {
+    uint32_t id;
+    std::map<std::string, std::pair<DatumType, void*>> values;
 };
 
 struct SimInfo {
@@ -49,14 +59,6 @@ struct SimSystemState {
     std::string stringValue;
 };
 
-struct Data {
-    PayloadType type;
-    void* payload;
-};
 
-struct SimobjectDataBatch {
-    uint32_t id;
-    std::map<std::string, std::pair<DatumType, void*>> values;
-};
 
 #endif

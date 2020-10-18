@@ -11,12 +11,12 @@
 struct SIMCONNECT_RECV;
 struct DataBatchDefinition;
 
-class SimConnectHandler {
+class SimConnectSession {
 
 public:
-    SimConnectHandler();
+    SimConnectSession();
     bool Open(const std::string& appName);
-    Data NextDispatch();
+    DispatchContent NextDispatch();
 
     uint32_t SubscribeToSystemEvent(const std::string& eventName);
     uint32_t RequestDataOnSimObject(uint32_t existingDataDefinitionId, uint32_t objectId, uint32_t period, uint32_t flags);
@@ -41,7 +41,7 @@ public:
 private:
     HANDLE hSimConnect;
 
-    Data Process(SIMCONNECT_RECV* pData, DWORD cbData);
+    DispatchContent Process(SIMCONNECT_RECV* pData, DWORD cbData);
 
     ExceptionInfo* GetExceptionInfo(SIMCONNECT_RECV *pData);
     SimEvent* GetEvent(SIMCONNECT_RECV *pData);

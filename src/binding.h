@@ -6,8 +6,7 @@
 #include <napi.h>
 #include "commons.h"
 
-class SimConnectHandler;
-class DispatchProgressWorker;
+class DispatchQueueWorker;
 
 class NodeSimconnect : public Napi::ObjectWrap<NodeSimconnect> {
     public:

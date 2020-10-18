@@ -1,30 +1,30 @@
-#include "NodeSimconnect.h"
-#include "simconnect-handler.h"
-#include "NodeSimconnectHandler.h"
+#include "binding.h"
+#include "simconnect_session.h"
+#include "sim_handler.h"
 #include <iostream>
 
 NodeSimconnect::NodeSimconnect(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeSimconnect>(info) { }
 
 Napi::Object NodeSimconnect::Init(Napi::Env env, Napi::Object exports) {
-    Napi::Function func = DefineClass(env, "SimConnect", {
+    Napi::Function classFunction = DefineClass(env, "SimConnect", {
         InstanceMethod<&NodeSimconnect::Open>("open")
     });
 
-    Napi::FunctionReference* constructor = new Napi::FunctionReference();
-    *constructor = Napi::Persistent(func);
-    exports.Set("SimConnect", func);
+    auto constructor = new Napi::FunctionReference();
+    *constructor = Napi::Persistent(classFunction);
+    exports.Set("SimConnect", classFunction);
     env.SetInstanceData<Napi::FunctionReference>(constructor);
     return exports;
 }
 
 Napi::Value NodeSimconnect::Open(const Napi::CallbackInfo& info) {
-    Napi::String appName = info[0].As<Napi::String>();
-    Napi::Function callback = info[1].As<Napi::Function>();
+    auto appName = info[0].As<Napi::String>();
+    auto callback = info[1].As<Napi::Function>();
 
     onOpen = Napi::Persistent(callback);
-    simulator = Napi::Persistent(NodeSimconnectHandler::Init(info.Env()));
+    simulator = Napi::Persistent(SimHandler::Init(info.Env()));
 
-    NodeSimconnectHandler* s = NodeSimconnectHandler::Unwrap(simulator.Value().ToObject());
+    SimHandler* s = SimHandler::Unwrap(simulator.Value().ToObject());
 
     s->Open(appName.Utf8Value(), &onOpen);
 

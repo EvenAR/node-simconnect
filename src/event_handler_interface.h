@@ -1,6 +1,6 @@
 #include "commons.h"
 
-class ISimulatorEventHandler {
+class EventHandlerInterface {
 public:
     virtual void onException(ExceptionInfo* exception) = 0;
     virtual void onOpen(SimInfo* simInfo) = 0;

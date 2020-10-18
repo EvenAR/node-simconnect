@@ -2,15 +2,15 @@
 #define NODE_SIMCONNECT_HANDLER_H
 
 #include <napi.h>
-#include "simconnect-handler.h"
-#include "ISimulatorEventHandler.h"
+#include "simconnect_session.h"
+#include "event_handler_interface.h"
 
-class DispatchProgressWorker;
+class DispatchQueueWorker;
 
-class NodeSimconnectHandler : public Napi::ObjectWrap<NodeSimconnectHandler>, ISimulatorEventHandler {
+class SimHandler : public Napi::ObjectWrap<SimHandler>, EventHandlerInterface {
 
     public:
-        NodeSimconnectHandler(const Napi::CallbackInfo& info);
+        SimHandler(const Napi::CallbackInfo& info);
         static Napi::Object Init(Napi::Env env);
         void Open(const std::string& appName, Napi::FunctionReference* openCallback);
 
@@ -18,15 +18,16 @@ class NodeSimconnectHandler : public Napi::ObjectWrap<NodeSimconnectHandler>, IS
         Napi::Value RequestSystemState(const Napi::CallbackInfo& info);
         Napi::Value RequestDataOnSimObject(const Napi::CallbackInfo& info);
 
-        ~NodeSimconnectHandler();
+        ~SimHandler();
 
     private:
+        SimConnectSession simConnectSession;
+
         std::unordered_map<int32_t, Napi::FunctionReference> systemStateCallbacks;
         std::unordered_map<int32_t, Napi::FunctionReference> systemEventCallbacks;
         std::unordered_map<int32_t, Napi::FunctionReference> dataRequestCallbacks;
         Napi::FunctionReference* openCallback;
-        SimConnectHandler handler;
-        DispatchProgressWorker* wk;
+        DispatchQueueWorker* dispatchQueueWorker;
 
         void onOpen(SimInfo* simInfo);
         void onQuit();

@@ -3,7 +3,7 @@
 #include <SimConnect.h>
 #include <iostream>
 
-#include "simconnect-handler.h"
+#include "simconnect_session.h"
 
 std::map<SIMCONNECT_EXCEPTION, const char*> exceptionNames = {
 	{ SIMCONNECT_EXCEPTION_NONE, "SIMCONNECT_EXCEPTION_NONE" },
@@ -71,17 +71,17 @@ struct DataBatchDefinition {
 
 std::map<DWORD, DataBatchDefinition> dataDefinitions;
 
-SimConnectHandler::SimConnectHandler() { 
+SimConnectSession::SimConnectSession() { 
     hSimConnect = NULL;
 }
 
-bool SimConnectHandler::Open(const std::string& appName) {
+bool SimConnectSession::Open(const std::string& appName) {
     HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
     std::cout << hSimConnect << std::endl;
     return SUCCEEDED(hr);
 };
 
-Data SimConnectHandler::NextDispatch() {
+DispatchContent SimConnectSession::NextDispatch() {
     SIMCONNECT_RECV *pData;
     DWORD cbData;
 
@@ -89,39 +89,39 @@ Data SimConnectHandler::NextDispatch() {
     if (SUCCEEDED(hr)) {
         return this->Process(pData, cbData);
     } else if (NT_ERROR(hr)) {
-        return { PayloadType::Error, nullptr };
+        return { DispatchContentType::Error, nullptr };
     } else {
-        return { PayloadType::Nothing, nullptr };
+        return { DispatchContentType::Nothing, nullptr };
     }    
 }
 
-Data SimConnectHandler::Process(SIMCONNECT_RECV* pData, DWORD cbData) {
+DispatchContent SimConnectSession::Process(SIMCONNECT_RECV* pData, DWORD cbData) {
     SIMCONNECT_RECV_ID eventId = (SIMCONNECT_RECV_ID)pData->dwID;
 
     switch (eventId) {
         case SIMCONNECT_RECV_ID_NULL:
-            return { PayloadType::Nothing, nullptr };
+            return { DispatchContentType::Nothing, nullptr };
         case SIMCONNECT_RECV_ID_EXCEPTION: 
-            return { PayloadType::Error, this->GetExceptionInfo(pData) };
+            return { DispatchContentType::Error, this->GetExceptionInfo(pData) };
         case SIMCONNECT_RECV_ID_OPEN:
-            return { PayloadType::Open, this->GetSimInfo(pData) };
+            return { DispatchContentType::Open, this->GetSimInfo(pData) };
         case SIMCONNECT_RECV_ID_QUIT:
-            return { PayloadType::Quit, nullptr };
+            return { DispatchContentType::Quit, nullptr };
         case SIMCONNECT_RECV_ID_SYSTEM_STATE:
-            return { PayloadType::SystemState, this->GetSystemState(pData) };
+            return { DispatchContentType::SystemState, this->GetSystemState(pData) };
         case SIMCONNECT_RECV_ID_EVENT:
-            return { PayloadType::EventId, this->GetEvent(pData) };
+            return { DispatchContentType::EventId, this->GetEvent(pData) };
         case SIMCONNECT_RECV_ID_SIMOBJECT_DATA: 
-            return { PayloadType::SimobjectData, this->GetSimObjectData(pData, cbData) };
+            return { DispatchContentType::SimobjectData, this->GetSimObjectData(pData, cbData) };
         case SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE: 
-            return { PayloadType::SimobjectData, this->GetSimObjectData(pData, cbData) };
+            return { DispatchContentType::SimobjectData, this->GetSimObjectData(pData, cbData) };
         default: {
-            return { PayloadType::Unkn, nullptr };
+            return { DispatchContentType::Unkn, nullptr };
         }
     }
 }
 
-uint32_t SimConnectHandler::SubscribeToSystemEvent(const std::string& eventName) {
+uint32_t SimConnectSession::SubscribeToSystemEvent(const std::string& eventName) {
     HRESULT hr = SimConnect_SubscribeToSystemEvent(this->hSimConnect, nextEventId, eventName.c_str());
     if (hr != S_OK) {
         std::cout << "ERR " << hr << std::endl;
@@ -130,17 +130,17 @@ uint32_t SimConnectHandler::SubscribeToSystemEvent(const std::string& eventName)
     return nextEventId++;
 }
 
-uint32_t SimConnectHandler::RequestSystemState(std::string stateName) {
+uint32_t SimConnectSession::RequestSystemState(std::string stateName) {
     HRESULT hr = SimConnect_RequestSystemState(hSimConnect, nextRequestId, stateName.c_str());
     return nextRequestId++;
 }
 
-uint32_t SimConnectHandler::FlightLoad(std::string fileName) {
+uint32_t SimConnectSession::FlightLoad(std::string fileName) {
     HRESULT hr = SimConnect_FlightLoad(hSimConnect, fileName.c_str());
     return SUCCEEDED(hr);
 }
 
-uint32_t SimConnectHandler::TransmitClientEvent(std::string eventName, uint32_t objectId, int data) {
+uint32_t SimConnectSession::TransmitClientEvent(std::string eventName, uint32_t objectId, int data) {
     HRESULT hr = SimConnect_MapClientEventToSimEvent(hSimConnect, nextEventId, eventName.c_str());
     
     // TODO: error handling
@@ -159,13 +159,13 @@ uint32_t SimConnectHandler::TransmitClientEvent(std::string eventName, uint32_t 
     return nextEventId++;
 }
 
-uint32_t SimConnectHandler::CreateDataDefinition(std::vector<DatumRequest> datumRequests) {
+uint32_t SimConnectSession::CreateDataDefinition(std::vector<DatumRequest> datumRequests) {
     DataBatchDefinition newDefinition = this->GenerateDataDefinition(datumRequests);
     dataDefinitions[newDefinition.id] = newDefinition;
     return newDefinition.id;
 }
 
-uint32_t SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, uint32_t objectId, uint32_t period, uint32_t flags) {
+uint32_t SimConnectSession::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, uint32_t objectId, uint32_t period, uint32_t flags) {
     
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
     
@@ -184,7 +184,7 @@ uint32_t SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> dat
     return nextRequestId++;
 }
 
-uint32_t SimConnectHandler::RequestDataOnSimObject(uint32_t existingDataDefinitionId, uint32_t objectId, uint32_t period, uint32_t flags) {
+uint32_t SimConnectSession::RequestDataOnSimObject(uint32_t existingDataDefinitionId, uint32_t objectId, uint32_t period, uint32_t flags) {
     
     HRESULT hr = SimConnect_RequestDataOnSimObject(
         hSimConnect, 
@@ -200,7 +200,7 @@ uint32_t SimConnectHandler::RequestDataOnSimObject(uint32_t existingDataDefiniti
     return nextRequestId++;
 }
 
-uint32_t SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, uint32_t radius, uint32_t simobjectType) {
+uint32_t SimConnectSession::RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, uint32_t radius, uint32_t simobjectType) {
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
 
     dataDefinitions[newDataDefinition.id] = newDataDefinition;
@@ -214,7 +214,7 @@ uint32_t SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequest>
     return nextRequestId++;
 }
 
-uint32_t SimConnectHandler::SetDataOnSimObject(std::string datumName, std::string unitsName, double value) {
+uint32_t SimConnectSession::SetDataOnSimObject(std::string datumName, std::string unitsName, double value) {
 
     HRESULT hr = SimConnect_AddToDataDefinition(
         hSimConnect, 
@@ -240,7 +240,7 @@ uint32_t SimConnectHandler::SetDataOnSimObject(std::string datumName, std::strin
     return nextDataDefinitionId++;
 }
 
-uint32_t SimConnectHandler::SetAircraftInitialPosition(
+uint32_t SimConnectSession::SetAircraftInitialPosition(
     double lat,
     double lng,
     double altitude,
@@ -284,7 +284,7 @@ uint32_t SimConnectHandler::SetAircraftInitialPosition(
     return SUCCEEDED(hr);
 }
 
-SimEvent* SimConnectHandler::GetEvent(SIMCONNECT_RECV *pData) {
+SimEvent* SimConnectSession::GetEvent(SIMCONNECT_RECV *pData) {
     SIMCONNECT_RECV_EVENT *myEvent = (SIMCONNECT_RECV_EVENT *)pData;
     SimEvent* info = new SimEvent;
     info->type = myEvent->uEventID;
@@ -292,7 +292,7 @@ SimEvent* SimConnectHandler::GetEvent(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-SimSystemState* SimConnectHandler::GetSystemState(SIMCONNECT_RECV *pData) {
+SimSystemState* SimConnectSession::GetSystemState(SIMCONNECT_RECV *pData) {
     SIMCONNECT_RECV_SYSTEM_STATE *pState = (SIMCONNECT_RECV_SYSTEM_STATE *)pData;
 
     return new SimSystemState{
@@ -303,7 +303,7 @@ SimSystemState* SimConnectHandler::GetSystemState(SIMCONNECT_RECV *pData) {
     };
 }
 
-SimInfo* SimConnectHandler::GetSimInfo(SIMCONNECT_RECV *pData) {
+SimInfo* SimConnectSession::GetSimInfo(SIMCONNECT_RECV *pData) {
     SIMCONNECT_RECV_OPEN *pOpen = (SIMCONNECT_RECV_OPEN *)pData;
 
     char simconnVersion[32];
@@ -319,7 +319,7 @@ SimInfo* SimConnectHandler::GetSimInfo(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-ExceptionInfo* SimConnectHandler::GetExceptionInfo(SIMCONNECT_RECV *pData) {
+ExceptionInfo* SimConnectSession::GetExceptionInfo(SIMCONNECT_RECV *pData) {
     SIMCONNECT_RECV_EXCEPTION *exception = (SIMCONNECT_RECV_EXCEPTION *)pData; 
 
     ExceptionInfo* info = new ExceptionInfo;
@@ -331,7 +331,7 @@ ExceptionInfo* SimConnectHandler::GetExceptionInfo(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-SimobjectDataBatch* SimConnectHandler::GetSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData) {
+SimobjectDataBatch* SimConnectSession::GetSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData) {
     SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pData;
     DataBatchDefinition batch = dataDefinitions[pObjData->dwDefineID];
 
@@ -373,7 +373,7 @@ SimobjectDataBatch* SimConnectHandler::GetSimObjectData(SIMCONNECT_RECV *pData, 
     };
 }
 
-DataBatchDefinition SimConnectHandler::GenerateDataDefinition(std::vector<DatumRequest> datumRequests) {
+DataBatchDefinition SimConnectSession::GenerateDataDefinition(std::vector<DatumRequest> datumRequests) {
     std::vector<std::string> requestedDatumNames;
     std::vector<SIMCONNECT_DATATYPE> requestedDatumTypes;
 
