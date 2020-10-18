@@ -58,13 +58,13 @@ std::map<SIMCONNECT_DATATYPE, int> sizeMap = {
 	{ SIMCONNECT_DATATYPE_STRING260, 260 }
 };
 
-unsigned int nextEventId = 0;
-unsigned int nextRequestId = 0;
-unsigned int nextDataDefinitionId = 0;
+uint32_t nextEventId = 0;
+uint32_t nextRequestId = 0;
+uint32_t nextDataDefinitionId = 0;
 
 struct DataBatchDefinition {
 	SIMCONNECT_DATA_DEFINITION_ID id;
-	unsigned int num_values;
+	uint32_t num_values;
 	std::vector<std::string> datum_names;
 	std::vector<SIMCONNECT_DATATYPE> datum_types;
 };
@@ -121,7 +121,7 @@ Data SimConnectHandler::Process(SIMCONNECT_RECV* pData, DWORD cbData) {
     }
 }
 
-unsigned int SimConnectHandler::SubscribeToSystemEvent(const std::string& eventName) {
+uint32_t SimConnectHandler::SubscribeToSystemEvent(const std::string& eventName) {
     HRESULT hr = SimConnect_SubscribeToSystemEvent(this->hSimConnect, nextEventId, eventName.c_str());
     if (hr != S_OK) {
         std::cout << "ERR " << hr << std::endl;
@@ -130,17 +130,17 @@ unsigned int SimConnectHandler::SubscribeToSystemEvent(const std::string& eventN
     return nextEventId++;
 }
 
-unsigned int SimConnectHandler::RequestSystemState(std::string stateName) {
+uint32_t SimConnectHandler::RequestSystemState(std::string stateName) {
     HRESULT hr = SimConnect_RequestSystemState(hSimConnect, nextRequestId, stateName.c_str());
     return nextRequestId++;
 }
 
-unsigned int SimConnectHandler::FlightLoad(std::string fileName) {
+uint32_t SimConnectHandler::FlightLoad(std::string fileName) {
     HRESULT hr = SimConnect_FlightLoad(hSimConnect, fileName.c_str());
     return SUCCEEDED(hr);
 }
 
-unsigned int SimConnectHandler::TransmitClientEvent(std::string eventName, unsigned int objectId, int data) {
+uint32_t SimConnectHandler::TransmitClientEvent(std::string eventName, uint32_t objectId, int data) {
     HRESULT hr = SimConnect_MapClientEventToSimEvent(hSimConnect, nextEventId, eventName.c_str());
     
     // TODO: error handling
@@ -159,13 +159,13 @@ unsigned int SimConnectHandler::TransmitClientEvent(std::string eventName, unsig
     return nextEventId++;
 }
 
-unsigned int SimConnectHandler::CreateDataDefinition(std::vector<DatumRequest> datumRequests) {
+uint32_t SimConnectHandler::CreateDataDefinition(std::vector<DatumRequest> datumRequests) {
     DataBatchDefinition newDefinition = this->GenerateDataDefinition(datumRequests);
     dataDefinitions[newDefinition.id] = newDefinition;
     return newDefinition.id;
 }
 
-unsigned int SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags) {
+uint32_t SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, uint32_t objectId, uint32_t period, uint32_t flags) {
     
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
     
@@ -184,7 +184,7 @@ unsigned int SimConnectHandler::RequestDataOnSimObject(std::vector<DatumRequest>
     return nextRequestId++;
 }
 
-unsigned int SimConnectHandler::RequestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags) {
+uint32_t SimConnectHandler::RequestDataOnSimObject(uint32_t existingDataDefinitionId, uint32_t objectId, uint32_t period, uint32_t flags) {
     
     HRESULT hr = SimConnect_RequestDataOnSimObject(
         hSimConnect, 
@@ -200,7 +200,7 @@ unsigned int SimConnectHandler::RequestDataOnSimObject(unsigned int existingData
     return nextRequestId++;
 }
 
-unsigned int SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType) {
+uint32_t SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, uint32_t radius, uint32_t simobjectType) {
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
 
     dataDefinitions[newDataDefinition.id] = newDataDefinition;
@@ -214,7 +214,7 @@ unsigned int SimConnectHandler::RequestDataOnSimObjectType(std::vector<DatumRequ
     return nextRequestId++;
 }
 
-unsigned int SimConnectHandler::SetDataOnSimObject(std::string datumName, std::string unitsName, double value) {
+uint32_t SimConnectHandler::SetDataOnSimObject(std::string datumName, std::string unitsName, double value) {
 
     HRESULT hr = SimConnect_AddToDataDefinition(
         hSimConnect, 
@@ -240,7 +240,7 @@ unsigned int SimConnectHandler::SetDataOnSimObject(std::string datumName, std::s
     return nextDataDefinitionId++;
 }
 
-unsigned int SimConnectHandler::SetAircraftInitialPosition(
+uint32_t SimConnectHandler::SetAircraftInitialPosition(
     double lat,
     double lng,
     double altitude,
@@ -339,17 +339,16 @@ SimobjectDataBatch* SimConnectHandler::GetSimObjectData(SIMCONNECT_RECV *pData, 
 	std::vector<std::string> datumNames = batch.datum_names;
     std::map<std::string, std::pair<DatumType, void*>> output;
 
-    unsigned int dataValueOffset = 0;
+    uint32_t dataValueOffset = 0;
 
-    for (unsigned int i = 0; i < batch.num_values; i++) {
-        unsigned int datumSize = 0;
+    for (uint32_t i = 0; i < batch.num_values; i++) {
+        uint32_t datumSize = 0;
         std::string datumName = datumNames.at(i);
         SIMCONNECT_DATATYPE datumType = datumTypes.at(i);
 
         if (datumType == SIMCONNECT_DATATYPE_STRINGV) {
-            //dataValueOffset += 8; // Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
-			char *pOutString;
 			DWORD cbString;
+			char *pOutString;
 			char *pStringv = ((char *)(&pObjData->dwData));
 
             HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);

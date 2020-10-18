@@ -61,7 +61,7 @@ Napi::Value NodeSimconnectHandler::SubscribeToSystemEvent(const Napi::CallbackIn
 
 Napi::Value NodeSimconnectHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
     Napi::Function callback = info[1].As<Napi::Function>();
-    auto objectId = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 0);
+    auto objectId = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 1);
     auto period = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
     auto flags = getOptionalElement(info, 4, Napi::Number, Napi::Number::Uint32Value, 0);
 

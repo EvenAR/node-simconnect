@@ -18,12 +18,12 @@ public:
     bool Open(const std::string& appName);
     Data NextDispatch();
 
-    unsigned int SubscribeToSystemEvent(const std::string& eventName);
-    unsigned int RequestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
-    unsigned int RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags);
-    unsigned int RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType);
-    unsigned int SetDataOnSimObject(std::string datumName, std::string unitsName, double value);
-    unsigned int SetAircraftInitialPosition(
+    uint32_t SubscribeToSystemEvent(const std::string& eventName);
+    uint32_t RequestDataOnSimObject(uint32_t existingDataDefinitionId, uint32_t objectId, uint32_t period, uint32_t flags);
+    uint32_t RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, uint32_t objectId, uint32_t period, uint32_t flags);
+    uint32_t RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, uint32_t radius, uint32_t simobjectType);
+    uint32_t SetDataOnSimObject(std::string datumName, std::string unitsName, double value);
+    uint32_t SetAircraftInitialPosition(
         double lat,
         double lng,
         double altitude,
@@ -33,10 +33,10 @@ public:
         bool onGround,
         unsigned long airspeed
     );
-    unsigned int RequestSystemState(std::string stateName);
-    unsigned int FlightLoad(std::string fileName);
-    unsigned int TransmitClientEvent(std::string eventName, unsigned int objectId, int data);
-    unsigned int CreateDataDefinition(std::vector<DatumRequest> datumRequests);
+    uint32_t RequestSystemState(std::string stateName);
+    uint32_t FlightLoad(std::string fileName);
+    uint32_t TransmitClientEvent(std::string eventName, uint32_t objectId, int data);
+    uint32_t CreateDataDefinition(std::vector<DatumRequest> datumRequests);
    
 private:
     HANDLE hSimConnect;

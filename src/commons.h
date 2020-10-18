@@ -34,7 +34,7 @@ struct ExceptionInfo {
 struct DatumRequest {
     std::string datumName;
     std::string unitName;
-    unsigned int datumType;
+    uint32_t datumType;
 };
 
 struct SimEvent {
@@ -43,8 +43,8 @@ struct SimEvent {
 };
 
 struct SimSystemState {
-    unsigned int requestId;
-    unsigned int integerValue;
+    uint32_t requestId;
+    uint32_t integerValue;
     float floatValue;
     std::string stringValue;
 };
@@ -55,7 +55,7 @@ struct Data {
 };
 
 struct SimobjectDataBatch {
-    unsigned int id;
+    uint32_t id;
     std::map<std::string, std::pair<DatumType, void*>> values;
 };
 
