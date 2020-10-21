@@ -16,6 +16,8 @@ class SimConnectSession {
 public:
     SimConnectSession();
     bool Open(const std::string& appName);
+    bool Close();
+
     DispatchContent NextDispatch();
 
     uint32_t SubscribeToSystemEvent(const std::string& eventName);
@@ -37,11 +39,15 @@ public:
     uint32_t FlightLoad(std::string fileName);
     uint32_t TransmitClientEvent(std::string eventName, uint32_t objectId, int data);
     uint32_t CreateDataDefinition(std::vector<DatumRequest> datumRequests);
+
+    void ErrorReported();
    
 private:
     HANDLE hSimConnect;
+    ErrorInfo* fatalError;
 
     DispatchContent Process(SIMCONNECT_RECV* pData, DWORD cbData);
+    void HandleError(const std::string& name, NTSTATUS code);
 
     ExceptionInfo* GetExceptionInfo(SIMCONNECT_RECV *pData);
     SimEvent* GetEvent(SIMCONNECT_RECV *pData);

@@ -5,6 +5,7 @@
 
 enum DispatchContentType {
     Nothing,
+    Exception,
     Error,
     Unkn,
     Open,
@@ -35,10 +36,15 @@ struct SimInfo {
 };
 
 struct ExceptionInfo {
-    int exception;
-    int packetId;
-    int parameterIndex;
+    uint32_t exception;
+    uint32_t packetId;
+    uint32_t parameterIndex;
     std::string exceptionName;
+};
+
+struct ErrorInfo {
+    std::string code;
+    std::string text;
 };
 
 struct DatumRequest {

@@ -15,19 +15,30 @@ SimHandler::SimHandler(const Napi::CallbackInfo& info)
 }
 
 SimHandler::~SimHandler() {
+    delete this->dispatchQueueWorker;
 }
 
-void SimHandler::Open(const std::string& appName, Napi::FunctionReference* openCallback) {
-    this->openCallback = openCallback;
+bool SimHandler::Open(
+    const std::string& appName, 
+    const Napi::Function& onOpen,
+    const Napi::Function& onQuit,
+    const Napi::Function& onException,
+    const Napi::Function& onError
+) {
+    openCallback = Napi::Persistent(onOpen);
+    quitCallback = Napi::Persistent(onQuit);
+    exceptionCallback = Napi::Persistent(onException);
+    errorCallback = Napi::Persistent(onError);
 
     if (simConnectSession.Open(appName)) {
         dispatchQueueWorker = new DispatchQueueWorker(Env(), &simConnectSession, this);
         dispatchQueueWorker->Queue();
-    } else {
-        this->openCallback->Call({
-            Napi::String::New(Env(), "Failed to connect")
-        });
-    }
+        return true;
+    } 
+    errorCallback.Call({
+        Napi::String::New(Env(), "Failed to connect")
+    });
+    return false;
 }
 
 Napi::Object SimHandler::Init(Napi::Env env) {
@@ -84,19 +95,31 @@ void SimHandler::onOpen(SimInfo* simInfo) {
     object.Set("name", Napi::String::New(Env(), simInfo->name));
     object.Set("version", Napi::String::New(Env(), simInfo->version));
 
-    this->openCallback->Call({
-        Env().Undefined(),
+    openCallback.Call({
         object,
-        this->Value()
+        Value()
     });
 }
 
 void SimHandler::onException(ExceptionInfo* exceptionInfo) {
-    std::cout << "TODO: ExceptionInfo " << exceptionInfo->exceptionName << std::endl;
+    auto obj = Napi::Object::New(Env());
+    obj.Set("dwException", Napi::Number::New(Env(), exceptionInfo->exception));
+    obj.Set("dwSendID", Napi::Number::New(Env(), exceptionInfo->packetId));
+    obj.Set("dwIndex", Napi::Number::New(Env(), exceptionInfo->parameterIndex));
+    obj.Set("name", Napi::String::New(Env(), exceptionInfo->exceptionName));
+    exceptionCallback.Call({obj});
+}
+
+void SimHandler::onError(ErrorInfo* errorInfo) {
+    auto obj = Napi::Object::New(Env());
+    obj.Set("NTSTATUS", Napi::String::New(Env(), errorInfo->code));
+    obj.Set("message", Napi::String::New(Env(), errorInfo->text));
+    errorCallback.Call({obj});
 }
 
 void SimHandler::onQuit() {
-    std::cout << "TODO: Quit :(" << std::endl;
+    delete dispatchQueueWorker;
+    quitCallback.Call({});
 }
 
 void SimHandler::onSystemState(SimSystemState* simSystemState) {

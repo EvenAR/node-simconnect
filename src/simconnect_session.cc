@@ -2,8 +2,12 @@
 #include <winternl.h>
 #include <SimConnect.h>
 #include <iostream>
+#include <sstream>
+#include <assert.h>
 
 #include "simconnect_session.h"
+
+#define check(hr) { if(hr != S_OK) HandleError(__FUNCTION__, hr); }
 
 std::map<SIMCONNECT_EXCEPTION, const char*> exceptionNames = {
 	{ SIMCONNECT_EXCEPTION_NONE, "SIMCONNECT_EXCEPTION_NONE" },
@@ -71,17 +75,23 @@ struct DataBatchDefinition {
 
 std::map<DWORD, DataBatchDefinition> dataDefinitions;
 
-SimConnectSession::SimConnectSession() { 
-    hSimConnect = NULL;
-}
+SimConnectSession::SimConnectSession() {  }
 
 bool SimConnectSession::Open(const std::string& appName) {
+    this->hSimConnect = NULL;
+    this->fatalError = nullptr;
+
     HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
-    std::cout << hSimConnect << std::endl;
+    check(hr);
+    
     return SUCCEEDED(hr);
 };
 
 DispatchContent SimConnectSession::NextDispatch() {
+    if (this->fatalError != nullptr) {
+        return { DispatchContentType::Error, this->fatalError };
+    }
+
     SIMCONNECT_RECV *pData;
     DWORD cbData;
 
@@ -89,7 +99,8 @@ DispatchContent SimConnectSession::NextDispatch() {
     if (SUCCEEDED(hr)) {
         return this->Process(pData, cbData);
     } else if (NT_ERROR(hr)) {
-        return { DispatchContentType::Error, nullptr };
+        check(hr);
+        return { DispatchContentType::Error, this->fatalError };
     } else {
         return { DispatchContentType::Nothing, nullptr };
     }    
@@ -102,7 +113,7 @@ DispatchContent SimConnectSession::Process(SIMCONNECT_RECV* pData, DWORD cbData)
         case SIMCONNECT_RECV_ID_NULL:
             return { DispatchContentType::Nothing, nullptr };
         case SIMCONNECT_RECV_ID_EXCEPTION: 
-            return { DispatchContentType::Error, this->GetExceptionInfo(pData) };
+            return { DispatchContentType::Exception, this->GetExceptionInfo(pData) };
         case SIMCONNECT_RECV_ID_OPEN:
             return { DispatchContentType::Open, this->GetSimInfo(pData) };
         case SIMCONNECT_RECV_ID_QUIT:
@@ -123,27 +134,26 @@ DispatchContent SimConnectSession::Process(SIMCONNECT_RECV* pData, DWORD cbData)
 
 uint32_t SimConnectSession::SubscribeToSystemEvent(const std::string& eventName) {
     HRESULT hr = SimConnect_SubscribeToSystemEvent(this->hSimConnect, nextEventId, eventName.c_str());
-    if (hr != S_OK) {
-        std::cout << "ERR " << hr << std::endl;
-    }
-    
+    check(hr);
     return nextEventId++;
 }
 
 uint32_t SimConnectSession::RequestSystemState(std::string stateName) {
     HRESULT hr = SimConnect_RequestSystemState(hSimConnect, nextRequestId, stateName.c_str());
+    check(hr);
     return nextRequestId++;
 }
 
 uint32_t SimConnectSession::FlightLoad(std::string fileName) {
     HRESULT hr = SimConnect_FlightLoad(hSimConnect, fileName.c_str());
+    check(hr);
     return SUCCEEDED(hr);
 }
 
 uint32_t SimConnectSession::TransmitClientEvent(std::string eventName, uint32_t objectId, int data) {
     HRESULT hr = SimConnect_MapClientEventToSimEvent(hSimConnect, nextEventId, eventName.c_str());
     
-    // TODO: error handling
+    check(hr);
 
     hr = SimConnect_TransmitClientEvent(
         hSimConnect, 
@@ -154,7 +164,7 @@ uint32_t SimConnectSession::TransmitClientEvent(std::string eventName, uint32_t 
         SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY
     );
 
-    // TODO: error handling
+    check(hr);
 
     return nextEventId++;
 }
@@ -180,7 +190,8 @@ uint32_t SimConnectSession::RequestDataOnSimObject(std::vector<DatumRequest> dat
         flags
     );
 
-    // TODO: error handling
+    check(hr);
+
     return nextRequestId++;
 }
 
@@ -195,7 +206,7 @@ uint32_t SimConnectSession::RequestDataOnSimObject(uint32_t existingDataDefiniti
         flags
     );
 
-    // TODO: error handling
+    check(hr);
 
     return nextRequestId++;
 }
@@ -204,13 +215,16 @@ uint32_t SimConnectSession::RequestDataOnSimObjectType(std::vector<DatumRequest>
     DataBatchDefinition newDataDefinition = GenerateDataDefinition(datumRequests);
 
     dataDefinitions[newDataDefinition.id] = newDataDefinition;
-    SimConnect_RequestDataOnSimObjectType(
+    HRESULT hr = SimConnect_RequestDataOnSimObjectType(
         hSimConnect, 
         nextRequestId, 
         newDataDefinition.id, 
         radius, 
         SIMCONNECT_SIMOBJECT_TYPE(simobjectType)
     );
+
+    check(hr);
+
     return nextRequestId++;
 }
 
@@ -223,7 +237,7 @@ uint32_t SimConnectSession::SetDataOnSimObject(std::string datumName, std::strin
         unitsName.c_str()
     );
 
-    // TODO: error handling
+    check(hr);
 
     hr = SimConnect_SetDataOnSimObject(
         hSimConnect, 
@@ -235,7 +249,7 @@ uint32_t SimConnectSession::SetDataOnSimObject(std::string datumName, std::strin
         &value
     );
 
-    // TODO: error handling
+    check(hr);
 
     return nextDataDefinitionId++;
 }
@@ -269,6 +283,8 @@ uint32_t SimConnectSession::SetAircraftInitialPosition(
         SIMCONNECT_DATATYPE_INITPOSITION
     );
 
+    check(hr);
+
     hr = SimConnect_SetDataOnSimObject(
         hSimConnect, 
         nextDataDefinitionId,
@@ -278,6 +294,8 @@ uint32_t SimConnectSession::SetAircraftInitialPosition(
         sizeof(init), 
         &init
     );
+
+    check(hr);
 
     nextDataDefinitionId++;
 
@@ -353,6 +371,8 @@ SimobjectDataBatch* SimConnectSession::GetSimObjectData(SIMCONNECT_RECV *pData, 
 
             HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
             
+            check(hr);
+
             output[datumName] = std::make_pair(
                 DatumType::Str, 
                 new std::string(NT_ERROR(hr) ? "ERROR" : pOutString)
@@ -381,13 +401,15 @@ DataBatchDefinition SimConnectSession::GenerateDataDefinition(std::vector<DatumR
         const char* datumName = datumRequest.datumName.c_str();
         const char* unitsName = datumRequest.unitName.c_str();
 
-        SimConnect_AddToDataDefinition(
+        HRESULT hr = SimConnect_AddToDataDefinition(
             hSimConnect, 
             nextDataDefinitionId, 
             datumName, 
             unitsName,
             SIMCONNECT_DATATYPE(datumRequest.datumType)
         );
+
+        check(hr);
 
         requestedDatumNames.push_back(datumName);
         requestedDatumTypes.push_back(SIMCONNECT_DATATYPE(datumRequest.datumType));
@@ -399,4 +421,21 @@ DataBatchDefinition SimConnectSession::GenerateDataDefinition(std::vector<DatumR
         requestedDatumNames, 
         requestedDatumTypes 
     };
+}
+
+bool SimConnectSession::Close() {
+    HRESULT hr = SimConnect_Close(hSimConnect);
+    check(hr);
+    return SUCCEEDED(hr);
+}
+
+void SimConnectSession::HandleError(const std::string& name, NTSTATUS code) {
+	char errorCode[32];
+	sprintf(errorCode, "0x%08X", code);     // Typically 0xC000014B, 0xC000020D or 0xC000013C
+    std::stringstream errorMessage;
+    errorMessage << "An error occured in " << name << ", NTSTATUS: " << errorCode;    
+    std::cout << errorMessage.str() << std::endl;
+    if (fatalError == nullptr) {
+        fatalError = new ErrorInfo{errorCode, errorMessage.str()};
+    }
 }

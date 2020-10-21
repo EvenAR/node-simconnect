@@ -19,21 +19,23 @@ Napi::Object NodeSimconnect::Init(Napi::Env env, Napi::Object exports) {
 
 Napi::Value NodeSimconnect::Open(const Napi::CallbackInfo& info) {
     auto appName = info[0].As<Napi::String>();
-    auto callback = info[1].As<Napi::Function>();
 
-    onOpen = Napi::Persistent(callback);
-    simulator = Napi::Persistent(SimHandler::Init(info.Env()));
+    auto onOpen = info[1].As<Napi::Function>();
+    auto onQuit = info[2].As<Napi::Function>();
+    auto onException = info[3].As<Napi::Function>();
+    auto onError = info[4].As<Napi::Function>();
 
-    SimHandler* s = SimHandler::Unwrap(simulator.Value().ToObject());
+    simHandler = Napi::Persistent(SimHandler::Init(info.Env()));
 
-    s->Open(appName.Utf8Value(), &onOpen);
+    SimHandler* simHandlerInstance = SimHandler::Unwrap(simHandler.Value().ToObject());
+    bool ok = simHandlerInstance->Open(appName.Utf8Value(), onOpen, onQuit, onException, onError);
 
-    return info.Env().Undefined();
+    return Napi::Boolean::New(info.Env(), ok);
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports) {
+Napi::Object InitModule(Napi::Env env, Napi::Object exports) {
     NodeSimconnect::Init(env, exports);
     return exports;
 }
 
-NODE_API_MODULE(node_simconnect, Init);
+NODE_API_MODULE(node_simconnect, InitModule);

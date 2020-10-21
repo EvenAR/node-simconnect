@@ -11,16 +11,23 @@ DispatchQueueWorker::DispatchQueueWorker(Napi::Env env, SimConnectSession* simCo
 , eventHandler(eventHandler)
 , simConnect(simConnect)  {  }
 
-DispatchQueueWorker::~DispatchQueueWorker() { }
+DispatchQueueWorker::~DispatchQueueWorker() {
+    this->doWork = false;
+}
 
 void DispatchQueueWorker::Execute(const ExecutionProgress& progress) {
+    this->doWork = true;
+
     // This code will be executed on the worker thread
-    while (true) {
+    while (this->doWork) {
         DispatchContent nextDispatch = simConnect->NextDispatch();
         if (nextDispatch.type == DispatchContentType::Nothing) {
             Sleep(1);
         } else {
             progress.Send(&nextDispatch, 1);
+        }
+        if (nextDispatch.type == DispatchContentType::Error || nextDispatch.type == DispatchContentType::Quit) {
+            this->doWork = false;
         }
     }
 }
@@ -30,9 +37,18 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
     switch (dispatch->type) {
         case DispatchContentType::Nothing: break;
         case DispatchContentType::Error: {
+            ErrorInfo* pInfo = (ErrorInfo *)dispatch->payload;
+            this->eventHandler->onError(pInfo);
+            delete pInfo;
+        }
+        case DispatchContentType::Quit: {
+            this->eventHandler->onQuit();
+            this->doWork = false;
+        }
+        break;
+        case DispatchContentType::Exception: {
             ExceptionInfo* pEvent = (ExceptionInfo *)dispatch->payload;
             this->eventHandler->onException(pEvent);
-            std::cout << pEvent->exceptionName << std::endl;
             delete pEvent;
         }
         break;
@@ -40,10 +56,6 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
             SimInfo* pSimInfo = (SimInfo *)dispatch->payload;
             this->eventHandler->onOpen(pSimInfo);
             delete pSimInfo;
-        }
-        break;
-        case DispatchContentType::Quit: {
-            this->eventHandler->onQuit();
         }
         break;
         case DispatchContentType::EventId: {
