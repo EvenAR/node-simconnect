@@ -75,7 +75,7 @@ Napi::Value SimHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
     auto period = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
     auto flags = getOptionalElement(info, 4, Napi::Number, Napi::Number::Uint32Value, 0);
 
-    uint32_t requestId;
+    unsigned int requestId;
     if (info[0].IsNumber()) {
         auto existingDataDefinitionId = info[0].As<Napi::Number>().Uint32Value();
         requestId = simConnectSession.RequestDataOnSimObject(existingDataDefinitionId, objectId, period, flags);
@@ -166,7 +166,7 @@ void SimHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) {
 
 std::vector<DatumRequest> SimHandler::ToDatumRequests(Napi::Array requestedValues) {
     std::vector<DatumRequest> datumRequests;
-    for (uint32_t i = 0; i < requestedValues.Length(); i++) {
+    for (unsigned int i = 0; i < requestedValues.Length(); i++) {
         if(requestedValues.Get(i).IsArray()) {
             auto options = requestedValues.Get(i).As<Napi::Array>();
             datumRequests.push_back({

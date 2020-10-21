@@ -26,7 +26,7 @@ enum DatumType {
 };
 
 struct SimobjectDataBatch {
-    uint32_t id;
+    unsigned int id;
     std::map<std::string, std::pair<DatumType, void*>> values;
 };
 
@@ -36,9 +36,9 @@ struct SimInfo {
 };
 
 struct ExceptionInfo {
-    uint32_t exception;
-    uint32_t packetId;
-    uint32_t parameterIndex;
+    unsigned int exception;
+    unsigned int packetId;
+    unsigned int parameterIndex;
     std::string exceptionName;
 };
 
@@ -50,7 +50,7 @@ struct ErrorInfo {
 struct DatumRequest {
     std::string datumName;
     std::string unitName;
-    uint32_t datumType;
+    unsigned int datumType;
 };
 
 struct SimEvent {
@@ -59,8 +59,8 @@ struct SimEvent {
 };
 
 struct SimSystemState {
-    uint32_t requestId;
-    uint32_t integerValue;
+    unsigned int requestId;
+    unsigned int integerValue;
     float floatValue;
     std::string stringValue;
 };
