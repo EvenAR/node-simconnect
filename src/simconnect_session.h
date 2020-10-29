@@ -1,5 +1,5 @@
-#ifndef SIMCONNECT_HANDLER_H
-#define SIMCONNECT_HANDLER_H
+#ifndef SIMCONNECT_SESSION_H
+#define SIMCONNECT_SESSION_H
 
 #include <string>
 #include <vector>

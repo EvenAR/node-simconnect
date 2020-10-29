@@ -1,5 +1,5 @@
-#ifndef NODE_SIMCONNECT_HANDLER_H
-#define NODE_SIMCONNECT_HANDLER_H
+#ifndef SIM_HANDLER_H
+#define SIM_HANDLER_H
 
 #include <napi.h>
 #include "simconnect_session.h"

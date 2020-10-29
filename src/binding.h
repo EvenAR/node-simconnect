@@ -1,7 +1,5 @@
-#ifndef NODE_SIMCONNECT_H
-#define NODE_SIMCONNECT_H
-
-#define NAPI_VERSION 6
+#ifndef BINDING_H
+#define BINDING_H
 
 #include <napi.h>
 #include "commons.h"
