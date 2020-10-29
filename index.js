@@ -5,7 +5,7 @@ if (process.platform !== `win32`) {
 }
 try {
     // Try loading manual build first
-    nodeSimconnect = require(`./build/Release/node-simconnect`);
+    nodeSimconnect = require(`./build/Release/node_simconnect`);
     console.info(`node-simconnect: Manual build loaded`);
 } catch (ex) {
     // If it fails, load the included binary

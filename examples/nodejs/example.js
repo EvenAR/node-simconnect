@@ -1,4 +1,4 @@
-const { SimConnect } = require("../../build/Release/node_simconnect");
+const { SimConnect } = require("../..");
 
 const simConnect = new SimConnect()
 
