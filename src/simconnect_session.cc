@@ -430,12 +430,15 @@ bool SimConnectSession::Close() {
 }
 
 void SimConnectSession::HandleError(const std::string& name, NTSTATUS code) {
-	char errorCode[32];
-	sprintf(errorCode, "0x%08X", code);     // Typically 0xC000014B, 0xC000020D or 0xC000013C
-    std::stringstream errorMessage;
-    errorMessage << "An error occured in " << name << ", NTSTATUS: " << errorCode;    
-    std::cout << errorMessage.str() << std::endl;
+	char errorCodeBuffer[32];
+	sprintf(errorCodeBuffer, "0x%08X", code);     // Typically 0xC000014B, 0xC000020D or 0xC000013C
+
+    std::string errorCode(errorCodeBuffer);
+    std::string errorMessage = "An error occured in " + name + ", NTSTATUS: " + errorCode;
+    
+    std::cout << errorMessage.c_str() << std::endl;
+
     if (fatalError == nullptr) {
-        fatalError = new ErrorInfo{errorCode, errorMessage.str()};
+        fatalError = new ErrorInfo{errorCode, errorMessage};
     }
 }

@@ -15,7 +15,7 @@
             ],
             'include_dirs': [
                 "SimConnect/Inc",
-                "<!@(node -p \"require('node-addon-api').include\")",
+                "<!(node -p \"require('node-addon-api').include_dir\")",
             ],
             "link_settings": {
                 "libraries": [
