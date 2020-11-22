@@ -1,4 +1,4 @@
-#include "sim_handler.h"
+#include "client_handler.h"
 #include "dispatch_queue_worker.h"
 #include <iostream>
 
@@ -9,16 +9,16 @@
 #define getOptionalElement(array, index, type, conversion, fallback) \
     array.Length() > index ? array[index].As<type>().conversion() : fallback;
 
-SimHandler::SimHandler(const Napi::CallbackInfo& info) 
-: Napi::ObjectWrap<SimHandler>(info) {
+ClientHandler::ClientHandler(const Napi::CallbackInfo& info) 
+: Napi::ObjectWrap<ClientHandler>(info) {
     
 }
 
-SimHandler::~SimHandler() {
+ClientHandler::~ClientHandler() {
 
 }
 
-bool SimHandler::Open(
+bool ClientHandler::Open(
     const std::string& appName, 
     const Napi::Function& onOpen,
     const Napi::Function& onQuit,
@@ -42,15 +42,15 @@ bool SimHandler::Open(
     return false;
 }
 
-Napi::Object SimHandler::Init(Napi::Env env) {
-    return DefineClass(env, "SimHandler", {
-        InstanceMethod("subscribeToSystemEvent", &SimHandler::SubscribeToSystemEvent, napi_enumerable),
-        InstanceMethod("requestSystemState", &SimHandler::RequestSystemState, napi_enumerable),
-        InstanceMethod("requestDataOnSimObject", &SimHandler::RequestDataOnSimObject, napi_enumerable),
+Napi::Object ClientHandler::Init(Napi::Env env) {
+    return DefineClass(env, "ClientHandler", {
+        InstanceMethod("subscribeToSystemEvent", &ClientHandler::SubscribeToSystemEvent, napi_enumerable),
+        InstanceMethod("requestSystemState", &ClientHandler::RequestSystemState, napi_enumerable),
+        InstanceMethod("requestDataOnSimObject", &ClientHandler::RequestDataOnSimObject, napi_enumerable),
     }).New({});
 }
 
-Napi::Value SimHandler::RequestSystemState(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::RequestSystemState(const Napi::CallbackInfo& info) {
     auto stateName = info[0].As<Napi::String>();
     auto callback = info[1].As<Napi::Function>();
     
@@ -60,7 +60,7 @@ Napi::Value SimHandler::RequestSystemState(const Napi::CallbackInfo& info) {
     return info.Env().Undefined();
 };
 
-Napi::Value SimHandler::SubscribeToSystemEvent(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::SubscribeToSystemEvent(const Napi::CallbackInfo& info) {
     auto eventName = info[0].As<Napi::String>();
     auto callback = info[1].As<Napi::Function>();
     
@@ -70,7 +70,7 @@ Napi::Value SimHandler::SubscribeToSystemEvent(const Napi::CallbackInfo& info) {
     return info.Env().Undefined();
 };
 
-Napi::Value SimHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
     auto callback = info[1].As<Napi::Function>();
     auto objectId = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 1);
     auto period = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
@@ -91,7 +91,7 @@ Napi::Value SimHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
 };
 
 
-void SimHandler::onOpen(SimInfo* simInfo) {
+void ClientHandler::onOpen(SimInfo* simInfo) {
     auto object = Napi::Object::New(Env());
     object.Set("name", Napi::String::New(Env(), simInfo->name));
     object.Set("version", Napi::String::New(Env(), simInfo->version));
@@ -102,7 +102,7 @@ void SimHandler::onOpen(SimInfo* simInfo) {
     });
 }
 
-void SimHandler::onException(ExceptionInfo* exceptionInfo) {
+void ClientHandler::onException(ExceptionInfo* exceptionInfo) {
     auto obj = Napi::Object::New(Env());
     obj.Set("dwException", Napi::Number::New(Env(), exceptionInfo->exception));
     obj.Set("dwSendID", Napi::Number::New(Env(), exceptionInfo->packetId));
@@ -111,18 +111,18 @@ void SimHandler::onException(ExceptionInfo* exceptionInfo) {
     exceptionCallback.Call({obj});
 }
 
-void SimHandler::onError(ErrorInfo* errorInfo) {
+void ClientHandler::onError(ErrorInfo* errorInfo) {
     auto obj = Napi::Object::New(Env());
     obj.Set("NTSTATUS", Napi::String::New(Env(), errorInfo->code));
     obj.Set("message", Napi::String::New(Env(), errorInfo->text));
     errorCallback.Call({obj});
 }
 
-void SimHandler::onQuit() {
+void ClientHandler::onQuit() {
     quitCallback.Call({});
 }
 
-void SimHandler::onSystemState(SimSystemState* simSystemState) {
+void ClientHandler::onSystemState(SimSystemState* simSystemState) {
     auto obj = Napi::Object::New(Env());
     obj.Set("integer", Napi::Number::New(Env(), simSystemState->integerValue));
     obj.Set("float", Napi::Number::New(Env(), simSystemState->floatValue));
@@ -131,12 +131,12 @@ void SimHandler::onSystemState(SimSystemState* simSystemState) {
     systemStateCallbacks[simSystemState->requestId].Call({obj});
 }
 
-void SimHandler::onEvent(SimEvent* simEvent) {
+void ClientHandler::onEvent(SimEvent* simEvent) {
     auto value = Napi::Number::New(Env(), simEvent->value);
     systemEventCallbacks[simEvent->type].Call({value});
 }
 
-void SimHandler::onSimobjectData(SimobjectDataBatch* simobjectDataBatch) {
+void ClientHandler::onSimobjectData(SimobjectDataBatch* simobjectDataBatch) {
     auto obj = Napi::Object::New(Env());                
 
     for ( auto const& [datumName, pair] : simobjectDataBatch->values ) {
@@ -160,11 +160,11 @@ void SimHandler::onSimobjectData(SimobjectDataBatch* simobjectDataBatch) {
     dataRequestCallbacks[simobjectDataBatch->id].Call({obj});
 }
 
-void SimHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) {
+void ClientHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) {
     std::cout << "TODO: onSimobjectData 2" << std::endl;
 }
 
-std::vector<DatumRequest> SimHandler::ToDatumRequests(Napi::Array requestedValues) {
+std::vector<DatumRequest> ClientHandler::ToDatumRequests(Napi::Array requestedValues) {
     std::vector<DatumRequest> datumRequests;
     for (unsigned int i = 0; i < requestedValues.Length(); i++) {
         if(requestedValues.Get(i).IsArray()) {

@@ -7,10 +7,10 @@
 
 class DispatchQueueWorker;
 
-class SimHandler : public Napi::ObjectWrap<SimHandler>, EventHandlerInterface {
+class ClientHandler : public Napi::ObjectWrap<ClientHandler>, EventHandlerInterface {
 
     public:
-        SimHandler(const Napi::CallbackInfo& info);
+        ClientHandler(const Napi::CallbackInfo& info);
         static Napi::Object Init(Napi::Env env);
 
         bool Open(
@@ -25,7 +25,7 @@ class SimHandler : public Napi::ObjectWrap<SimHandler>, EventHandlerInterface {
         Napi::Value RequestSystemState(const Napi::CallbackInfo& info);
         Napi::Value RequestDataOnSimObject(const Napi::CallbackInfo& info);
 
-        ~SimHandler();
+        ~ClientHandler();
 
     private:
         SimConnectSession simConnectSession;

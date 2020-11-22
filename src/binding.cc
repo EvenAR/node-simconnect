@@ -1,6 +1,6 @@
 #include "binding.h"
 #include "simconnect_session.h"
-#include "sim_handler.h"
+#include "client_handler.h"
 #include <iostream>
 
 NodeSimconnect::NodeSimconnect(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NodeSimconnect>(info) { }
@@ -26,10 +26,10 @@ Napi::Value NodeSimconnect::Open(const Napi::CallbackInfo& info) {
     auto onError = info[4].As<Napi::Function>();
 
     if (!simHandler) {
-        simHandler = Napi::Persistent(SimHandler::Init(info.Env()));
+        simHandler = Napi::Persistent(ClientHandler::Init(info.Env()));
     }
 
-    SimHandler* simHandlerInstance = SimHandler::Unwrap(simHandler.Value().ToObject());
+    ClientHandler* simHandlerInstance = ClientHandler::Unwrap(simHandler.Value().ToObject());
     bool ok = simHandlerInstance->Open(appName.Utf8Value(), onOpen, onQuit, onException, onError);
 
     return Napi::Boolean::New(info.Env(), ok);
