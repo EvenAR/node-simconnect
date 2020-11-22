@@ -676,23 +676,21 @@ DataDefinition generateDataDefinition(Isolate *isolate, HANDLE hSimConnect, Loca
 				{
 					int t = value->Get(2)->Int32Value(ctx).ToChecked();
 					datumType = SIMCONNECT_DATATYPE(t);
-					double epsilon = 0;
-					float datumId = SIMCONNECT_UNUSED;
-
-					if (len > 3)
-					{
-						epsilon = value->Get(3)->Int32Value(ctx).ToChecked();
-					}
-					if (len > 4)
-					{
-						datumId = value->Get(4)->Int32Value(ctx).ToChecked();
-					}
-
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
 				}
-				else {
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName);
+
+				float epsilon = 0;
+				if (len > 3)
+				{
+				  epsilon = value->Get(3)->Int32Value(ctx).ToChecked();
 				}
+
+				DWORD datumId = SIMCONNECT_UNUSED;
+				if (len > 4)
+				{
+				  datumId = value->Get(4)->Int32Value(ctx).ToChecked();
+				}
+
+				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
 
 				if (NT_ERROR(hr))
 				{
