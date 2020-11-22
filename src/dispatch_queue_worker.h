@@ -18,8 +18,6 @@ public:
 private:
     EventHandlerInterface* eventHandler;
     SimConnectSession* simConnect;
-
-    bool doWork;
 };
 
 #endif

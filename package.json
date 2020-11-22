@@ -4,7 +4,7 @@
   "description": "Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)",
   "main": "index.js",
   "scripts": {
-    "rebuild": "node-gyp configure rebuild --msvs_version=2017 --arch=ia32",
+    "rebuild": "node-gyp configure rebuild --msvs_version=2019 --arch=ia32",
     "rebuild:dev": "npm run rebuild -- --debug"
   },
   "author": "",

@@ -15,7 +15,7 @@ SimHandler::SimHandler(const Napi::CallbackInfo& info)
 }
 
 SimHandler::~SimHandler() {
-    delete this->dispatchQueueWorker;
+
 }
 
 bool SimHandler::Open(
@@ -25,14 +25,15 @@ bool SimHandler::Open(
     const Napi::Function& onException,
     const Napi::Function& onError
 ) {
-    openCallback = Napi::Persistent(onOpen);
-    quitCallback = Napi::Persistent(onQuit);
-    exceptionCallback = Napi::Persistent(onException);
-    errorCallback = Napi::Persistent(onError);
-
     if (simConnectSession.Open(appName)) {
+        openCallback = Napi::Persistent(onOpen);
+        quitCallback = Napi::Persistent(onQuit);
+        exceptionCallback = Napi::Persistent(onException);
+        errorCallback = Napi::Persistent(onError);
+
         dispatchQueueWorker = new DispatchQueueWorker(Env(), &simConnectSession, this);
         dispatchQueueWorker->Queue();
+
         return true;
     } 
     errorCallback.Call({
@@ -118,7 +119,6 @@ void SimHandler::onError(ErrorInfo* errorInfo) {
 }
 
 void SimHandler::onQuit() {
-    delete dispatchQueueWorker;
     quitCallback.Call({});
 }
 

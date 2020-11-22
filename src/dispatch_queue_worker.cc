@@ -12,14 +12,11 @@ DispatchQueueWorker::DispatchQueueWorker(Napi::Env env, SimConnectSession* simCo
 , simConnect(simConnect)  {  }
 
 DispatchQueueWorker::~DispatchQueueWorker() {
-    this->doWork = false;
 }
 
 void DispatchQueueWorker::Execute(const ExecutionProgress& progress) {
-    this->doWork = true;
-
     // This code will be executed on the worker thread
-    while (this->doWork) {
+    while (true) {
         DispatchContent nextDispatch = simConnect->NextDispatch();
         if (nextDispatch.type == DispatchContentType::Nothing) {
             Sleep(1);
@@ -27,7 +24,7 @@ void DispatchQueueWorker::Execute(const ExecutionProgress& progress) {
             progress.Send(&nextDispatch, 1);
         }
         if (nextDispatch.type == DispatchContentType::Error || nextDispatch.type == DispatchContentType::Quit) {
-            this->doWork = false;
+            break;  // This will make this worker destroy itself
         }
     }
 }
@@ -41,9 +38,9 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
             this->eventHandler->onError(pInfo);
             delete pInfo;
         }
+        break;
         case DispatchContentType::Quit: {
             this->eventHandler->onQuit();
-            this->doWork = false;
         }
         break;
         case DispatchContentType::Exception: {

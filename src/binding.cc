@@ -25,7 +25,9 @@ Napi::Value NodeSimconnect::Open(const Napi::CallbackInfo& info) {
     auto onException = info[3].As<Napi::Function>();
     auto onError = info[4].As<Napi::Function>();
 
-    simHandler = Napi::Persistent(SimHandler::Init(info.Env()));
+    if (!simHandler) {
+        simHandler = Napi::Persistent(SimHandler::Init(info.Env()));
+    }
 
     SimHandler* simHandlerInstance = SimHandler::Unwrap(simHandler.Value().ToObject());
     bool ok = simHandlerInstance->Open(appName.Utf8Value(), onOpen, onQuit, onException, onError);
