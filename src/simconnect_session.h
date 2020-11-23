@@ -15,17 +15,17 @@ class SimConnectSession {
 
 public:
     SimConnectSession();
-    bool Open(const std::string& appName);
+    bool open(const std::string& appName);
     bool Close();
 
     DispatchContent NextDispatch();
 
-    unsigned int SubscribeToSystemEvent(const std::string& eventName);
-    unsigned int RequestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
-    unsigned int RequestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags);
-    unsigned int RequestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType);
-    unsigned int SetDataOnSimObject(std::string datumName, std::string unitsName, double value);
-    unsigned int SetAircraftInitialPosition(
+    unsigned int subscribeToSystemEvent(const std::string& eventName);
+    unsigned int requestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
+    unsigned int requestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags);
+    unsigned int requestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType);
+    unsigned int setDataOnSimObject(std::string datumName, std::string unitsName, double value);
+    unsigned int setAircraftInitialPosition(
         double lat,
         double lng,
         double altitude,
@@ -35,26 +35,24 @@ public:
         bool onGround,
         unsigned long airspeed
     );
-    unsigned int RequestSystemState(std::string stateName);
-    unsigned int FlightLoad(std::string fileName);
-    unsigned int TransmitClientEvent(std::string eventName, unsigned int objectId, int data);
-    unsigned int CreateDataDefinition(std::vector<DatumRequest> datumRequests);
-
-    void ErrorReported();
+    unsigned int requestSystemState(std::string stateName);
+    unsigned int flightLoad(std::string fileName);
+    unsigned int transmitClientEvent(std::string eventName, unsigned int objectId, int data);
+    unsigned int createDataDefinition(std::vector<DatumRequest> datumRequests);
    
 private:
     HANDLE hSimConnect;
     ErrorInfo* fatalError;
 
-    DispatchContent Process(SIMCONNECT_RECV* pData, DWORD cbData);
-    void HandleError(const std::string& name, NTSTATUS code);
+    DispatchContent process(SIMCONNECT_RECV* pData, DWORD cbData);
+    void handleError(const std::string& name, NTSTATUS code);
 
-    ExceptionInfo* GetExceptionInfo(SIMCONNECT_RECV *pData);
-    SimEvent* GetEvent(SIMCONNECT_RECV *pData);
-    SimInfo* GetSimInfo(SIMCONNECT_RECV *pData);
-    SimSystemState* GetSystemState(SIMCONNECT_RECV *pData);
-    SimobjectDataBatch* GetSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData);
-    DataBatchDefinition GenerateDataDefinition(std::vector<DatumRequest> datumRequests);
+    ExceptionInfo* getExceptionInfo(SIMCONNECT_RECV *pData);
+    SimEvent* getEvent(SIMCONNECT_RECV *pData);
+    SimInfo* getSimInfo(SIMCONNECT_RECV *pData);
+    SimSystemState* getSystemState(SIMCONNECT_RECV *pData);
+    SimobjectDataBatch* getSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData);
+    DataBatchDefinition generateDataDefinition(std::vector<DatumRequest> datumRequests);
 };
 
 

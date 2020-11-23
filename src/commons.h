@@ -8,7 +8,7 @@ enum DispatchContentType {
     Exception,
     Error,
     Unkn,
-    Open,
+    open,
     Quit,
     EventId,
     SimobjectData,

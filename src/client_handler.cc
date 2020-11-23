@@ -18,14 +18,14 @@ ClientHandler::~ClientHandler() {
 
 }
 
-bool ClientHandler::Open(
+bool ClientHandler::open(
     const std::string& appName, 
     const Napi::Function& onOpen,
     const Napi::Function& onQuit,
     const Napi::Function& onException,
     const Napi::Function& onError
 ) {
-    if (simConnectSession.Open(appName)) {
+    if (simConnectSession.open(appName)) {
         openCallback = Napi::Persistent(onOpen);
         quitCallback = Napi::Persistent(onQuit);
         exceptionCallback = Napi::Persistent(onException);
@@ -42,35 +42,35 @@ bool ClientHandler::Open(
     return false;
 }
 
-Napi::Object ClientHandler::Init(Napi::Env env) {
+Napi::Object ClientHandler::init(Napi::Env env) {
     return DefineClass(env, "ClientHandler", {
-        InstanceMethod("subscribeToSystemEvent", &ClientHandler::SubscribeToSystemEvent, napi_enumerable),
-        InstanceMethod("requestSystemState", &ClientHandler::RequestSystemState, napi_enumerable),
-        InstanceMethod("requestDataOnSimObject", &ClientHandler::RequestDataOnSimObject, napi_enumerable),
+        InstanceMethod("subscribeToSystemEvent", &ClientHandler::subscribeToSystemEvent, napi_enumerable),
+        InstanceMethod("requestSystemState", &ClientHandler::requestSystemState, napi_enumerable),
+        InstanceMethod("requestDataOnSimObject", &ClientHandler::requestDataOnSimObject, napi_enumerable),
     }).New({});
 }
 
-Napi::Value ClientHandler::RequestSystemState(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::requestSystemState(const Napi::CallbackInfo& info) {
     auto stateName = info[0].As<Napi::String>();
     auto callback = info[1].As<Napi::Function>();
     
-    auto requestId = simConnectSession.RequestSystemState(stateName.Utf8Value());
+    auto requestId = simConnectSession.requestSystemState(stateName.Utf8Value());
     systemStateCallbacks[requestId] = Persistent(callback);
 
     return info.Env().Undefined();
 };
 
-Napi::Value ClientHandler::SubscribeToSystemEvent(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::subscribeToSystemEvent(const Napi::CallbackInfo& info) {
     auto eventName = info[0].As<Napi::String>();
     auto callback = info[1].As<Napi::Function>();
     
-    auto eventId = simConnectSession.SubscribeToSystemEvent(eventName.Utf8Value());
+    auto eventId = simConnectSession.subscribeToSystemEvent(eventName.Utf8Value());
     systemEventCallbacks[eventId] = Persistent(callback);
 
     return info.Env().Undefined();
 };
 
-Napi::Value ClientHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info) {
+Napi::Value ClientHandler::requestDataOnSimObject(const Napi::CallbackInfo& info) {
     auto callback = info[1].As<Napi::Function>();
     auto objectId = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 1);
     auto period = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
@@ -79,10 +79,10 @@ Napi::Value ClientHandler::RequestDataOnSimObject(const Napi::CallbackInfo& info
     unsigned int requestId;
     if (info[0].IsNumber()) {
         auto existingDataDefinitionId = info[0].As<Napi::Number>().Uint32Value();
-        requestId = simConnectSession.RequestDataOnSimObject(existingDataDefinitionId, objectId, period, flags);
+        requestId = simConnectSession.requestDataOnSimObject(existingDataDefinitionId, objectId, period, flags);
     } else {
         auto requestedValues = info[0].As<Napi::Array>();
-        requestId = simConnectSession.RequestDataOnSimObject(ToDatumRequests(requestedValues), objectId, period, flags);
+        requestId = simConnectSession.requestDataOnSimObject(toDatumRequests(requestedValues), objectId, period, flags);
     }
     
     dataRequestCallbacks[requestId] = Persistent(callback);
@@ -164,7 +164,7 @@ void ClientHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) 
     std::cout << "TODO: onSimobjectData 2" << std::endl;
 }
 
-std::vector<DatumRequest> ClientHandler::ToDatumRequests(Napi::Array requestedValues) {
+std::vector<DatumRequest> ClientHandler::toDatumRequests(Napi::Array requestedValues) {
     std::vector<DatumRequest> datumRequests;
     for (unsigned int i = 0; i < requestedValues.Length(); i++) {
         if(requestedValues.Get(i).IsArray()) {

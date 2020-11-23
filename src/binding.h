@@ -9,10 +9,10 @@ class DispatchProgressWorker;
 class NodeSimconnect : public Napi::ObjectWrap<NodeSimconnect> {
     public:
         NodeSimconnect(const Napi::CallbackInfo& info);
-        static Napi::Object Init(Napi::Env env, Napi::Object exports);
+        static Napi::Object init(Napi::Env env, Napi::Object exports);
     private:
         Napi::ObjectReference simHandler;
-        Napi::Value Open(const Napi::CallbackInfo& info);
+        Napi::Value open(const Napi::CallbackInfo& info);
 };
 
 #endif

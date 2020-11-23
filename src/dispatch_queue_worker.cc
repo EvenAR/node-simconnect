@@ -49,7 +49,7 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
             delete pEvent;
         }
         break;
-        case DispatchContentType::Open: {
+        case DispatchContentType::open: {
             SimInfo* pSimInfo = (SimInfo *)dispatch->payload;
             this->eventHandler->onOpen(pSimInfo);
             delete pSimInfo;
