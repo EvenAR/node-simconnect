@@ -16,15 +16,20 @@ class SimConnectSession {
 public:
     SimConnectSession();
     bool open(const std::string& appName);
-    bool Close();
+    bool close();
 
     DispatchContent NextDispatch();
 
     unsigned int subscribeToSystemEvent(const std::string& eventName);
-    unsigned int requestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
+
     unsigned int requestDataOnSimObject(std::vector<DatumRequest> datumRequests, unsigned int objectId, unsigned int period, unsigned int flags);
+    unsigned int requestDataOnSimObject(unsigned int existingDataDefinitionId, unsigned int objectId, unsigned int period, unsigned int flags);
+
     unsigned int requestDataOnSimObjectType(std::vector<DatumRequest> datumRequests, unsigned int radius, unsigned int simobjectType);
+    unsigned int requestDataOnSimObjectType(unsigned int existingDataDefinitionId, unsigned int radius, unsigned int simobjectType);
+
     unsigned int setDataOnSimObject(std::string datumName, std::string unitsName, double value);
+
     unsigned int setAircraftInitialPosition(
         double lat,
         double lng,

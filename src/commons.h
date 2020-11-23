@@ -1,6 +1,7 @@
 #ifndef COMMONS_H
 #define COMMONS_H
 #include <string>
+#include <optional>
 #include <map>
 
 enum DispatchContentType {
@@ -49,8 +50,8 @@ struct ErrorInfo {
 
 struct DatumRequest {
     std::string datumName;
-    std::string unitName;
-    unsigned int datumType;
+    std::optional<std::string> unitName;
+    std::optional<unsigned int> datumType;
 };
 
 struct SimEvent {

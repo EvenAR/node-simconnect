@@ -1,6 +1,7 @@
 #include "client_handler.h"
 #include "dispatch_queue_worker.h"
 #include <iostream>
+#include <optional>
 
 // Napi utils
 #define getOptionalProp(object, name, type, conversion, fallback) \
@@ -16,6 +17,18 @@ ClientHandler::ClientHandler(const Napi::CallbackInfo& info)
 
 ClientHandler::~ClientHandler() {
 
+}
+
+Napi::Object ClientHandler::init(Napi::Env env) {
+    return DefineClass(env, "ClientHandler", {
+        InstanceMethod("requestDataOnSimObject", &ClientHandler::requestDataOnSimObject, napi_enumerable),
+        InstanceMethod("requestDataOnSimObjectType", &ClientHandler::requestDataOnSimObjectType, napi_enumerable),
+        InstanceMethod("createDataDefinition", &ClientHandler::createDataDefinition, napi_enumerable),
+        InstanceMethod("setDataOnSimObject", &ClientHandler::setDataOnSimObject, napi_enumerable),
+        InstanceMethod("subscribeToSystemEvent", &ClientHandler::subscribeToSystemEvent, napi_enumerable),
+        InstanceMethod("requestSystemState", &ClientHandler::requestSystemState, napi_enumerable),
+        InstanceMethod("close", &ClientHandler::close, napi_enumerable),
+    }).New({});
 }
 
 bool ClientHandler::open(
@@ -42,14 +55,6 @@ bool ClientHandler::open(
     return false;
 }
 
-Napi::Object ClientHandler::init(Napi::Env env) {
-    return DefineClass(env, "ClientHandler", {
-        InstanceMethod("subscribeToSystemEvent", &ClientHandler::subscribeToSystemEvent, napi_enumerable),
-        InstanceMethod("requestSystemState", &ClientHandler::requestSystemState, napi_enumerable),
-        InstanceMethod("requestDataOnSimObject", &ClientHandler::requestDataOnSimObject, napi_enumerable),
-    }).New({});
-}
-
 Napi::Value ClientHandler::requestSystemState(const Napi::CallbackInfo& info) {
     auto stateName = info[0].As<Napi::String>();
     auto callback = info[1].As<Napi::Function>();
@@ -68,7 +73,7 @@ Napi::Value ClientHandler::subscribeToSystemEvent(const Napi::CallbackInfo& info
     systemEventCallbacks[eventId] = Persistent(callback);
 
     return info.Env().Undefined();
-};
+}
 
 Napi::Value ClientHandler::requestDataOnSimObject(const Napi::CallbackInfo& info) {
     auto callback = info[1].As<Napi::Function>();
@@ -88,8 +93,49 @@ Napi::Value ClientHandler::requestDataOnSimObject(const Napi::CallbackInfo& info
     dataRequestCallbacks[requestId] = Persistent(callback);
 
     return info.Env().Undefined();
+}
+
+Napi::Value ClientHandler::createDataDefinition(const Napi::CallbackInfo& info) {
+    auto requestedValues = info[0].As<Napi::Array>();
+    auto definitionId = simConnectSession.createDataDefinition(toDatumRequests(requestedValues));
+
+    return Napi::Number::New(info.Env(), definitionId);
 };
 
+Napi::Value ClientHandler::requestDataOnSimObjectType(const Napi::CallbackInfo& info) {
+    auto callback = info[1].As<Napi::Function>();
+    auto radius = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 0);
+    auto type = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
+
+    unsigned int requestId;
+    if (info[0].IsNumber()) {
+        auto existingDataDefinitionId = info[0].As<Napi::Number>().Uint32Value();
+        requestId = simConnectSession.requestDataOnSimObjectType(existingDataDefinitionId, radius, type);
+    } else {
+        auto requestedValues = info[0].As<Napi::Array>();
+        requestId = simConnectSession.requestDataOnSimObjectType(toDatumRequests(requestedValues), radius, type);
+    }
+
+    dataRequestCallbacks[requestId] = Persistent(callback);
+
+    return info.Env().Undefined();
+};
+
+Napi::Value ClientHandler::setDataOnSimObject(const Napi::CallbackInfo& info) {
+    auto datumName = info[0].As<Napi::String>();
+    auto unitName = info[1].As<Napi::String>();
+    auto value = info[2].As<Napi::Number>().DoubleValue();
+
+    simConnectSession.setDataOnSimObject(datumName, unitName, value);
+
+    return info.Env().Undefined();
+};
+
+Napi::Value ClientHandler::close(const Napi::CallbackInfo& info) {
+    auto success = simConnectSession.close();
+
+    return Napi::Boolean::New(info.Env(), success);
+};
 
 void ClientHandler::onOpen(SimInfo* simInfo) {
     auto object = Napi::Object::New(Env());
@@ -167,12 +213,17 @@ void ClientHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) 
 std::vector<DatumRequest> ClientHandler::toDatumRequests(Napi::Array requestedValues) {
     std::vector<DatumRequest> datumRequests;
     for (unsigned int i = 0; i < requestedValues.Length(); i++) {
-        if(requestedValues.Get(i).IsArray()) {
-            auto options = requestedValues.Get(i).As<Napi::Array>();
+        auto element = requestedValues.Get(i);
+        if(element.IsArray()) {
+            auto options = element.As<Napi::Array>();
+            auto datumName = options.Get("0").As<Napi::String>().Utf8Value();
+            auto unitName = options.Get("1").IsNull() ? std::nullopt : std::optional<std::string>{ options.Get("1").As<Napi::String>().Utf8Value() };
+            auto dataType = options.Get("2").IsUndefined() ? std::nullopt : std::optional<unsigned int>{ options.Get("2").As<Napi::Number>().Uint32Value() }; 
+
             datumRequests.push_back({
-                options.Get("0").As<Napi::String>().Utf8Value(),                      // Name
-                options.Get("1").As<Napi::String>().Utf8Value(),                      // Unit name
-                getOptionalProp(options, "2", Napi::Number, Napi::Number::Uint32Value, 4)   // Type (4 = SIMCONNECT_DATATYPE_FLOAT64)
+                datumName,
+                unitName,
+                dataType
             });
         }
     }

@@ -170,7 +170,7 @@ unsigned int SimConnectSession::transmitClientEvent(std::string eventName, unsig
 }
 
 unsigned int SimConnectSession::createDataDefinition(std::vector<DatumRequest> datumRequests) {
-    DataBatchDefinition newDefinition = this->generateDataDefinition(datumRequests);
+    DataBatchDefinition newDefinition = generateDataDefinition(datumRequests);
     dataDefinitions[newDefinition.id] = newDefinition;
     return newDefinition.id;
 }
@@ -228,8 +228,22 @@ unsigned int SimConnectSession::requestDataOnSimObjectType(std::vector<DatumRequ
     return nextRequestId++;
 }
 
-unsigned int SimConnectSession::setDataOnSimObject(std::string datumName, std::string unitsName, double value) {
 
+unsigned int SimConnectSession::requestDataOnSimObjectType(unsigned int existingDataDefinitionId, unsigned int radius, unsigned int simobjectType) {
+    HRESULT hr = SimConnect_RequestDataOnSimObjectType(
+        hSimConnect,
+        nextRequestId,
+        dataDefinitions[existingDataDefinitionId].id,
+        radius,
+        SIMCONNECT_SIMOBJECT_TYPE(simobjectType)
+    );
+
+    check(hr);
+
+    return nextRequestId++;
+}
+
+unsigned int SimConnectSession::setDataOnSimObject(std::string datumName, std::string unitsName, double value) {
     HRESULT hr = SimConnect_AddToDataDefinition(
         hSimConnect, 
         nextDataDefinitionId, 
@@ -398,21 +412,22 @@ DataBatchDefinition SimConnectSession::generateDataDefinition(std::vector<DatumR
     std::vector<SIMCONNECT_DATATYPE> requestedDatumTypes;
 
     for (auto &datumRequest : datumRequests) {
-        const char* datumName = datumRequest.datumName.c_str();
-        const char* unitsName = datumRequest.unitName.c_str();
+        auto datumName = datumRequest.datumName.c_str();
+        auto unitsName = datumRequest.unitName.has_value() ? datumRequest.unitName.value().c_str() : nullptr;
+        auto datumType = SIMCONNECT_DATATYPE(datumRequest.datumType.value_or(SIMCONNECT_DATATYPE_FLOAT64));
 
         HRESULT hr = SimConnect_AddToDataDefinition(
             hSimConnect, 
             nextDataDefinitionId, 
             datumName, 
             unitsName,
-            SIMCONNECT_DATATYPE(datumRequest.datumType)
+            datumType
         );
 
         check(hr);
 
         requestedDatumNames.push_back(datumName);
-        requestedDatumTypes.push_back(SIMCONNECT_DATATYPE(datumRequest.datumType));
+        requestedDatumTypes.push_back(datumType);
     }
     
     return { 
@@ -423,7 +438,7 @@ DataBatchDefinition SimConnectSession::generateDataDefinition(std::vector<DatumR
     };
 }
 
-bool SimConnectSession::Close() {
+bool SimConnectSession::close() {
     HRESULT hr = SimConnect_Close(hSimConnect);
     check(hr);
     return SUCCEEDED(hr);

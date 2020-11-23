@@ -21,9 +21,13 @@ class ClientHandler : public Napi::ObjectWrap<ClientHandler>, EventHandlerInterf
             const Napi::Function& onError
         );
 
-        Napi::Value subscribeToSystemEvent(const Napi::CallbackInfo& info);
         Napi::Value requestSystemState(const Napi::CallbackInfo& info);
         Napi::Value requestDataOnSimObject(const Napi::CallbackInfo& info);
+        Napi::Value createDataDefinition(const Napi::CallbackInfo& info);
+        Napi::Value requestDataOnSimObjectType(const Napi::CallbackInfo& info);
+        Napi::Value setDataOnSimObject(const Napi::CallbackInfo& info);
+        Napi::Value subscribeToSystemEvent(const Napi::CallbackInfo& info);
+        Napi::Value close(const Napi::CallbackInfo& info);
 
         ~ClientHandler();
 
@@ -39,7 +43,7 @@ class ClientHandler : public Napi::ObjectWrap<ClientHandler>, EventHandlerInterf
         std::unordered_map<int32_t, Napi::FunctionReference> systemEventCallbacks;
         std::unordered_map<int32_t, Napi::FunctionReference> dataRequestCallbacks;
 
-        DispatchQueueWorker* dispatchQueueWorker;
+        DispatchQueueWorker* dispatchQueueWorker = nullptr;
         std::vector<DatumRequest> toDatumRequests(Napi::Array requestedValues);
 
         // Required functions defined EventHandlerInterface
