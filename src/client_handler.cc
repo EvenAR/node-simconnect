@@ -138,14 +138,12 @@ Napi::Value ClientHandler::close(const Napi::CallbackInfo& info) {
 };
 
 void ClientHandler::onOpen(SimInfo* simInfo) {
-    auto object = Napi::Object::New(Env());
-    object.Set("name", Napi::String::New(Env(), simInfo->name));
-    object.Set("version", Napi::String::New(Env(), simInfo->version));
+    auto clientHandlerObject = Value();
 
-    openCallback.Call({
-        object,
-        Value()
-    });
+    clientHandlerObject.Set("name", Napi::String::New(Env(), simInfo->name));
+    clientHandlerObject.Set("version", Napi::String::New(Env(), simInfo->version));
+
+    openCallback.Call({ clientHandlerObject });
 }
 
 void ClientHandler::onException(ExceptionInfo* exceptionInfo) {
