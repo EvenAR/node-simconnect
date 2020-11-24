@@ -363,8 +363,8 @@ ExceptionInfo* SimConnectSession::getExceptionInfo(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-SimobjectDataBatch* SimConnectSession::getSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData) {
-    SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pData;
+SimobjectDataBatch* SimConnectSession::getSimObjectData(SIMCONNECT_RECV * pSimData, DWORD cbData) {
+    SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pSimData;
     DataBatchDefinition batch = dataDefinitions[pObjData->dwDefineID];
 
     std::vector<SIMCONNECT_DATATYPE> datumTypes = batch.datum_types;
@@ -377,26 +377,23 @@ SimobjectDataBatch* SimConnectSession::getSimObjectData(SIMCONNECT_RECV *pData, 
         unsigned int datumSize = 0;
         std::string datumName = datumNames.at(i);
         SIMCONNECT_DATATYPE datumType = datumTypes.at(i);
+        char* pData = (char*)(&pObjData->dwData) + dataValueOffset;
 
         if (datumType == SIMCONNECT_DATATYPE_STRINGV) {
 			DWORD cbString;
 			char *pOutString;
-			char *pStringv = ((char *)(&pObjData->dwData));
 
-            HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
-            
-            check(hr);
+            HRESULT hr = SimConnect_RetrieveString(pSimData, cbData, reinterpret_cast<BYTE*>(pData), &pOutString, &cbString);
 
             output[datumName] = std::make_pair(
-                DatumType::Str, 
-                new std::string(NT_ERROR(hr) ? "ERROR" : pOutString)
+                DatumType::Str,
+                new std::string(SUCCEEDED(hr) ? pOutString : "")
             );
 
 			datumSize = cbString;
         } else {
 			datumSize = sizeMap[datumType];
-			char *p = ((char *)(&pObjData->dwData) + dataValueOffset);
-			double *var = (double *)p;
+			double *var = (double *)pData;
             output[datumName] = std::make_pair(DatumType::Num, var);
 		}
 		dataValueOffset += datumSize;
