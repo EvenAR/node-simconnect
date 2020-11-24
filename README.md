@@ -190,6 +190,20 @@ To use `node-simconnect` with Electron or NW.JS, the package must be built speci
   
   (where `--target` is the version of NW.JS).
 
+## Development
+
+1. Install [Microsoft Visual Studio 2019](https://visualstudio.microsoft.com/) (Community Edition is sufficient)
+1. Run `npm run rebuild:debug`
+1. Open `build\binding.sln` 
+
+### Debugging with Microsoft Visual Studio
+
+1. In the Solution Explorer right click on **node_simconnect** and select **Properties**
+1. Select **Configuration: Debug** 
+1. Open the **Debugging** page and set the following properties:
+   * **Command**: `$(ProgramFiles)\nodejs\node.exe`
+   * **Command Arguments**: `$(ProjectDir)..\examples\nodejs\example.js`
+
 ## Licence
 [MIT](https://opensource.org/licenses/MIT)
 

@@ -4,9 +4,6 @@
 #include <optional>
 
 // Napi utils
-#define getOptionalProp(object, name, type, conversion, fallback) \
-    object.Has(name) ? object.Get(name).As<type>().conversion() : fallback
-
 #define getOptionalElement(array, index, type, conversion, fallback) \
     array.Length() > index ? array[index].As<type>().conversion() : fallback;
 
@@ -76,17 +73,20 @@ Napi::Value ClientHandler::subscribeToSystemEvent(const Napi::CallbackInfo& info
 }
 
 Napi::Value ClientHandler::requestDataOnSimObject(const Napi::CallbackInfo& info) {
-    auto callback = info[1].As<Napi::Function>();
-    auto objectId = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 1);
-    auto period = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
-    auto flags = getOptionalElement(info, 4, Napi::Number, Napi::Number::Uint32Value, 0);
+    auto request = info[0];
+    auto options = info[1].As<Napi::Object>();
+    auto callback = info[2].As<Napi::Function>();
+
+    auto objectId = options.Get("objectId").As<Napi::Number>().Uint32Value();
+    auto period = options.Get("period").As<Napi::Number>().Uint32Value();
+    auto flags = options.Get("flags").As<Napi::Number>().Uint32Value();
 
     unsigned int requestId;
-    if (info[0].IsNumber()) {
-        auto existingDataDefinitionId = info[0].As<Napi::Number>().Uint32Value();
+    if (request.IsNumber()) {
+        auto existingDataDefinitionId = request.As<Napi::Number>().Uint32Value();
         requestId = simConnectSession.requestDataOnSimObject(existingDataDefinitionId, objectId, period, flags);
     } else {
-        auto requestedValues = info[0].As<Napi::Array>();
+        auto requestedValues = request.As<Napi::Array>();
         requestId = simConnectSession.requestDataOnSimObject(toDatumRequests(requestedValues), objectId, period, flags);
     }
     
@@ -103,16 +103,19 @@ Napi::Value ClientHandler::createDataDefinition(const Napi::CallbackInfo& info) 
 };
 
 Napi::Value ClientHandler::requestDataOnSimObjectType(const Napi::CallbackInfo& info) {
-    auto callback = info[1].As<Napi::Function>();
-    auto radius = getOptionalElement(info, 2, Napi::Number, Napi::Number::Uint32Value, 0);
-    auto type = getOptionalElement(info, 3, Napi::Number, Napi::Number::Uint32Value, 0);
+    auto request = info[0];
+    auto options = info[1].As<Napi::Object>();
+    auto callback = info[2].As<Napi::Function>();
+        
+    auto radius = options.Get("radius").As<Napi::Number>().Uint32Value();
+    auto type = options.Get("type").As<Napi::Number>().Uint32Value();
 
     unsigned int requestId;
-    if (info[0].IsNumber()) {
-        auto existingDataDefinitionId = info[0].As<Napi::Number>().Uint32Value();
+    if (request.IsNumber()) {
+        auto existingDataDefinitionId = request.As<Napi::Number>().Uint32Value();
         requestId = simConnectSession.requestDataOnSimObjectType(existingDataDefinitionId, radius, type);
     } else {
-        auto requestedValues = info[0].As<Napi::Array>();
+        auto requestedValues = request.As<Napi::Array>();
         requestId = simConnectSession.requestDataOnSimObjectType(toDatumRequests(requestedValues), radius, type);
     }
 

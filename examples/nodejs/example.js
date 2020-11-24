@@ -14,33 +14,49 @@ function tryToConnect() {
     )
     if (!ok) {
         setTimeout(() => {
+            console.log("Failed to connect. Retrying...")
             tryToConnect();
         }, 5000);
     }
 }
 
-function onOpen(simInfo, simulator) {
-    console.log(simInfo);
+function onOpen(simulator) {
+    console.log(simulator.name, simulator.version);
             
     simulator.subscribeToSystemEvent("Pause", value => {
-        console.log("PAUSE", value)
+        console.log("Pause status:", value)
     })
 
     simulator.requestSystemState("AircraftLoaded", function(obj) {
-        console.log(obj);
+        console.log("Loaded aircraft:", obj.string);
     });
 
-    simulator.requestDataOnSimObject([
+    const navInfoDefId = simulator.createDataDefinition([
+        ["ATC FLIGHT NUMBER", null, 11], // SIMCONNECT_DATATYPE_STRINGV
+        ["NAV NAME:1", null, 11], // SIMCONNECT_DATATYPE_STRINGV
         ["Plane Latitude", "degrees"],
-        ["Plane Longitude", "degrees"],  
-        ["PLANE ALTITUDE", "feet"]
-    ], (data) => {
-        console.log(
-            "Latitude:  " + data["Plane Latitude"] + "\n" +
-            "Longitude: " + data["Plane Longitude"] + "\n" +
-            "Altitude:  " + data["PLANE ALTITUDE"] + " feet"
-        );
-    }, 0, 4);
+        ["Plane Longitude", "degrees"],
+    ]);
+    
+    simulator.requestDataOnSimObject(navInfoDefId, {
+        period: 1, // SIMCONNECT_PERIOD_ONCE
+        objectId: 0, // SIMCONNECT_OBJECT_ID_USER
+        flags: 0, // SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT
+    }, (data) => {
+        console.log(data)
+    });
+
+    simulator.requestDataOnSimObjectType([
+        ["ATC MODEL", null, 11], // SIMCONNECT_DATATYPE_STRINGV
+        ["Plane Latitude", "degrees"],
+        ["Plane Longitude", "degrees"]
+    ], { 
+        radius: 10000, 
+        type: 2 // SIMCONNECT_SIMOBJECT_TYPE_AIRCRAFT
+    }, (data) => {
+        // Called for each aircraft
+        console.log(data);
+    });
 }
 
 function onQuit() {
