@@ -176,10 +176,9 @@ void messageReceiver(uv_async_t *handle)
 }
 
 // Handles data requested with requestDataOnSimObject or requestDataOnSimObjectType
-void handleReceived_Data(Isolate *isolate, SIMCONNECT_RECV *pData, DWORD cbData)
+void handleReceived_Data(Isolate *isolate, SIMCONNECT_RECV *pSimData, DWORD cbData)
 {
-
-	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pData;
+	SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pSimData;
 	int numVars = dataDefinitions[pObjData->dwDefineID].num_values;
 	std::vector<SIMCONNECT_DATATYPE> valTypes = dataDefinitions[pObjData->dwDefineID].datum_types;
 	std::vector<std::string> valIds = dataDefinitions[pObjData->dwDefineID].datum_names;
@@ -190,21 +189,20 @@ void handleReceived_Data(Isolate *isolate, SIMCONNECT_RECV *pData, DWORD cbData)
 	for (int i = 0; i < numVars; i++)
 	{
 		int varSize = 0;
+		v8::Local<v8::String> key = String::NewFromUtf8(isolate, valIds.at(i).c_str());
+		char *pData = ((char*)(&pObjData->dwData) + dataValueOffset);
 
 		if (valTypes[i] == SIMCONNECT_DATATYPE_STRINGV)
 		{
-			dataValueOffset += 8; // Not really sure why this is needed, but it fixes problems like this: "F-22 RapF-22 Raptor - 525th Fighter Squadron"
 			char *pOutString;
 			DWORD cbString;
-			char *pStringv = ((char *)(&pObjData->dwData));
-			HRESULT hr = SimConnect_RetrieveString(pData, cbData, dataValueOffset + pStringv, &pOutString, &cbString);
+			HRESULT hr = SimConnect_RetrieveString(pSimData, cbData, pData, &pOutString, &cbString);
 			if (NT_ERROR(hr))
 			{
 				handle_Error(isolate, hr);
 				return;
 			}
 
-			v8::Local<v8::String> key = String::NewFromUtf8(isolate, valIds.at(i).c_str());
 			try
 			{
 				v8::Local<v8::String> value = String::NewFromOneByte(isolate, (const uint8_t *)pOutString, v8::NewStringType::kNormal).ToLocalChecked();
@@ -220,11 +218,39 @@ void handleReceived_Data(Isolate *isolate, SIMCONNECT_RECV *pData, DWORD cbData)
 		}
 		else
 		{
-			//printf("------ %s -----\n", valIds.at(i).c_str());
 			varSize = sizeMap[valTypes[i]];
-			char *p = ((char *)(&pObjData->dwData) + dataValueOffset);
-			double *var = (double *)p;
-			result_list->Set(String::NewFromUtf8(isolate, valIds.at(i).c_str()), Number::New(isolate, *var));
+			switch (valTypes[i]) {
+
+				case SIMCONNECT_DATATYPE_INT32:
+					result_list->Set(key, Number::New(isolate, *(int32_t *)pData));
+					break;
+
+				case SIMCONNECT_DATATYPE_INT64:
+					result_list->Set(key, Number::New(isolate, *(int64_t *)pData));
+					break;
+
+				case SIMCONNECT_DATATYPE_FLOAT32:
+					result_list->Set(key, Number::New(isolate, *(float *)pData));
+					break;
+
+				case SIMCONNECT_DATATYPE_FLOAT64:
+					result_list->Set(key, Number::New(isolate, *(double *)pData));
+					break;
+
+				case SIMCONNECT_DATATYPE_STRING8:
+				case SIMCONNECT_DATATYPE_STRING32:
+				case SIMCONNECT_DATATYPE_STRING64:
+				case SIMCONNECT_DATATYPE_STRING128:
+				case SIMCONNECT_DATATYPE_STRING256:
+				case SIMCONNECT_DATATYPE_STRING260:
+					{
+						v8::Local<v8::String> value = String::NewFromOneByte(isolate, (const uint8_t *)pData, v8::NewStringType::kNormal).ToLocalChecked();
+						result_list->Set(key, value);
+					}
+					break;
+				default:
+					break;
+			}
 		}
 		dataValueOffset += varSize;
 	}
