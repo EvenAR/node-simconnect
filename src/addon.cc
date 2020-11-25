@@ -672,48 +672,30 @@ DataDefinition generateDataDefinition(Isolate *isolate, HANDLE hSimConnect, Loca
 				}
 
 				SIMCONNECT_DATATYPE datumType = SIMCONNECT_DATATYPE_FLOAT64; // Default type (double)
-				double epsilon;
-				float datumId;
-
-				if (len > 1)
-				{
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName);
-					if (NT_ERROR(hr))
-					{
-						handle_Error(isolate, hr);
-						break;
-					}
-				}
 				if (len > 2)
 				{
 					int t = value->Get(2)->Int32Value(ctx).ToChecked();
 					datumType = SIMCONNECT_DATATYPE(t);
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType);
-					if (NT_ERROR(hr))
-					{
-						handle_Error(isolate, hr);
-						break;
-					}
 				}
+
+				float epsilon = 0;
 				if (len > 3)
 				{
-					epsilon = value->Get(3)->Int32Value(ctx).ToChecked();
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon);
-					if (NT_ERROR(hr))
-					{
-						handle_Error(isolate, hr);
-						break;
-					}
+				  epsilon = value->Get(3)->Int32Value(ctx).ToChecked();
 				}
+
+				DWORD datumId = SIMCONNECT_UNUSED;
 				if (len > 4)
 				{
-					datumId = value->Get(4)->Int32Value(ctx).ToChecked();
-					hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
-					if (NT_ERROR(hr))
-					{
-						handle_Error(isolate, hr);
-						break;
-					}
+				  datumId = value->Get(4)->Int32Value(ctx).ToChecked();
+				}
+
+				hr = SimConnect_AddToDataDefinition(hSimConnect, definitionId, sDatumName, sUnitsName, datumType, epsilon, datumId);
+
+				if (NT_ERROR(hr))
+				{
+					handle_Error(isolate, hr);
+					break;
 				}
 
 				std::string datumNameStr(sDatumName);
