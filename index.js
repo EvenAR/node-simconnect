@@ -21,7 +21,7 @@ try {
     if (process.arch === `x64`) {
         throw `node-simconnect: The pre-built binary only works with the 32-bit version of Node.js`;
     }
-    nodeSimconnect = require(`./bin/win_ia32/node-simconnect`);
+    nodeSimconnect = require(`./bin/win_ia32/node_simconnect`);
     console.info(`node-simconnect: Pre-built binary loaded`);
 }
 
