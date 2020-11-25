@@ -14,148 +14,210 @@ To install node-simconnect using the included binary:
 **Note: The included binary requires the 32 bit version of NodeJS.**
 
 ## Usage :grey_question:
-Import the module:
+Import the module and create an instance:
 
-`const simConnect = require('node-simconnect');`
+```ts
+const { SimConnect } = require('node-simconnect');
 
-The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
-
-### open
-`open(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
-
-Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open` (eg. if sim is not running).
-
-**Example**
-```javascript
-var success = simConnect.open("MyAppName", 
-    (name, version) => {
-        console.log("Connected to: " + name + "\nSimConnect version: " + version);
-        // Safe to start interacting with SimConnect here (request data, etc)
-    }, () => {
-        console.log("Simulator exited by user");
-    }, (exception) => {
-        console.log("SimConnect exception: " + exception.name + " (" + exception.dwException + ", " + exception.dwSendID + ", " + exception.dwIndex + ", " + exception.cbData + ")");
-    }, (error) => {
-        console.log("Undexpected disconnect/error: " + error); // Look up error code in ntstatus.h for details
-});
+const simConnect = new SimConnect();
 ```
 
-### requestDataOnSimObject
-`requestDataOnSimObject(reqData, callback, objectId, period, dataRequestFlag)`
+### <a name="open"></a>open
+
+Attempts to opens a session with SimConnect. If it fails to connect (eg. if sim is not running), the function immediately returns `false`. The success callback function will provide the `Client` object which you will use to interact with the simulator. The available features are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
+
+```ts
+open(
+    appName: string, 
+    onSuccess: (client: Client) => void, 
+    onQuit: () => void, 
+    onException: (details) => void, 
+    onError: (details) => void
+) : boolean;
+```
+
+```ts
+const ok = simConnect.open(
+    "My app's name", 
+    successCallback,
+    quitCallback,
+    exceptionCallback,
+    errorCallback
+);
+
+if (!ok) {
+    console.log('Failed to connect. Please try again.');
+}
+
+function successCallback(client) {
+    const { name, version } = client;
+    console.log(`Connected to: ${name}\nSimConnect version: ${version}`);
+    // ... do stuff with client 
+}
+
+function quitCallback() {
+    console.log('Sim quit');
+}
+
+function exceptionCallback(details) {
+    const { name, dwException, dwSendID, dwIndex } = details;
+    console.log(`The following exception occured: ${name}`);
+}
+
+function errorCallback(details) {
+    const { message, NTSTATUS } = details;
+    console.log(`The following error occured: ${message}`);
+}
+```
+
+### <a name="requestDataOnSimObject"></a>requestDataOnSimObject
 
 Request one or more [Simulation Variables](https://msdn.microsoft.com/en-us/library/cc526981.aspx) and set a callback function to later handle the received data. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObject) for more details.
 
 Each simulation variable is defined by an array. 
 
-**Example:**
-```javascript
+Definition:
+```ts
+requestDataOnSimObject(
+    requestedValues: any[][] | number,
+    options: {
+        period: PERIOD,           // SIMCONNECT_PERIOD_...
+        objectId: OBJECT_ID,      // SIMCONNECT_OBJECT_...
+        flags: DATA_REQUEST_FLAG, // SIMCONNECT_DATA_REQUEST_FLAG_...
+    },
+    callback: (data: any) => void
+) : void
+```
+Requested value example: 
+```ts
 [
-    "Plane Latitude",              // Datum name
-    "degrees",                     // Units name
-    simConnect.datatype.FLOAT64,   // Datum type (optional, FLOAT64 is default and works for most data types)
-    0                              // Epsilon (optional, 0 is default)
+    "Plane Latitude",      // Datum name
+    "degrees",             // Units name
+    DATA_TYPE.FLOAT64,     // Datum type (optional, FLOAT64 is default and works for most data types)
+    0                      // Epsilon (optional, 0 is default)
 ]    
 ```
-**Full example:**
-```javascript
-simConnect.requestDataOnSimObject([
-        ["Plane Latitude", "degrees"],
-        ["Plane Longitude", "degrees"],  
-        ["PLANE ALTITUDE", "feet"]
-    ], (data) => {
-        // Called when data is received
-        console.log(
-            "Latitude:  " + data["Plane Latitude"] + "\n" +
-            "Longitude: " + data["Plane Longitude"] + "\n" +
-            "Altitude:  " + data["PLANE ALTITUDE"] + " feet"
-        );
-    }, 
-    simConnect.objectId.USER,               // User aircraft
-    simConnect.period.SIM_FRAME,            // Get data every sim frame...
-    simConnect.dataRequestFlag.CHANGED      // ...but only if one of the variables have changed
-);
+Full example:
+```ts
+client.requestDataOnSimObject([
+    ["Plane Latitude", "degrees"],
+    ["Plane Longitude", "degrees"],
+    ["PLANE ALTITUDE", "feet"]
+], {
+    period: PERIOD.SIM_FRAME,           // SIMCONNECT_PERIOD_ONCE
+    objectId: OBJECT_ID.USER,           // SIMCONNECT_OBJECT_ID_USER
+    flags: DATA_REQUEST_FLAG.CHANGED,   // SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT
+}, (data) => {
+    console.log(
+        "Latitude:  " + data["Plane Latitude"] + "\n" +
+        "Longitude: " + data["Plane Longitude"] + "\n" +
+        "Altitude:  " + data["PLANE ALTITUDE"] + " feet"
+    );
+});
 ```
 
-
-### requestDataOnSimObjectType
-`requestDataOnSimObjectType(reqData, callback, radius, simobjectType)`
-
+### <a name="requestDataOnSimObjectType"></a>requestDataOnSimObjectType
 Similar to `requestDataOnSimObject`. Used to retrieve information about simulation objects of a given type that are within a specified radius of the user's aircraft. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_RequestDataOnSimObjectType) for more details.
 
-**Example**:
-This will receive info about the user's aircraft. For this, a radius of 0 is used. Notice that when `STRINGV` is requested, the unit should be `null`.
-```javascript
-simConnect.requestDataOnSimObjectType([
-    ["NAV IDENT:1", null, simConnect.datatype.STRINGV],
-    ["NAV NAME:1", null, simConnect.datatype.STRINGV],
-    ["NAV DME:1","Nautical miles"],
-], (data) => {
-    console.log(data);
-}, 0 /* radius=0 */, simConnect.simobjectType.USER);
+Definition:
+```ts
+requestDataOnSimObjectType(
+    requestedValues: any[][] | number,
+    options: {
+        radius: number,
+        type: SIMOBJECT_TYPE,      // SIMCONNECT_SIMOBJECT_TYPE_...
+    },
+    callback: (data: any) => void
+) : void
 ```
-
-**Example**:
-This will receive info about all aircraft within a 10 km radius. The callback will run one time for each identified aircraft.
-```javascript
-simConnect.requestDataOnSimObjectType([
-    ["ATC MODEL",null,simConnect.datatype.STRINGV],
+Example: This will receive info about all aircraft within a 10 km radius. The callback will run one time for each identified aircraft. Notice that when `STRINGV` is requested, the unit should be `null`
+```ts
+client.requestDataOnSimObjectType([
+    ["ATC MODEL", null, 11],        // SIMCONNECT_DATATYPE_STRINGV
     ["Plane Latitude", "degrees"],
     ["Plane Longitude", "degrees"]
-], (data) => {
+], { 
+    radius: 10000, 
+    type: SIMOBJECT_TYPE.AIRCRAFT
+}, (data) => {
+    // Called for each aircraft
     console.log(data);
-}, 10000, simConnect.simobjectType.AIRCRAFT);
+});
 ```
 
-### createDataDefinition
-`createDataDefinition(reqData)`
+### <a name="createDataDefinition"></a>createDataDefinition
+Used to create a data definition. Returns an id which can be used with `requestDataOnSimObject`/`requestDataOnSimObjectType` in place of the 2D array. This should be used when you have multiple requests for the same data - otherwise the app will crash after receiving too many requests. Example:
 
-Used to create a data definition. Returns an id which can be used with `requestDataOnSimObjectType` in place of the array. This should be used when you have multiple requests for the same data - otherwise the app will crash after receiving too many requests. 
+```ts
+createDataDefinition(requestedValues: any[][]) : number
+```
 
-**Example**:
-```javascript
-var navInfoDefId = simConnect.createDataDefinition([
+```ts
+var navInfoDefId = client.createDataDefinition([
     ["NAV DME:1", "Nautical miles"],
     ["NAV GLIDE SLOPE ERROR:1", "Degrees"],
     ["NAV RADIAL ERROR:1", "Degrees"],
 ]);
 
 setInterval(() => {
-    simConnect.requestDataOnSimObjectType(navInfoDefId, (data) => {
-        console.log(data)
-    }, 0, simConnect.simobjectType.USER)
-},100)
+    client.requestDataOnSimObjectType(
+        navInfoDefId, 
+        {
+            radius: 0,
+            type: SIMOBJECT_TYPE.USER,      // SIMCONNECT_SIMOBJECT_TYPE_...
+        }, 
+        (data) => {
+            console.log(data)
+        }
+    );
+}, 1000);
 ```
 
-### setDataOnSimObject
-`setDataOnSimObject(variableName, unit, value)`
-
+### <a name="setDataOnSimObject"></a>setDataOnSimObject
 Set a single [Simulation Variable](https://msdn.microsoft.com/en-us/library/cc526981.aspx) on user aircraft. First parameter is the datum name, second is the units name and last is the value.
 
-**Example**:
-```javascript
-simConnect.setDataOnSimObject("GENERAL ENG THROTTLE LEVER POSITION:1", "Percent", 50);
+Definition:
+```ts
+setDataOnSimObject(
+    variableName: string, 
+    unit: string, 
+    value: number
+) : void
 ```
 
-### subscribeToSystemEvent
-`subscribeToSystemEvent(eventName, callback)`
+Example:
+```ts
+client.setDataOnSimObject("GENERAL ENG THROTTLE LEVER POSITION:1", "Percent", 50);
+```
 
+### <a name="subscribeToSystemEvent"></a>subscribeToSystemEvent
 Subscribe to a system event. See [SDK Reference](https://msdn.microsoft.com/en-us/library/cc526983.aspx#SimConnect_SubscribeToSystemEvent) for available events.
 
-**Example**:
-```javascript
-simConnect.subscribeToSystemEvent("Pause", (paused) => { 
+```ts
+subscribeToSystemEvent(
+    eventName: string, 
+    callback: (value: number) => void
+) : void
+```
+
+Example:
+```ts
+client.subscribeToSystemEvent("Pause", (paused) => { 
     // Called when the system event occurs
     console.log(paused ? "Sim paused" : "Sim un-paused");
 });
 ```
-### close
-`close()`
 
+### <a name="close"></a>close
 Manually close the connection to SimConnect. Returns `false` if it fails.
 
-**Example**:
-```javascript
-var success = simConnect.close();
+```ts
+close() : boolean
+```
+
+Example:
+```ts
+const success = client.close();
 ```
 
 ## Manual build 🔨

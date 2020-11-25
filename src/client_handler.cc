@@ -17,7 +17,7 @@ ClientHandler::~ClientHandler() {
 }
 
 Napi::Object ClientHandler::init(Napi::Env env) {
-    return DefineClass(env, "ClientHandler", {
+    return DefineClass(env, "Client", {
         InstanceMethod("requestDataOnSimObject", &ClientHandler::requestDataOnSimObject, napi_enumerable),
         InstanceMethod("requestDataOnSimObjectType", &ClientHandler::requestDataOnSimObjectType, napi_enumerable),
         InstanceMethod("createDataDefinition", &ClientHandler::createDataDefinition, napi_enumerable),
