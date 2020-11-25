@@ -1,12 +1,19 @@
-var nodeSimconnect = null;
-
 if (process.platform !== `win32`) {
     throw `node-simconnect: The only supported platform is Windows (win32). Found: ${process.platform}`;
 }
+
+let nodeSimconnect = undefined;
+
 try {
+    const TEXT_COLOR = '\x1b[30m\x1b[44m%s\x1b[0m';
     // Try loading manual build first
-    nodeSimconnect = require(`./build/Release/node_simconnect`);
-    console.info(`node-simconnect: Manual build loaded`);
+    try {
+        nodeSimconnect = require(`./build/Release/node_simconnect`);
+        console.info(TEXT_COLOR, `node-simconnect: Local Debug build loaded`);
+    } catch {
+        nodeSimconnect = require(`./build/Debug/node_simconnect`);
+        console.info(TEXT_COLOR, `node-simconnect: Local Release build loaded`);
+    }
 } catch (ex) {
     // If it fails, load the included binary
     console.info(`node-simconnect: Failed to load manual build (${ex.code})`);
@@ -18,48 +25,7 @@ try {
     console.info(`node-simconnect: Pre-built binary loaded`);
 }
 
-nodeSimconnect.objectId = {
-    USER: 0
+module.exports = {
+    SimConnect: nodeSimconnect.SimConnect,
+    ...require("./src/generated/constants")
 };
-
-nodeSimconnect.dataRequestFlag = {
-    DEFAULT: 0,
-    CHANGED: 1,
-    TAGGED: 2
-};
-
-nodeSimconnect.datatype = {
-    INVALID: 0,  
-    INT32: 1,    
-    INT64: 2,    
-    FLOAT32: 3,  
-    FLOAT64: 4,  
-    STRING8: 5,  
-    STRING32: 6, 
-    STRING64: 7, 
-    STRING128: 8,
-    STRING256: 9,
-    STRING260: 10,
-    STRINGV: 11
-};
-
-nodeSimconnect.simobjectType = {
-    USER: 0,
-    ALL: 1,
-    AIRCRAFT: 2,
-    HELICOPTER: 3,
-    BOAT: 4,
-    GROUND: 5,
-};
-
-nodeSimconnect.period = {
-    NEVER: 0,
-    ONCE: 1,
-    VISUAL_FRAME: 2,
-    SIM_FRAME: 3,
-    SECOND: 4,
-};
-
-
-
-module.exports = nodeSimconnect;
