@@ -343,10 +343,10 @@ void handleReceived_SystemState(Isolate *isolate, SIMCONNECT_RECV *pData, DWORD 
 	Local<Object> obj = Object::New(isolate);
 	obj->Set(String::NewFromUtf8(isolate, "integer"), Number::New(isolate, pState->dwInteger));
 	obj->Set(String::NewFromUtf8(isolate, "float"), Number::New(isolate, pState->fFloat));
-	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromUtf8(isolate, "string"));
+	obj->Set(String::NewFromUtf8(isolate, "string"), String::NewFromUtf8(isolate, pState->szString));
 
 	Local<Value> argv[1] = {obj};
-	systemStateCallbacks[openEventId]->Call(isolate->GetCurrentContext()->Global(), 1, argv);
+	systemStateCallbacks[pState->dwRequestID]->Call(isolate->GetCurrentContext()->Global(), 1, argv);
 }
 
 void handleReceived_Quit(Isolate *isolate)
