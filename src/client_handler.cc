@@ -45,10 +45,7 @@ bool ClientHandler::open(
         dispatchQueueWorker->Queue();
 
         return true;
-    } 
-    errorCallback.Call({
-        Napi::String::New(Env(), "Failed to connect")
-    });
+    }
     return false;
 }
 

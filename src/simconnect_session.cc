@@ -82,7 +82,6 @@ bool SimConnectSession::open(const std::string& appName) {
     this->fatalError = nullptr;
 
     HRESULT hr = SimConnect_Open(&hSimConnect, appName.c_str(), NULL, 0, 0, 0);
-    check(hr);
     
     return SUCCEEDED(hr);
 };
