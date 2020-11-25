@@ -268,6 +268,3 @@ To use `node-simconnect` with Electron or NW.JS, the package must be built speci
 
 ## Licence
 [MIT](https://opensource.org/licenses/MIT)
-
-## Code contributors :trophy:
-- [uriba107](https://github.com/uriba107)
