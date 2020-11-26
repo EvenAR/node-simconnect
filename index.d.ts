@@ -8,7 +8,7 @@ export class SimConnect {
     ): boolean;
 }
 
-export class Client {
+interface Client {
     name: string;
     version: string;
 
