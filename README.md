@@ -1,5 +1,5 @@
 > A refactored version of node-simconnect is under development. :construction:
-> * **Contributors**: please check out the [refactor](/EvenAR/node-simconnect/tree/refactor) branch.
+> * **Contributors**: please check out the [refactor](https://github.com/EvenAR/node-simconnect/tree/refactor) branch.
 > * **Application developers**: please don't use it. If you still want to try it, use `npm install node-simconnect@beta`
 
 # node-simconnect :airplane: 
