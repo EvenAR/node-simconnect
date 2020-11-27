@@ -1,4 +1,9 @@
+> A refactored version of node-simconnect is under development. :construction:
+> * **Contributors**: please check out the [refactor](/EvenAR/node-simconnect/tree/refactor) branch.
+> * **Application developers**: please don't use it. If you still want to try it, use `npm install node-simconnect@beta`
+
 # node-simconnect :airplane: 
+
 Wrapper for the SimConnect SDK for Flight Simulator X and Prepar3D (Windows only)
 
 This project is at a very early stage and wraps only a few basic SimConnect function calls. Feel free to join the development! :)
@@ -21,7 +26,7 @@ Import the module:
 The available functions are described below. Please refer to [example.js](examples/nodejs/example.js) for more help.
 
 ### open
-`open(connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
+`open(appName, connectedCallback, simExitedCallback, exceptionCallback, errorCallback)`
 
 Open connection and provide callback functions for handling critical events. Returns `false` if it failed to call `open` (eg. if sim is not running).
 
@@ -185,6 +190,3 @@ To use `node-simconnect` with Electron or NW.JS, the package must be built speci
 
 ## Licence
 [MIT](https://opensource.org/licenses/MIT)
-
-## Code contributors :trophy:
-- [uriba107](https://github.com/uriba107)
