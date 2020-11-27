@@ -68,7 +68,7 @@ unsigned int nextDataDefinitionId = 0;
 
 struct DataBatchDefinition {
 	SIMCONNECT_DATA_DEFINITION_ID id;
-	unsigned int num_values;
+	size_t num_values;
 	std::vector<std::string> datum_names;
 	std::vector<SIMCONNECT_DATATYPE> datum_types;
 };
