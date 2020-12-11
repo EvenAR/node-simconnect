@@ -19,7 +19,9 @@
             ],
             "link_settings": {
                 "libraries": [
-                    "../SimConnect/lib/SimConnect"
+                    "../SimConnect/lib/SimConnect",
+					"Ws2_32.lib",
+					"Shlwapi.lib"
                 ]
             },
             'cflags!': [ '-fno-exceptions' ],
