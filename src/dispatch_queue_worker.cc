@@ -34,9 +34,7 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
     switch (dispatch->type) {
         case DispatchContentType::Nothing: break;
         case DispatchContentType::Error: {
-            ErrorInfo* pInfo = (ErrorInfo *)dispatch->payload;
-            this->eventHandler->onError(pInfo);
-            delete pInfo;
+            this->eventHandler->onError(std::static_pointer_cast<ErrorInfo>(dispatch->payload));
         }
         break;
         case DispatchContentType::Quit: {
@@ -44,33 +42,23 @@ void DispatchQueueWorker::OnProgress(const DispatchContent* dispatch, size_t cou
         }
         break;
         case DispatchContentType::Exception: {
-            ExceptionInfo* pEvent = (ExceptionInfo *)dispatch->payload;
-            this->eventHandler->onException(pEvent);
-            delete pEvent;
+            this->eventHandler->onException(std::static_pointer_cast<ExceptionInfo>(dispatch->payload));
         }
         break;
         case DispatchContentType::open: {
-            SimInfo* pSimInfo = (SimInfo *)dispatch->payload;
-            this->eventHandler->onOpen(pSimInfo);
-            delete pSimInfo;
+            this->eventHandler->onOpen(std::static_pointer_cast<SimInfo>(dispatch->payload));
         }
         break;
         case DispatchContentType::EventId: {
-            SimEvent* pEvent = (SimEvent *)dispatch->payload;
-            this->eventHandler->onEvent(pEvent);
-            delete pEvent;
+            this->eventHandler->onEvent(std::static_pointer_cast<SimEvent>(dispatch->payload));
         }
         break;
         case DispatchContentType::SystemState: {
-            SimSystemState* pSystemState = (SimSystemState *)dispatch->payload;
-            this->eventHandler->onSystemState(pSystemState);
-            delete pSystemState;
+            this->eventHandler->onSystemState(std::static_pointer_cast<SimSystemState>(dispatch->payload));
         }
         break;
         case DispatchContentType::SimobjectData: {
-            SimobjectDataBatch* pDataBatch = (SimobjectDataBatch *)dispatch->payload;
-            this->eventHandler->onSimobjectData(pDataBatch);
-            delete pDataBatch;
+            this->eventHandler->onSimobjectData(std::static_pointer_cast<SimobjectDataBatch>(dispatch->payload));
         }
         break;
         default: {

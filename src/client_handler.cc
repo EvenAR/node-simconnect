@@ -137,7 +137,7 @@ Napi::Value ClientHandler::close(const Napi::CallbackInfo& info) {
     return Napi::Boolean::New(info.Env(), success);
 };
 
-void ClientHandler::onOpen(SimInfo* simInfo) {
+void ClientHandler::onOpen(std::shared_ptr<SimInfo> simInfo) {
     auto clientHandlerObject = Value();
 
     clientHandlerObject.Set("name", Napi::String::New(Env(), simInfo->name));
@@ -146,7 +146,7 @@ void ClientHandler::onOpen(SimInfo* simInfo) {
     openCallback.Call({ clientHandlerObject });
 }
 
-void ClientHandler::onException(ExceptionInfo* exceptionInfo) {
+void ClientHandler::onException(std::shared_ptr<ExceptionInfo> exceptionInfo) {
     auto obj = Napi::Object::New(Env());
     obj.Set("dwException", Napi::Number::New(Env(), exceptionInfo->exception));
     obj.Set("dwSendID", Napi::Number::New(Env(), exceptionInfo->packetId));
@@ -155,7 +155,7 @@ void ClientHandler::onException(ExceptionInfo* exceptionInfo) {
     exceptionCallback.Call({obj});
 }
 
-void ClientHandler::onError(ErrorInfo* errorInfo) {
+void ClientHandler::onError(std::shared_ptr<ErrorInfo> errorInfo) {
     auto obj = Napi::Object::New(Env());
     obj.Set("NTSTATUS", Napi::String::New(Env(), errorInfo->code));
     obj.Set("message", Napi::String::New(Env(), errorInfo->text));
@@ -166,7 +166,7 @@ void ClientHandler::onQuit() {
     quitCallback.Call({});
 }
 
-void ClientHandler::onSystemState(SimSystemState* simSystemState) {
+void ClientHandler::onSystemState(std::shared_ptr<SimSystemState> simSystemState) {
     auto obj = Napi::Object::New(Env());
     obj.Set("integer", Napi::Number::New(Env(), simSystemState->integerValue));
     obj.Set("float", Napi::Number::New(Env(), simSystemState->floatValue));
@@ -175,26 +175,30 @@ void ClientHandler::onSystemState(SimSystemState* simSystemState) {
     systemStateCallbacks[simSystemState->requestId].Call({obj});
 }
 
-void ClientHandler::onEvent(SimEvent* simEvent) {
+void ClientHandler::onEvent(std::shared_ptr<SimEvent> simEvent) {
     auto value = Napi::Number::New(Env(), simEvent->value);
     systemEventCallbacks[simEvent->type].Call({value});
 }
 
-void ClientHandler::onSimobjectData(SimobjectDataBatch* simobjectDataBatch) {
+void ClientHandler::onSimobjectData(std::shared_ptr<SimobjectDataBatch> simobjectDataBatch) {
     auto obj = Napi::Object::New(Env());                
 
     for ( auto const& [datumName, pair] : simobjectDataBatch->values ) {
         DatumType datumType = pair.first;
-        void* pDatumValue = pair.second;
+        std::shared_ptr<const void> pDatumValue = pair.second;
 
         switch (datumType) {
-            case DatumType::Num: {
-                double* pDouble = (double*)pDatumValue;
-                obj.Set(datumName, Napi::Number::New(Env(), *pDouble));
+            case DatumType::Int32: {
+                obj.Set(datumName, Napi::Number::New(Env(), *std::static_pointer_cast<const int32_t>(pDatumValue)));
             } break;
-            case DatumType::Str: {
-                std::string* pString = (std::string*)pDatumValue;
-                obj.Set(datumName, Napi::String::New(Env(), pString->c_str()));
+            case DatumType::Int64: {
+                obj.Set(datumName, Napi::Number::New(Env(), *std::static_pointer_cast<const int64_t>(pDatumValue)));
+            } break;
+            case DatumType::Double: {
+                obj.Set(datumName, Napi::Number::New(Env(), *std::static_pointer_cast<const double>(pDatumValue)));
+            } break;
+            case DatumType::Text: {
+                obj.Set(datumName, Napi::String::New(Env(), std::static_pointer_cast<const std::string>(pDatumValue)->c_str()));
             } break;
             default: {
                 obj.Set("UNKNOWN_VALUE", Napi::String::New(Env(), "?"));
@@ -202,11 +206,7 @@ void ClientHandler::onSimobjectData(SimobjectDataBatch* simobjectDataBatch) {
         }
     }
     dataRequestCallbacks[simobjectDataBatch->id].Call({obj});
-}
-
-void ClientHandler::onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch) {
-    std::cout << "TODO: onSimobjectData 2" << std::endl;
-}
+};
 
 std::vector<DatumRequest> ClientHandler::toDatumRequests(Napi::Array requestedValues) {
     std::vector<DatumRequest> datumRequests;

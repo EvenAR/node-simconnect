@@ -95,6 +95,7 @@ DispatchContent SimConnectSession::NextDispatch() {
     DWORD cbData;
 
     HRESULT hr = SimConnect_GetNextDispatch(hSimConnect, &pData, &cbData);
+
     if (SUCCEEDED(hr)) {
         return this->process(pData, cbData);
     } else if (NT_ERROR(hr)) {
@@ -315,26 +316,30 @@ unsigned int SimConnectSession::setAircraftInitialPosition(
     return SUCCEEDED(hr);
 }
 
-SimEvent* SimConnectSession::getEvent(SIMCONNECT_RECV *pData) {
-    SIMCONNECT_RECV_EVENT *myEvent = (SIMCONNECT_RECV_EVENT *)pData;
-    SimEvent* info = new SimEvent;
+std::shared_ptr<SimEvent> SimConnectSession::getEvent(SIMCONNECT_RECV* pData) {
+    SIMCONNECT_RECV_EVENT* myEvent = (SIMCONNECT_RECV_EVENT*)pData;
+    auto info = std::make_shared<SimEvent>();
     info->type = myEvent->uEventID;
     info->value = myEvent->dwData;
     return info;
 }
 
-SimSystemState* SimConnectSession::getSystemState(SIMCONNECT_RECV *pData) {
-    SIMCONNECT_RECV_SYSTEM_STATE *pState = (SIMCONNECT_RECV_SYSTEM_STATE *)pData;
+std::shared_ptr<SimSystemState> SimConnectSession::getSystemState(SIMCONNECT_RECV* pData) {
+    SIMCONNECT_RECV_SYSTEM_STATE* pState = (SIMCONNECT_RECV_SYSTEM_STATE*)pData;
 
-    return new SimSystemState{
-        pState->dwRequestID,
-        pState->dwInteger,
-        pState->fFloat,
-        std::string(pState->szString)
-    };
+    auto simSystemState = std::make_shared<SimSystemState>(
+        SimSystemState{
+            pState->dwRequestID,
+            pState->dwInteger,
+            pState->fFloat,
+            std::string(pState->szString)
+        }
+     );
+
+    return simSystemState;
 }
 
-SimInfo* SimConnectSession::getSimInfo(SIMCONNECT_RECV *pData) {
+std::shared_ptr<SimInfo> SimConnectSession::getSimInfo(SIMCONNECT_RECV* pData) {
     SIMCONNECT_RECV_OPEN *pOpen = (SIMCONNECT_RECV_OPEN *)pData;
 
     char simconnVersion[32];
@@ -343,17 +348,17 @@ SimInfo* SimConnectSession::getSimInfo(SIMCONNECT_RECV *pData) {
     std::string version = std::string(simconnVersion);
     std::string simName = std::string(pOpen->szApplicationName);
 
-    SimInfo* info = new SimInfo;
+    auto info = std::make_shared<SimInfo>();
     info->name = std::string(pOpen->szApplicationName);
     info->version = std::string(simconnVersion);
     
     return info;
 }
 
-ExceptionInfo* SimConnectSession::getExceptionInfo(SIMCONNECT_RECV *pData) {
+std::shared_ptr<ExceptionInfo> SimConnectSession::getExceptionInfo(SIMCONNECT_RECV* pData) {
     SIMCONNECT_RECV_EXCEPTION *exception = (SIMCONNECT_RECV_EXCEPTION *)pData; 
 
-    ExceptionInfo* info = new ExceptionInfo;
+    auto info = std::shared_ptr<ExceptionInfo>();
     info->exception = exception->dwException;
     info->packetId = exception->dwSendID;
     info->parameterIndex = exception->dwIndex;
@@ -362,13 +367,13 @@ ExceptionInfo* SimConnectSession::getExceptionInfo(SIMCONNECT_RECV *pData) {
     return info;
 }
 
-SimobjectDataBatch* SimConnectSession::getSimObjectData(SIMCONNECT_RECV * pSimData, DWORD cbData) {
+std::shared_ptr<SimobjectDataBatch> SimConnectSession::getSimObjectData(SIMCONNECT_RECV* pSimData, DWORD cbData) {
     SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA *)pSimData;
     DataBatchDefinition batch = dataDefinitions[pObjData->dwDefineID];
 
     std::vector<SIMCONNECT_DATATYPE> datumTypes = batch.datum_types;
 	std::vector<std::string> datumNames = batch.datum_names;
-    std::map<std::string, std::pair<DatumType, void*>> output;
+    std::map<std::string, std::pair<DatumType, std::shared_ptr<const void>>> output;
 
     unsigned int dataValueOffset = 0;
 
@@ -385,22 +390,56 @@ SimobjectDataBatch* SimConnectSession::getSimObjectData(SIMCONNECT_RECV * pSimDa
             HRESULT hr = SimConnect_RetrieveString(pSimData, cbData, reinterpret_cast<BYTE*>(pData), &pOutString, &cbString);
 
             output[datumName] = std::make_pair(
-                DatumType::Str,
-                new std::string(SUCCEEDED(hr) ? pOutString : "")
+                DatumType::Text,
+                std::make_shared<std::string>(SUCCEEDED(hr) ? pOutString : "")
             );
 
 			datumSize = cbString;
         } else {
+        
 			datumSize = sizeMap[datumType];
-			double *var = (double *)pData;
-            output[datumName] = std::make_pair(DatumType::Num, var);
+
+            switch (datumType) {
+                case SIMCONNECT_DATATYPE_INT32: {
+                    auto value = std::make_shared<int32_t>(*(int32_t*)pData);
+                    output[datumName] = std::make_pair(DatumType::Int32, value);
+                }
+                break;
+                case SIMCONNECT_DATATYPE_INT64: {
+                    auto value = std::make_shared<int64_t>(*(int64_t*)pData);
+                    output[datumName] = std::make_pair(DatumType::Int64, value);
+                }
+                break;
+                case SIMCONNECT_DATATYPE_FLOAT32: {
+                    auto value = std::make_shared<float>(*(float*)pData);
+                    output[datumName] = std::make_pair(DatumType::Float, value);
+                }
+                break;
+                case SIMCONNECT_DATATYPE_FLOAT64: {
+                    auto value = std::make_shared<double>(*(double*)pData);
+                    output[datumName] = std::make_pair(DatumType::Double, value);
+                }
+                break;
+                case SIMCONNECT_DATATYPE_STRING8:
+                case SIMCONNECT_DATATYPE_STRING32:
+                case SIMCONNECT_DATATYPE_STRING64:
+                case SIMCONNECT_DATATYPE_STRING128:
+                case SIMCONNECT_DATATYPE_STRING256:
+                case SIMCONNECT_DATATYPE_STRING260: {
+                    auto value = std::make_shared< uint8_t>(*(const uint8_t*)pData);
+                    output[datumName] = std::make_pair(DatumType::Text, value);
+                }
+                break;
+                default:
+                    break;
+            }
 		}
 		dataValueOffset += datumSize;
     }
-    return new SimobjectDataBatch {
+    return std::make_shared<SimobjectDataBatch>(SimobjectDataBatch{
         pObjData->dwRequestID,
         output
-    };
+    });
 }
 
 DataBatchDefinition SimConnectSession::generateDataDefinition(std::vector<DatumRequest> datumRequests) {
@@ -450,6 +489,6 @@ void SimConnectSession::handleError(const std::string& name, NTSTATUS code) {
     std::cout << errorMessage.c_str() << std::endl;
 
     if (fatalError == nullptr) {
-        fatalError = new ErrorInfo{errorCode, errorMessage};
+        fatalError = std::make_shared<ErrorInfo>(ErrorInfo{errorCode, errorMessage});
     }
 }

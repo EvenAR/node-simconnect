@@ -47,16 +47,16 @@ public:
    
 private:
     HANDLE hSimConnect;
-    ErrorInfo* fatalError;
+    std::shared_ptr<ErrorInfo> fatalError;
 
     DispatchContent process(SIMCONNECT_RECV* pData, DWORD cbData);
     void handleError(const std::string& name, NTSTATUS code);
 
-    ExceptionInfo* getExceptionInfo(SIMCONNECT_RECV *pData);
-    SimEvent* getEvent(SIMCONNECT_RECV *pData);
-    SimInfo* getSimInfo(SIMCONNECT_RECV *pData);
-    SimSystemState* getSystemState(SIMCONNECT_RECV *pData);
-    SimobjectDataBatch* getSimObjectData(SIMCONNECT_RECV *pData, DWORD cbData);
+    std::shared_ptr<ExceptionInfo> getExceptionInfo(SIMCONNECT_RECV* pData);
+    std::shared_ptr<SimEvent> getEvent(SIMCONNECT_RECV* pData);
+    std::shared_ptr<SimInfo> getSimInfo(SIMCONNECT_RECV* pData);
+    std::shared_ptr<SimSystemState> getSystemState(SIMCONNECT_RECV* pData);
+    std::shared_ptr<SimobjectDataBatch> getSimObjectData(SIMCONNECT_RECV* pData, DWORD cbData);
     DataBatchDefinition generateDataDefinition(std::vector<DatumRequest> datumRequests);
 };
 

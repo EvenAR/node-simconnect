@@ -47,14 +47,13 @@ class ClientHandler : public Napi::ObjectWrap<ClientHandler>, EventHandlerInterf
         std::vector<DatumRequest> toDatumRequests(Napi::Array requestedValues);
 
         // Required functions defined EventHandlerInterface
-        void onOpen(SimInfo* simInfo);
+        void onOpen(std::shared_ptr<SimInfo> simInfo);
         void onQuit();
-        void onException(ExceptionInfo* exceptionInfo);
-        void onError(ErrorInfo* errorInfo);
-        void onSystemState(SimSystemState* simSystemState);
-        void onEvent(SimEvent* simEvent);
-        void onSimobjectData(SimobjectDataBatch* simobjectDataBatch);
-        void onSimobjectDataType(SimobjectDataBatch* simobjectDataBatch);
+        void onException(std::shared_ptr<ExceptionInfo> exceptionInfo);
+        void onError(std::shared_ptr<ErrorInfo> errorInfo);
+        void onSystemState(std::shared_ptr<SimSystemState> simSystemState);
+        void onEvent(std::shared_ptr<SimEvent> simEvent);
+        void onSimobjectData(std::shared_ptr<SimobjectDataBatch> simobjectDataBatch);
 };
 
 

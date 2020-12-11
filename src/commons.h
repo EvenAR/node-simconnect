@@ -18,17 +18,20 @@ enum DispatchContentType {
 
 struct DispatchContent {
     DispatchContentType type;
-    void* payload;
+    std::shared_ptr<void> payload;
 };
 
 enum DatumType {
-    Str,
-    Num
+    Text,
+    Int32,
+    Int64,
+    Double,
+    Float
 };
 
 struct SimobjectDataBatch {
     unsigned int id;
-    std::map<std::string, std::pair<DatumType, void*>> values;
+    std::map<std::string, std::pair<DatumType, std::shared_ptr<const void>>> values;
 };
 
 struct SimInfo {
