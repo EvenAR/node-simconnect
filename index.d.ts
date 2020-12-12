@@ -37,6 +37,11 @@ interface Client {
 
     createDataDefinition(
         reqData: RequestDataObject[]
+    ): number;
+
+    requestSystemState(
+        stateName: string,
+        callback: (data: SystemState) => void
     ): void;
 
     close(): boolean;
@@ -60,6 +65,8 @@ type RequestDataObject = [
 ]
 
 interface ResponseData { [key:string]: number | string | undefined }
+
+interface SystemState { integer: number, float: number, string: string }
 
 interface Exception {
     readonly name: string;
