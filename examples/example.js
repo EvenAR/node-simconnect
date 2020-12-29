@@ -1,6 +1,6 @@
-const { SimConnectPeriod, SimConnect, SimConnectConstants, SimConnectDataType, SimObjectType } = require("../dist/")
-const sc = new SimConnect("My app", "", 2);
+const {SimConnectDataType, SimConnect, SimConnectConstants, SimConnectPeriod, SimObjectType} = require("..")
 
+const sc = new SimConnect("My app", "", 2);
 
 sc.on("event", (recvEvent) => {
     switch(recvEvent.eventID) {
@@ -30,7 +30,7 @@ sc.on("simObjectDataByType", (recv) => {
 });
 
 
-sc.on("open", recvOpen => {
+sc.on("open", (recvOpen) => {
     console.log(recvOpen);
     sc.subscribeToSystemEvent(1, "pause");
 

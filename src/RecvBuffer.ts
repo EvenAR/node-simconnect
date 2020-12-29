@@ -55,8 +55,8 @@ interface XYZ {
 class RecvBuffer {
     buffer: ByteBuffer
     
-    constructor(buffer: ByteBuffer) {
-        this.buffer = buffer; //ByteBuffer.wrap(buffer).LE(true);
+    constructor(buffer: Buffer) {
+        this.buffer = ByteBuffer.wrap(buffer).LE(true);
     }
 
 	prepare() {

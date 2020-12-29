@@ -5,8 +5,9 @@ import { SimConnectPeriod } from "./SimConnectPeriod";
 import { SimObjectType } from "./SimObjectType";
 import { SimConnectConstants } from "./SimConnectConstants";
 import { RecvBuffer } from "./RecvBuffer";
-const regedit = require("regedit")
-import NetworkClient from "./NetworkClient";
+import { SimConnectSocket, RecvID, SimConnectMessage } from "./SimConnectSocket";
+
+const regedit = require("regedit");
 
 const RECEIVE_SIZE = 65536;
 const PROTOCOL = 0x4;
@@ -14,36 +15,6 @@ const PROTOCOL = 0x4;
 const SIMCONNECT_BUILD_SP0		    = 60905;
 const SIMCONNECT_BUILD_SP1		    = 61355;
 const SIMCONNECT_BUILD_SP2_XPACK	= 61259;
-
-enum RecvID {
-    ID_NULL,
-    ID_EXCEPTION,
-    ID_OPEN,
-    ID_QUIT,
-    ID_EVENT,
-    ID_EVENT_OBJECT_ADDREMOVE,
-    ID_EVENT_FILENAME,
-    ID_EVENT_FRAME,
-    ID_SIMOBJECT_DATA,
-    ID_SIMOBJECT_DATA_BYTYPE,
-    ID_WEATHER_OBSERVATION,
-    ID_CLOUD_STATE,
-    ID_ASSIGNED_OBJECT_ID,
-    ID_RESERVED_KEY,
-    ID_CUSTOM_ACTION,
-    ID_SYSTEM_STATE,
-    ID_CLIENT_DATA,
-    ID_EVENT_WEATHER_MODE,	
-    ID_AIRPORT_LIST,
-    ID_VOR_LIST,
-    ID_NDB_LIST,
-    ID_WAYPOINT_LIST,
-    ID_EVENT_MULTIPLAYER_SERVER_STARTED,
-    ID_EVENT_MULTIPLAYER_CLIENT_STARTED,
-    ID_EVENT_MULTIPLAYER_SESSION_ENDED,
-    ID_EVENT_RACE_END,
-	ID_EVENT_RACE_LAP
-}
 
 interface RecvOpen {
 	applicationName: string,
@@ -112,7 +83,7 @@ class SimConnect extends EventEmitter {
     packetsSent: number;
     bytesSent: number;
 	currentIndex: number;
-	networkClient: NetworkClient
+	clientSocket: SimConnectSocket;
 
     constructor(appName: string, config: any, simConnectProtocol: number) {
 		super();
@@ -123,24 +94,14 @@ class SimConnect extends EventEmitter {
         this.ourProtocol = simConnectProtocol;
 		this.writeBuffer = ByteBuffer.allocate(RECEIVE_SIZE, true);
 
-		this.networkClient = new NetworkClient();
+		this.clientSocket = new SimConnectSocket();
 
 		readRegKey("SimConnect_Port_IPv4").then(port => {
-			this.networkClient.on("connect", () => this.onOpen());
-			this.networkClient.on("message", (buffer) => this.parseMessage(buffer));
-			this.networkClient.openConnection("localhost", parseInt(port, 10));
+			this.clientSocket.on("connect", () => this.onOpen());
+			this.clientSocket.on("data", (data: SimConnectMessage) => this.handleMessage(data.id, data.data));
+			this.clientSocket.connect({host: "localhost", port: parseInt(port, 10)})
 		})
     }
-
-	parseMessage(message: RecvBuffer) {
-		const msg = {
-			version: message.readInt32(),
-			id: message.readInt32(),
-			data: message
-		};
-
-		this.handleMessage(msg.id, msg.data)
-	}
 
 	handleMessage(id: RecvID, data: RecvBuffer) {
 		switch(id) {
@@ -235,14 +196,13 @@ class SimConnect extends EventEmitter {
     sendPacket(type: number) {
 		// finalize packet
 		const packetSize = this.writeBuffer.offset;
-
-		this.writeBuffer.writeInt(packetSize, 0);	// size
-		this.writeBuffer.writeInt(this.ourProtocol, 4);
-		this.writeBuffer.writeInt(0xF0000000 | type, 8);
-		this.writeBuffer.writeInt(this.currentIndex++, 12);
+		this.writeBuffer.writeInt32(packetSize, 0);	// size
+		this.writeBuffer.writeInt32(this.ourProtocol, 4);
+		this.writeBuffer.writeInt32(0xF0000000 | type, 8);
+		this.writeBuffer.writeInt32(this.currentIndex++, 12);
 		this.writeBuffer.flip();
-		const data = this.writeBuffer.toBuffer();
-		this.networkClient.write(data);
+		const data = this.writeBuffer.toBuffer(true);
+		this.clientSocket.write(data);
 		this.packetsSent++;
 		this.bytesSent += packetSize;
 		//console.log("Sent " + ok + ": " + this.writeBuffer.buffer)
@@ -290,25 +250,12 @@ class SimConnect extends EventEmitter {
 
 	_definitionIds = []
 
-	registerClass(dataDefId: number, fields: [string, SimConnectDataType, string]) {
-		let fieldsAdded = 0;
-
-		fields.forEach((field) => {
-			this.addToDataDefinition(dataDefId, field[0], field[2], field[1], 0.0, 0)
-			fieldsAdded++;
-		});
-
-		if (fieldsAdded > 0) {
-			this._definitionIds.push(dataDefId)
-		}
-	}
-
 	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType: SimConnectDataType, epsilon: number, datumId: number) {
 		this.clean();
 		this.writeBuffer.writeInt32(dataDefId);
 		this.putString(this.writeBuffer, datumName, 256)
 		this.putString(this.writeBuffer, unitsName, 256)
-		this.writeBuffer.writeInt(dataType)
+		this.writeBuffer.writeInt32(dataType)
 		this.writeBuffer.writeFloat32(epsilon);
 		this.writeBuffer.writeInt32(datumId);
 		this.sendPacket(0x0C);
@@ -340,7 +287,7 @@ class SimConnect extends EventEmitter {
 function readRegKey(subKey: string): Promise<string> {
 	const FS_KEY = "HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator";
 	return new Promise((resolve, reject) => {
-		regedit.list(FS_KEY, (err, result) => {
+		regedit.list(FS_KEY, (err: any, result: any) => {
 			if(err) { 
 				reject() 
 			} else {
@@ -353,6 +300,6 @@ function readRegKey(subKey: string): Promise<string> {
 	
 }
 
-export {
-	SimConnect, RecvOpen, RecvEvent
-}
+module.exports = {
+	SimConnect, SimConnectSocket
+};

@@ -2,8 +2,14 @@
   "compilerOptions": {
     "module": "CommonJS",
     "target": "es2015",
+    "outDir": "./dist",
+    "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "outDir": "./dist"
+    "declarationMap": true,
+    "inlineSourceMap": true,
+    "inlineSources": true
   },
   "include": [
     "src/**/*"
