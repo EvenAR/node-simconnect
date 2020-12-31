@@ -2,17 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0ecf2dbb-bd86-40f4-b79b-0433c758f065" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/jest.config.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/SimConnectSocket.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/configuration/index.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/InitPosition.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/LatLonAlt.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/MarkerState.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/SimConnectData.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/Waypoint.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/XYZ.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/example.ts" beforeDir="false" afterPath="$PROJECT_DIR$/examples/example.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/NetworkClient.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/RecvBuffer.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/RecvBuffer.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/example.js" beforeDir="false" afterPath="$PROJECT_DIR$/examples/example.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/RecvBuffer.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/DataWrapper.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/SimConnect.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/SimConnect.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/SimConnectSocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/SimConnectSocket.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,10 +39,18 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/data" />
     <property name="nodejs.jest.jest_package" value="$PROJECT_DIR$/node_modules/jest" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="ts.external.directory.path" value="C:\Users\Even\Documents\simconnect-js-client\node_modules\typescript\lib" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Even\Documents\simconnect-js-client\src\data" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Even\Documents\simconnect-js-client\src\configuration" />
+    </key>
   </component>
   <component name="RunManager">
     <configuration name="Network client" type="JavaScriptTestRunnerJest" temporary="true" nameIsGenerated="true">
@@ -85,7 +94,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1609083912664</updated>
-      <workItem from="1609083914229" duration="43361000" />
+      <workItem from="1609083914229" duration="59786000" />
     </task>
     <servers />
   </component>
@@ -93,6 +102,14 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="715" y="385" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1609413605452">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state x="715" y="385" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1160@0.0.1920.1160" timestamp="1609413605452" />
+    <state x="766" y="298" key="#com.intellij.ide.util.MemberChooser" timestamp="1609413369872">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state x="766" y="298" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1160@0.0.1920.1160" timestamp="1609413369872" />
     <state width="794" height="466" key="DebuggerActiveHint" timestamp="1609102171024">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
@@ -161,9 +178,9 @@
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
     <state width="1877" height="396" key="GridCell.Tab.3.right/0.0.1920.1160@0.0.1920.1160" timestamp="1609166244252" />
-    <state x="656" y="312" width="609" height="536" key="find.popup" timestamp="1609248276742">
+    <state x="656" y="312" width="609" height="536" key="find.popup" timestamp="1609348092060">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
-    <state x="656" y="312" width="609" height="536" key="find.popup/0.0.1920.1160@0.0.1920.1160" timestamp="1609248276742" />
+    <state x="656" y="312" width="609" height="536" key="find.popup/0.0.1920.1160@0.0.1920.1160" timestamp="1609348092060" />
   </component>
 </project>

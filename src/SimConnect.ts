@@ -4,17 +4,12 @@ import { SimConnectDataType } from "./SimConnectDataType";
 import { SimConnectPeriod } from "./SimConnectPeriod";
 import { SimObjectType } from "./SimObjectType";
 import { SimConnectConstants } from "./SimConnectConstants";
-import { RecvBuffer } from "./RecvBuffer";
+import DataWrapper from "./DataWrapper";
 import { SimConnectSocket, RecvID, SimConnectMessage } from "./SimConnectSocket";
-
-const regedit = require("regedit");
+import {findSimConnectPortIPv4, SimConnectBuild} from "./configuration";
+import SimConnectData from "./data/SimConnectData";
 
 const RECEIVE_SIZE = 65536;
-const PROTOCOL = 0x4;
-
-const SIMCONNECT_BUILD_SP0		    = 60905;
-const SIMCONNECT_BUILD_SP1		    = 61355;
-const SIMCONNECT_BUILD_SP2_XPACK	= 61259;
 
 interface RecvOpen {
 	applicationName: string,
@@ -38,7 +33,7 @@ interface RecvSimObjectData {
 	entryNumber: number,
 	outOf: number,
 	defineCount: number,
-	data: RecvBuffer
+	data: DataWrapper
 }
 
 interface RecvOpen {
@@ -96,17 +91,17 @@ class SimConnect extends EventEmitter {
 
 		this.clientSocket = new SimConnectSocket();
 
-		readRegKey("SimConnect_Port_IPv4").then(port => {
-			this.clientSocket.on("connect", () => this.onOpen());
-			this.clientSocket.on("data", (data: SimConnectMessage) => this.handleMessage(data.id, data.data));
-			this.clientSocket.connect({host: "localhost", port: parseInt(port, 10)})
+		findSimConnectPortIPv4().then(port => {
+			this.clientSocket.on("connect", this._open.bind(this));
+			this.clientSocket.on("data", this.handleMessage.bind(this));
+			this.clientSocket.connect({host: "localhost", port: port})
 		})
     }
 
-	handleMessage(id: RecvID, data: RecvBuffer) {
+	handleMessage({id, data}: SimConnectMessage) {
 		switch(id) {
 			case RecvID.ID_EXCEPTION:
-				console.log("Exception", {
+				this.emit("Exception", {
 					exception: data.readInt32(),
 					sendId: data.readInt32(),
 					index: data.readInt32(),
@@ -210,7 +205,7 @@ class SimConnect extends EventEmitter {
 
 	//////////////////////////////////////
 
-    onOpen() {
+    _open() {
 		this.clean();
 		this.putString(this.writeBuffer, this.appName, 256);
 		this.writeBuffer.writeInt(0);
@@ -221,17 +216,17 @@ class SimConnect extends EventEmitter {
 		if (this.ourProtocol == 2) {
 			this.writeBuffer.writeInt(0);		// major version
 			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SIMCONNECT_BUILD_SP0);	// major build
+			this.writeBuffer.writeInt(SimConnectBuild.SP0);	// major build
 			this.writeBuffer.writeInt(0);		// minor build
 		} else if (this.ourProtocol == 3) {
 			this.writeBuffer.writeInt(10);		// major version
 			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SIMCONNECT_BUILD_SP1);	// major build
+			this.writeBuffer.writeInt(SimConnectBuild.SP1);	// major build
 			this.writeBuffer.writeInt(0);		// minor build
 		} else if (this.ourProtocol == 4) {
 			this.writeBuffer.writeInt(10);		// major version
 			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SIMCONNECT_BUILD_SP2_XPACK);	// major build
+			this.writeBuffer.writeInt(SimConnectBuild.SP2_XPACK);	// major build
 			this.writeBuffer.writeInt(0);		// minor build
 		} else {
 			console.log("YEYE")
@@ -282,22 +277,20 @@ class SimConnect extends EventEmitter {
 		this.writeBuffer.writeInt32(type);
 		this.sendPacket(0x0f);
 	}
-}
 
-function readRegKey(subKey: string): Promise<string> {
-	const FS_KEY = "HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator";
-	return new Promise((resolve, reject) => {
-		regedit.list(FS_KEY, (err: any, result: any) => {
-			if(err) { 
-				reject() 
-			} else {
-				console.log(result[FS_KEY].values[subKey].value)
-
-				resolve(result[FS_KEY].values[subKey].value);
-			}
-		})
-	})
-	
+	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: SimConnectData[]) {
+		this.clean();
+		this.writeBuffer.writeInt32(dataDefinitionID);
+		this.writeBuffer.writeInt32(objectID);
+		this.writeBuffer.writeInt32(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
+		this.writeBuffer.writeInt32(data.length);
+		this.writeBuffer.writeInt32(0);		// size
+		data.forEach(sd => {
+			sd.write(this.writeBuffer);
+		});
+		this.writeBuffer.writeInt32(32, this.writeBuffer.offset - 36);
+		this.sendPacket(0x10);
+	}
 }
 
 module.exports = {

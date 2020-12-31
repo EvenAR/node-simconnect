@@ -1,6 +1,6 @@
 import {Socket} from "net";
 import {Duplex} from "stream";
-import {RecvBuffer} from "./RecvBuffer";
+import DataWrapper from "./DataWrapper";
 
 const HEADER_LENGTH = 4;
 
@@ -37,7 +37,7 @@ enum RecvID {
 interface SimConnectMessage {
     version: number,
     id: RecvID,
-    data: RecvBuffer
+    data: DataWrapper
 }
 
 /**
@@ -93,7 +93,7 @@ class SimConnectSocket extends Duplex {
                 // Mandatory fields
                 version: body.readInt32LE(0),
                 id: body.readInt32LE(4),
-                data: new RecvBuffer(body.slice(8))
+                data: new DataWrapper(body.slice(8))
             };
 
             // Add object to read buffer

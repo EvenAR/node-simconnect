@@ -24,7 +24,7 @@ sc.on("simObjectData", (recvSimObjectData) => {
 sc.on("simObjectDataByType", (recv) => {
     switch (recv.requestID) {
         case 2:
-            console.log("Pos:", recv.data.getLatLonAlt());
+            console.log("Pos:", recv.data.readLatLonAlt());
             break;
     }
 });
