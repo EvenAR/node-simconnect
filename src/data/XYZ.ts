@@ -1,6 +1,5 @@
 import SimConnectData from "./SimConnectData";
 import DataWrapper from "../DataWrapper";
-import ByteBuffer from "bytebuffer";
 
 class XYZ implements SimConnectData {
     x: number = 0;
@@ -13,7 +12,7 @@ class XYZ implements SimConnectData {
         this.z = buffer.readFloat64();
     };
 
-    write(buffer: ByteBuffer) {
+    write(buffer: DataWrapper) {
 
     };
 }

@@ -1,6 +1,5 @@
 import SimConnectData from "./SimConnectData";
 import DataWrapper from "../DataWrapper";
-import ByteBuffer from "bytebuffer";
 
 class Waypoint implements SimConnectData {
     latitude: number = 0;   // degrees
@@ -28,7 +27,7 @@ class Waypoint implements SimConnectData {
         this.throttle = buffer.readFloat64();
     };
 
-    write(buffer: ByteBuffer) {
+    write(buffer: DataWrapper) {
 
     };
 }

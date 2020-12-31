@@ -1,6 +1,5 @@
 import SimConnectData from "./SimConnectData";
 import DataWrapper from "../DataWrapper";
-import ByteBuffer from "bytebuffer";
 
 class MarkerState implements SimConnectData {
     markerName: string = "";
@@ -11,7 +10,7 @@ class MarkerState implements SimConnectData {
         this.markerState = buffer.readInt32() !== 0;
     };
 
-    write(buffer: ByteBuffer) {
+    write(buffer: DataWrapper) {
 
     };
 }

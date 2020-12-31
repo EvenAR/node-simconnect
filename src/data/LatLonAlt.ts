@@ -1,6 +1,5 @@
 import SimConnectData from "./SimConnectData";
 import DataWrapper from "../DataWrapper";
-import ByteBuffer from "bytebuffer";
 
 class LatLonAlt implements SimConnectData {
     latitude: number = 0;
@@ -13,7 +12,7 @@ class LatLonAlt implements SimConnectData {
         this.altitude = buffer.readFloat64();
     };
 
-    write(buffer: ByteBuffer) {
+    write(buffer: DataWrapper) {
 
     };
 }

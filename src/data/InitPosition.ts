@@ -1,4 +1,3 @@
-import ByteBuffer from "bytebuffer";
 import SimConnectData from "./SimConnectData";
 import DataWrapper from "../DataWrapper";
 
@@ -25,7 +24,7 @@ class InitPosition implements SimConnectData {
         }
     }
 
-    write(buffer: ByteBuffer) {
+    write(buffer: DataWrapper) {
 
     }
 }

@@ -1,4 +1,3 @@
-import ByteBuffer = require("bytebuffer");
 import { EventEmitter } from "events";
 import { SimConnectDataType } from "./SimConnectDataType";
 import { SimConnectPeriod } from "./SimConnectPeriod";
@@ -73,7 +72,7 @@ declare interface SimConnect {
 
 class SimConnect extends EventEmitter {
 	appName: string;
-    writeBuffer: ByteBuffer;
+    writeBuffer: DataWrapper;
     ourProtocol: number;
     packetsSent: number;
     bytesSent: number;
@@ -87,7 +86,7 @@ class SimConnect extends EventEmitter {
         this.bytesSent = 0;
         this.currentIndex = 0;
         this.ourProtocol = simConnectProtocol;
-		this.writeBuffer = ByteBuffer.allocate(RECEIVE_SIZE, true);
+		this.writeBuffer = new DataWrapper(RECEIVE_SIZE);
 
 		this.clientSocket = new SimConnectSocket();
 
@@ -174,29 +173,18 @@ class SimConnect extends EventEmitter {
 	}
 
     clean() {
-		this.writeBuffer.clear();
-		this.writeBuffer.offset = 16;
+		this.writeBuffer.prepare();
     }
-    
-    putString(bf: ByteBuffer, s: string | null, fixed: number) {
-		if(s === null) s = "";
-		bf.writeString(s)
-		if (s.length < fixed) {
-			for (let i = 0; i < (fixed - s.length); i++) {
-				bf.writeByte(0x00);
-			}
-		}
-	}
 
     sendPacket(type: number) {
 		// finalize packet
-		const packetSize = this.writeBuffer.offset;
+		const packetSize = this.writeBuffer.getOffset();
 		this.writeBuffer.writeInt32(packetSize, 0);	// size
 		this.writeBuffer.writeInt32(this.ourProtocol, 4);
 		this.writeBuffer.writeInt32(0xF0000000 | type, 8);
 		this.writeBuffer.writeInt32(this.currentIndex++, 12);
 		this.writeBuffer.flip();
-		const data = this.writeBuffer.toBuffer(true);
+		const data = this.writeBuffer.getBufferCopy();
 		this.clientSocket.write(data);
 		this.packetsSent++;
 		this.bytesSent += packetSize;
@@ -207,27 +195,27 @@ class SimConnect extends EventEmitter {
 
     _open() {
 		this.clean();
-		this.putString(this.writeBuffer, this.appName, 256);
-		this.writeBuffer.writeInt(0);
+		this.writeBuffer.writeString256(this.appName)
+		this.writeBuffer.writeInt32(0);
 		this.writeBuffer.writeByte(0x00);
 		this.writeBuffer.writeByte(0x58);	// X
 		this.writeBuffer.writeByte(0x53);	// S
 		this.writeBuffer.writeByte(0x46);	// F
 		if (this.ourProtocol == 2) {
-			this.writeBuffer.writeInt(0);		// major version
-			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SimConnectBuild.SP0);	// major build
-			this.writeBuffer.writeInt(0);		// minor build
+			this.writeBuffer.writeInt32(0);		// major version
+			this.writeBuffer.writeInt32(0);		// minor version
+			this.writeBuffer.writeInt32(SimConnectBuild.SP0);	// major build
+			this.writeBuffer.writeInt32(0);		// minor build
 		} else if (this.ourProtocol == 3) {
-			this.writeBuffer.writeInt(10);		// major version
-			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SimConnectBuild.SP1);	// major build
-			this.writeBuffer.writeInt(0);		// minor build
+			this.writeBuffer.writeInt32(10);		// major version
+			this.writeBuffer.writeInt32(0);		// minor version
+			this.writeBuffer.writeInt32(SimConnectBuild.SP1);	// major build
+			this.writeBuffer.writeInt32(0);		// minor build
 		} else if (this.ourProtocol == 4) {
-			this.writeBuffer.writeInt(10);		// major version
-			this.writeBuffer.writeInt(0);		// minor version
-			this.writeBuffer.writeInt(SimConnectBuild.SP2_XPACK);	// major build
-			this.writeBuffer.writeInt(0);		// minor build
+			this.writeBuffer.writeInt32(10);		// major version
+			this.writeBuffer.writeInt32(0);		// minor version
+			this.writeBuffer.writeInt32(SimConnectBuild.SP2_XPACK);	// major build
+			this.writeBuffer.writeInt32(0);		// minor build
 		} else {
 			console.log("YEYE")
 			//throw new IllegalArgumentException(Messages.getString("SimConnect.InvalidProtocol")); //$NON-NLS-1$
@@ -239,7 +227,7 @@ class SimConnect extends EventEmitter {
 	subscribeToSystemEvent(clientEventID: number, eventName: string) {
 		this.clean();
 		this.writeBuffer.writeInt32(clientEventID);
-		this.putString(this.writeBuffer, eventName, 256);
+		this.writeBuffer.writeString256(eventName);
 		this.sendPacket(0x17);
 	}
 
@@ -248,8 +236,8 @@ class SimConnect extends EventEmitter {
 	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType: SimConnectDataType, epsilon: number, datumId: number) {
 		this.clean();
 		this.writeBuffer.writeInt32(dataDefId);
-		this.putString(this.writeBuffer, datumName, 256)
-		this.putString(this.writeBuffer, unitsName, 256)
+		this.writeBuffer.writeString256(datumName);
+		this.writeBuffer.writeString256(unitsName);
 		this.writeBuffer.writeInt32(dataType)
 		this.writeBuffer.writeFloat32(epsilon);
 		this.writeBuffer.writeInt32(datumId);
@@ -288,7 +276,7 @@ class SimConnect extends EventEmitter {
 		data.forEach(sd => {
 			sd.write(this.writeBuffer);
 		});
-		this.writeBuffer.writeInt32(32, this.writeBuffer.offset - 36);
+		this.writeBuffer.writeInt32(32, this.writeBuffer.getOffset() - 36);
 		this.sendPacket(0x10);
 	}
 }
