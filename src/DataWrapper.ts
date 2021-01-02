@@ -36,28 +36,28 @@ class DataWrapper {
 	writeByte(byte: number) {
         this.buffer.writeByte(byte);
     }
-	readInt32(): number {
+	readInt(): number {
 		return this.buffer.readInt32()
 	}
-	writeInt32(value: number, offset?: number) {
+	writeInt(value: number, offset?: number) {
         this.buffer.writeInt32(value, offset);
     }
-	readInt64(): Long {
+	readLong(): Long {
 		return this.buffer.readInt64()
 	}
-    writeInt64(value: number) {
+    writeLong(value: number) {
         this.buffer.writeInt64(value);
     }
-	readFloat32(): number {
+	readFloat(): number {
         return this.buffer.readFloat32()
 	}
-    writeFloat32(value: number) {
+    writeFloat(value: number) {
         this.buffer.writeFloat32(value);
     }
-	readFloat64() {
+	readDouble() {
         return this.buffer.readFloat64()
 	}
-    writeFloat64(value: number) {
+    writeDouble(value: number) {
         this.buffer.writeFloat64(value);
     }
 	readString8() {

@@ -101,44 +101,44 @@ class SimConnect extends EventEmitter {
 		switch(id) {
 			case RecvID.ID_EXCEPTION:
 				this.emit("Exception", {
-					exception: data.readInt32(),
-					sendId: data.readInt32(),
-					index: data.readInt32(),
+					exception: data.readInt(),
+					sendId: data.readInt(),
+					index: data.readInt(),
 				})
 				break;
 			case RecvID.ID_OPEN:
 				this.emit("open", {
 					applicationName: data.readString256(),
-					applicationVersionMajor: data.readInt32(),
-					applicationVersionMinor: data.readInt32(),
-					applicationBuildMajor: data.readInt32(),
-					applicationBuildMinor: data.readInt32(),
-					simConnectVersionMajor: data.readInt32(),
-					simConnectVersionMinor: data.readInt32(),
-					simConnectBuildMajor: data.readInt32(),
-					simConnectBuildMinor: data.readInt32(),
-					reserved1: data.readInt32(),
-					reserved2: data.readInt32()
+					applicationVersionMajor: data.readInt(),
+					applicationVersionMinor: data.readInt(),
+					applicationBuildMajor: data.readInt(),
+					applicationBuildMinor: data.readInt(),
+					simConnectVersionMajor: data.readInt(),
+					simConnectVersionMinor: data.readInt(),
+					simConnectBuildMajor: data.readInt(),
+					simConnectBuildMinor: data.readInt(),
+					reserved1: data.readInt(),
+					reserved2: data.readInt()
 				})
 				break;
 			case RecvID.ID_EVENT:
 				const recvEvent: RecvEvent = {
-					groupID: data.readInt32(),
-					eventID: data.readInt32(),
-					data: data.readInt32()
+					groupID: data.readInt(),
+					eventID: data.readInt(),
+					data: data.readInt()
 				}
 				this.emit("event", recvEvent)
 				break;
 			case RecvID.ID_SIMOBJECT_DATA:
 				//data.skip(8)
 				const recvSimObjectData: RecvSimObjectData = {
-					requestID: data.readInt32(),
-					objectID: data.readInt32(),
-					defineID: data.readInt32(),
-					flags: data.readInt32(),
-					entryNumber: data.readInt32(),
-					outOf: data.readInt32(),
-					defineCount: data.readInt32(),
+					requestID: data.readInt(),
+					objectID: data.readInt(),
+					defineID: data.readInt(),
+					flags: data.readInt(),
+					entryNumber: data.readInt(),
+					outOf: data.readInt(),
+					defineCount: data.readInt(),
 					data: data
 				}
 				
@@ -146,22 +146,22 @@ class SimConnect extends EventEmitter {
 				break;
 			case RecvID.ID_SIMOBJECT_DATA_BYTYPE:
 				const recvSimObjectDataByType: RecvSimObjectData = {
-					requestID: data.readInt32(),
-					objectID: data.readInt32(),
-					defineID: data.readInt32(),
-					flags: data.readInt32(),
-					entryNumber: data.readInt32(),
-					outOf: data.readInt32(),
-					defineCount: data.readInt32(),
+					requestID: data.readInt(),
+					objectID: data.readInt(),
+					defineID: data.readInt(),
+					flags: data.readInt(),
+					entryNumber: data.readInt(),
+					outOf: data.readInt(),
+					defineCount: data.readInt(),
 					data: data
 				}
 				this.emit("simObjectDataByType", recvSimObjectDataByType)
 			break;
 			case RecvID.ID_SYSTEM_STATE:
 				const recvSystemState: RecvSystemState = {
-					requestID: data.readInt32(),
-					dataInteger: data.readInt32(),
-					dataFloat: data.readFloat32(),
+					requestID: data.readInt(),
+					dataInteger: data.readInt(),
+					dataFloat: data.readFloat(),
 					dataString: data.readString(SimConnectConstants.MAX_PATH)
 				}
 				this.emit("systemState", recvSystemState)
@@ -175,10 +175,10 @@ class SimConnect extends EventEmitter {
     sendPacket(type: number) {
 		// finalize packet
 		const packetSize = this.writeBuffer.getOffset();
-		this.writeBuffer.writeInt32(packetSize, 0);	// size
-		this.writeBuffer.writeInt32(this.ourProtocol, 4);
-		this.writeBuffer.writeInt32(0xF0000000 | type, 8);
-		this.writeBuffer.writeInt32(this.currentIndex++, 12);
+		this.writeBuffer.writeInt(packetSize, 0);	// size
+		this.writeBuffer.writeInt(this.ourProtocol, 4);
+		this.writeBuffer.writeInt(0xF0000000 | type, 8);
+		this.writeBuffer.writeInt(this.currentIndex++, 12);
 		this.writeBuffer.flip();
 		const data = this.writeBuffer.getBufferCopy();
 		this.clientSocket.write(data);
@@ -192,26 +192,26 @@ class SimConnect extends EventEmitter {
     _open() {
 		this.writeBuffer.prepare();
 		this.writeBuffer.writeString256(this.appName)
-		this.writeBuffer.writeInt32(0);
+		this.writeBuffer.writeInt(0);
 		this.writeBuffer.writeByte(0x00);
 		this.writeBuffer.writeByte(0x58);	// X
 		this.writeBuffer.writeByte(0x53);	// S
 		this.writeBuffer.writeByte(0x46);	// F
 		if (this.ourProtocol == 2) {
-			this.writeBuffer.writeInt32(0);		// major version
-			this.writeBuffer.writeInt32(0);		// minor version
-			this.writeBuffer.writeInt32(SimConnectBuild.SP0);	// major build
-			this.writeBuffer.writeInt32(0);		// minor build
+			this.writeBuffer.writeInt(0);		// major version
+			this.writeBuffer.writeInt(0);		// minor version
+			this.writeBuffer.writeInt(SimConnectBuild.SP0);	// major build
+			this.writeBuffer.writeInt(0);		// minor build
 		} else if (this.ourProtocol == 3) {
-			this.writeBuffer.writeInt32(10);		// major version
-			this.writeBuffer.writeInt32(0);		// minor version
-			this.writeBuffer.writeInt32(SimConnectBuild.SP1);	// major build
-			this.writeBuffer.writeInt32(0);		// minor build
+			this.writeBuffer.writeInt(10);		// major version
+			this.writeBuffer.writeInt(0);		// minor version
+			this.writeBuffer.writeInt(SimConnectBuild.SP1);	// major build
+			this.writeBuffer.writeInt(0);		// minor build
 		} else if (this.ourProtocol == 4) {
-			this.writeBuffer.writeInt32(10);		// major version
-			this.writeBuffer.writeInt32(0);		// minor version
-			this.writeBuffer.writeInt32(SimConnectBuild.SP2_XPACK);	// major build
-			this.writeBuffer.writeInt32(0);		// minor build
+			this.writeBuffer.writeInt(10);		// major version
+			this.writeBuffer.writeInt(0);		// minor version
+			this.writeBuffer.writeInt(SimConnectBuild.SP2_XPACK);	// major build
+			this.writeBuffer.writeInt(0);		// minor build
 		} else {
 			console.log("YEYE")
 			//throw new IllegalArgumentException(Messages.getString("SimConnect.InvalidProtocol")); //$NON-NLS-1$
@@ -222,7 +222,7 @@ class SimConnect extends EventEmitter {
 
 	subscribeToSystemEvent(clientEventID: number, eventName: string) {
 		this.writeBuffer.prepare();
-		this.writeBuffer.writeInt32(clientEventID);
+		this.writeBuffer.writeInt(clientEventID);
 		this.writeBuffer.writeString256(eventName);
 		this.sendPacket(0x17);
 	}
@@ -231,48 +231,48 @@ class SimConnect extends EventEmitter {
 
 	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType?: SimConnectDataType, epsilon?: number, datumId?: number) {
 		this.writeBuffer.prepare();
-		this.writeBuffer.writeInt32(dataDefId);
+		this.writeBuffer.writeInt(dataDefId);
 		this.writeBuffer.writeString256(datumName);
 		this.writeBuffer.writeString256(unitsName);
-		this.writeBuffer.writeInt32(dataType || SimConnectDataType.FLOAT64);
-		this.writeBuffer.writeFloat32(epsilon || 0);
-		this.writeBuffer.writeInt32(datumId || SimConnectConstants.UNUSED);
+		this.writeBuffer.writeInt(dataType || SimConnectDataType.FLOAT64);
+		this.writeBuffer.writeFloat(epsilon || 0);
+		this.writeBuffer.writeInt(datumId || SimConnectConstants.UNUSED);
 		this.sendPacket(0x0C);
 	}
 
 	requestDataOnSimObject(dataRequestId: number, dataDefinitionId: number, objectId: number, period: SimConnectPeriod, flags?: number, origin?: number, interval?: number, limit?: number) {
 		this.writeBuffer.prepare();
-		this.writeBuffer.writeInt32(dataRequestId);
-		this.writeBuffer.writeInt32(dataDefinitionId);
-		this.writeBuffer.writeInt32(objectId);
-		this.writeBuffer.writeInt32(period);
-		this.writeBuffer.writeInt32(flags || 0);
-		this.writeBuffer.writeInt32(origin || 0);
-		this.writeBuffer.writeInt32(interval || 0);
-		this.writeBuffer.writeInt32(limit || 0);
+		this.writeBuffer.writeInt(dataRequestId);
+		this.writeBuffer.writeInt(dataDefinitionId);
+		this.writeBuffer.writeInt(objectId);
+		this.writeBuffer.writeInt(period);
+		this.writeBuffer.writeInt(flags || 0);
+		this.writeBuffer.writeInt(origin || 0);
+		this.writeBuffer.writeInt(interval || 0);
+		this.writeBuffer.writeInt(limit || 0);
 		this.sendPacket(0x0E);
 	}
 
 	requestDataOnSimObjectType(dataRequestId: number, dataDefinitionId: number, radiusMeters: number, type: SimObjectType) {
 		this.writeBuffer.prepare();
-		this.writeBuffer.writeInt32(dataRequestId);
-		this.writeBuffer.writeInt32(dataDefinitionId);
-		this.writeBuffer.writeInt32(radiusMeters);
-		this.writeBuffer.writeInt32(type);
+		this.writeBuffer.writeInt(dataRequestId);
+		this.writeBuffer.writeInt(dataDefinitionId);
+		this.writeBuffer.writeInt(radiusMeters);
+		this.writeBuffer.writeInt(type);
 		this.sendPacket(0x0f);
 	}
 
 	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: SimConnectData[]) {
 		this.writeBuffer.prepare();
-		this.writeBuffer.writeInt32(dataDefinitionID);
-		this.writeBuffer.writeInt32(objectID);
-		this.writeBuffer.writeInt32(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
-		this.writeBuffer.writeInt32(data.length);
-		this.writeBuffer.writeInt32(0);		// size
+		this.writeBuffer.writeInt(dataDefinitionID);
+		this.writeBuffer.writeInt(objectID);
+		this.writeBuffer.writeInt(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
+		this.writeBuffer.writeInt(data.length);
+		this.writeBuffer.writeInt(0);		// size
 		data.forEach(sd => {
 			sd.write(this.writeBuffer);
 		});
-		this.writeBuffer.writeInt32(32, this.writeBuffer.getOffset() - 36);
+		this.writeBuffer.writeInt(32, this.writeBuffer.getOffset() - 36);
 		this.sendPacket(0x10);
 	}
 }

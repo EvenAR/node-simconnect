@@ -7,9 +7,9 @@ class LatLonAlt implements SimConnectData {
     altitude: number = 0;
 
     read(buffer: DataWrapper) {
-        this.latitude = buffer.readFloat64();
-        this.longitude = buffer.readFloat64();
-        this.altitude = buffer.readFloat64();
+        this.latitude = buffer.readDouble();
+        this.longitude = buffer.readDouble();
+        this.altitude = buffer.readDouble();
     };
 
     write(buffer: DataWrapper) {

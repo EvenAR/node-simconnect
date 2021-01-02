@@ -7,9 +7,9 @@ class XYZ implements SimConnectData {
     z: number = 0;
 
     read(buffer: DataWrapper) {
-        this.x = buffer.readFloat64();
-        this.y = buffer.readFloat64();
-        this.z = buffer.readFloat64();
+        this.x = buffer.readDouble();
+        this.y = buffer.readDouble();
+        this.z = buffer.readDouble();
     };
 
     write(buffer: DataWrapper) {

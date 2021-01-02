@@ -19,12 +19,12 @@ class Waypoint implements SimConnectData {
     throttle: number = 0;   // percent
 
     read(buffer: DataWrapper) {
-        this.latitude = buffer.readFloat64();
-        this.longitude = buffer.readFloat64();
-        this.altitude = buffer.readFloat64();
-        this.flags = buffer.readInt32();
-        this.speed = buffer.readFloat64();
-        this.throttle = buffer.readFloat64();
+        this.latitude = buffer.readDouble();
+        this.longitude = buffer.readDouble();
+        this.altitude = buffer.readDouble();
+        this.flags = buffer.readInt();
+        this.speed = buffer.readDouble();
+        this.throttle = buffer.readDouble();
     };
 
     write(buffer: DataWrapper) {

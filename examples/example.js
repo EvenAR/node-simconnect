@@ -1,4 +1,4 @@
-const {SimConnectDataType, SimConnect, SimConnectConstants, SimConnectPeriod, SimObjectType} = require("..")
+const {SimConnectDataType, SimConnect, SimConnectConstants, SimConnectPeriod, SimObjectType, InitPosition} = require("..")
 
 const sc = new SimConnect("My app", "", 2);
 
@@ -13,9 +13,9 @@ sc.on("event", (recvEvent) => {
 sc.on("simObjectData", (recvSimObjectData) => {
     switch(recvSimObjectData.requestID) {
         case 1:
-            console.log("Lat:", recvSimObjectData.data.readFloat64());
-            console.log("Lng:", recvSimObjectData.data.readFloat64());
-            console.log("Alt:", recvSimObjectData.data.readFloat64());
+            console.log("Lat:", recvSimObjectData.data.readDouble());
+            console.log("Lng:", recvSimObjectData.data.readDouble());
+            console.log("Alt:", recvSimObjectData.data.readDouble());
             console.log("Cat:", recvSimObjectData.data.readStringV());
             break;
     }
@@ -42,4 +42,15 @@ sc.on("open", (recvOpen) => {
 
     sc.addToDataDefinition(2, "STRUCT LATLONALT", null, SimConnectDataType.LATLONALT, 0, SimConnectConstants.UNUSED);
     sc.requestDataOnSimObjectType(2, 2, 0, SimObjectType.USER)
+
+    const initPosition = new InitPosition();
+    initPosition.latitude = 60;
+    initPosition.longitude = 11;
+    initPosition.altitude = 50000;
+    initPosition.airspeed = 80;
+
+    console.log(initPosition)
+
+    sc.addToDataDefinition(3, "Initial Position", null, SimConnectDataType.INITPOSITION);
+    sc.setDataOnSimObject(3, SimConnectConstants.OBJECT_ID_USER, [initPosition])
 });
