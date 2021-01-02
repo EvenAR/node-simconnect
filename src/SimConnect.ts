@@ -1,10 +1,10 @@
-import { EventEmitter } from "events";
-import { SimConnectDataType } from "./SimConnectDataType";
-import { SimConnectPeriod } from "./SimConnectPeriod";
-import { SimObjectType } from "./SimObjectType";
-import { SimConnectConstants } from "./SimConnectConstants";
+import {EventEmitter} from "events";
+import {SimConnectDataType} from "./SimConnectDataType";
+import {SimConnectPeriod} from "./SimConnectPeriod";
+import {SimObjectType} from "./SimObjectType";
+import {SimConnectConstants} from "./SimConnectConstants";
 import DataWrapper from "./DataWrapper";
-import { SimConnectSocket, RecvID, SimConnectMessage } from "./SimConnectSocket";
+import {RecvID, SimConnectMessage, SimConnectSocket} from "./SimConnectSocket";
 import {findSimConnectPortIPv4, SimConnectBuild} from "./configuration";
 import SimConnectData from "./data/SimConnectData";
 
@@ -172,10 +172,6 @@ class SimConnect extends EventEmitter {
 		}
 	}
 
-    clean() {
-		this.writeBuffer.prepare();
-    }
-
     sendPacket(type: number) {
 		// finalize packet
 		const packetSize = this.writeBuffer.getOffset();
@@ -194,7 +190,7 @@ class SimConnect extends EventEmitter {
 	//////////////////////////////////////
 
     _open() {
-		this.clean();
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeString256(this.appName)
 		this.writeBuffer.writeInt32(0);
 		this.writeBuffer.writeByte(0x00);
@@ -225,7 +221,7 @@ class SimConnect extends EventEmitter {
 
 
 	subscribeToSystemEvent(clientEventID: number, eventName: string) {
-		this.clean();
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeInt32(clientEventID);
 		this.writeBuffer.writeString256(eventName);
 		this.sendPacket(0x17);
@@ -233,32 +229,32 @@ class SimConnect extends EventEmitter {
 
 	_definitionIds = []
 
-	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType: SimConnectDataType, epsilon: number, datumId: number) {
-		this.clean();
+	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType?: SimConnectDataType, epsilon?: number, datumId?: number) {
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeInt32(dataDefId);
 		this.writeBuffer.writeString256(datumName);
 		this.writeBuffer.writeString256(unitsName);
-		this.writeBuffer.writeInt32(dataType)
-		this.writeBuffer.writeFloat32(epsilon);
-		this.writeBuffer.writeInt32(datumId);
+		this.writeBuffer.writeInt32(dataType || SimConnectDataType.FLOAT64);
+		this.writeBuffer.writeFloat32(epsilon || 0);
+		this.writeBuffer.writeInt32(datumId || SimConnectConstants.UNUSED);
 		this.sendPacket(0x0C);
 	}
 
-	requestDataOnSimObject(dataRequestId: number, dataDefinitionId: number, objectId: number, period: SimConnectPeriod, flags: number, origin: number, interval: number, limit: number) {
-		this.clean();
+	requestDataOnSimObject(dataRequestId: number, dataDefinitionId: number, objectId: number, period: SimConnectPeriod, flags?: number, origin?: number, interval?: number, limit?: number) {
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeInt32(dataRequestId);
 		this.writeBuffer.writeInt32(dataDefinitionId);
 		this.writeBuffer.writeInt32(objectId);
 		this.writeBuffer.writeInt32(period);
-		this.writeBuffer.writeInt32(flags);
-		this.writeBuffer.writeInt32(origin);
-		this.writeBuffer.writeInt32(interval);
-		this.writeBuffer.writeInt32(limit);
+		this.writeBuffer.writeInt32(flags || 0);
+		this.writeBuffer.writeInt32(origin || 0);
+		this.writeBuffer.writeInt32(interval || 0);
+		this.writeBuffer.writeInt32(limit || 0);
 		this.sendPacket(0x0E);
 	}
 
 	requestDataOnSimObjectType(dataRequestId: number, dataDefinitionId: number, radiusMeters: number, type: SimObjectType) {
-		this.clean();
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeInt32(dataRequestId);
 		this.writeBuffer.writeInt32(dataDefinitionId);
 		this.writeBuffer.writeInt32(radiusMeters);
@@ -267,7 +263,7 @@ class SimConnect extends EventEmitter {
 	}
 
 	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: SimConnectData[]) {
-		this.clean();
+		this.writeBuffer.prepare();
 		this.writeBuffer.writeInt32(dataDefinitionID);
 		this.writeBuffer.writeInt32(objectID);
 		this.writeBuffer.writeInt32(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
