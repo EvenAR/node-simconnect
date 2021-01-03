@@ -12,8 +12,6 @@ function readRegistryValue(subKey: string): Promise<string> {
             if(err) {
                 reject()
             } else {
-                console.log(result[FS_KEY].values[subKey].value)
-
                 resolve(result[FS_KEY].values[subKey].value);
             }
         })

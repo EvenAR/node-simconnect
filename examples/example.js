@@ -31,6 +31,14 @@ sc.on("simObjectDataByType", (recv) => {
     }
 });
 
+sc.on("systemState", (recv) => {
+    console.log(recv)
+})
+
+sc.on("cloudState", (recv) => {
+    console.log(recv)
+})
+
 const data = new DataWrapper(512);
 
 sc.on("open", (recvOpen) => {
@@ -53,14 +61,20 @@ sc.on("open", (recvOpen) => {
     data.writeDouble(50.0);
     sc.setDataOnSimObject(3, SimConnectConstants.OBJECT_ID_USER, { buffer: data, arrayCount: 1, tagged: false });
 
-    const initPosition = new InitPosition();
+    /*const initPosition = new InitPosition();
     initPosition.latitude = 60;
     initPosition.longitude = 11;
     initPosition.altitude = 2000;
     initPosition.airspeed = 80;
 
     sc.addToDataDefinition(5, "Initial Position", null, SimConnectDataType.INITPOSITION);
-    sc.setDataOnSimObject(5, SimConnectConstants.OBJECT_ID_USER, [initPosition])
+    sc.setDataOnSimObject(5, SimConnectConstants.OBJECT_ID_USER, [initPosition])*/
+
+    sc.requestSystemState(5, "AircraftLoaded");
+
+    sc.weatherRequestObservationAtNearestStation(88, 60, 11);
+
+    sc.weatherRequestCloudState(777, 60, 11, 1000, 61, 12, 5000)
 
     // Get throttle value whenever it changes
     sc.requestDataOnSimObject(4, 3, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SIM_FRAME, SimConnectConstants.CLIENT_DATA_REQUEST_FLAG_CHANGED)

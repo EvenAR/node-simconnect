@@ -41,6 +41,10 @@ class DataWrapper {
 	writeByte(byte: number) {
         this.buffer.writeByte(byte);
     }
+    readBytes(length: number): Buffer {
+        const bytes = this.buffer.readBytes(length).copy();
+        return bytes.toBuffer();
+    }
 	readInt(): number {
 		return this.buffer.readInt32()
 	}
@@ -65,15 +69,21 @@ class DataWrapper {
     writeDouble(value: number) {
         this.buffer.writeFloat64(value);
     }
+    writeString(value: string, fixedLength?: number) {
+        putString(this.buffer, value, fixedLength || value.length);
+    }
 	readString8() {
         return makeString(this.buffer, 8)
 	}
     writeString8(value: string) {
         putString(this.buffer, value, 8);
     }
-	readString32() {
+    writeString30(value: string) {
+        putString(this.buffer, value, 30);
+    }
+    readString32() {
         return makeString(this.buffer, 32)
-	}
+    }
     writeString32(value: string) {
         putString(this.buffer, value, 32);
     }

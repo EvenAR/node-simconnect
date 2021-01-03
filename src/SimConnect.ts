@@ -7,6 +7,7 @@ import DataWrapper from "./wrappers/DataWrapper";
 import {RecvID, SimConnectMessage, SimConnectSocket} from "./SimConnectSocket";
 import {findSimConnectPortIPv4, SimConnectBuild} from "./configuration";
 import SimConnectData from "./data/SimConnectData";
+import {NotificationPriority} from "./NotificationPriority";
 
 const RECEIVE_SIZE = 65536;
 
@@ -62,6 +63,17 @@ interface RecvSystemState {
 	dataString: string
 }
 
+interface RecvWeatherObservation {
+	requestID: number,
+	metar: string
+}
+
+interface RecvCloudState {
+	requestID: number,
+	arraySize: number,
+	data: number[][]
+}
+
 type DataToSet = { buffer: DataWrapper, arrayCount: number, tagged: boolean } | SimConnectData[]
 
 declare interface SimConnect {
@@ -70,6 +82,8 @@ declare interface SimConnect {
     on(event: "simObjectData", handler: (recvSimObjectData: RecvSimObjectData) => void): this;
     on(event: "simObjectDataByType", handler: (recvSimObjectData: RecvSimObjectData) => void): this;
     on(event: "systemState", handler: (recvSystemState: RecvSystemState) => void): this;
+    on(event: "weatherObservation", handler: (recvWeatherObservation: RecvWeatherObservation) => void): this;
+    on(event: "cloudState", handler: (recvCloudState: RecvCloudState) => void): this;
 }
 
 class SimConnect extends EventEmitter {
@@ -96,6 +110,8 @@ class SimConnect extends EventEmitter {
 			this.clientSocket.on("connect", this._open.bind(this));
 			this.clientSocket.on("data", this.handleMessage.bind(this));
 			this.clientSocket.connect({host: "localhost", port: port})
+		}).catch(() => {
+			console.log("Port not found")
 		})
     }
 
@@ -158,7 +174,7 @@ class SimConnect extends EventEmitter {
 					data: data
 				}
 				this.emit("simObjectDataByType", recvSimObjectDataByType)
-			break;
+				break;
 			case RecvID.ID_SYSTEM_STATE:
 				const recvSystemState: RecvSystemState = {
 					requestID: data.readInt(),
@@ -167,7 +183,29 @@ class SimConnect extends EventEmitter {
 					dataString: data.readString(SimConnectConstants.MAX_PATH)
 				}
 				this.emit("systemState", recvSystemState)
-			break;
+				break;
+			case RecvID.ID_WEATHER_OBSERVATION:
+				const recvWeatherObservation: RecvWeatherObservation = {
+					requestID: data.readInt(),
+					metar: data.readStringV()
+				};
+				this.emit("weatherObservation", recvWeatherObservation);
+				break;
+			case RecvID.ID_CLOUD_STATE:
+				const requestID = data.readInt();
+				const arraySize = data.readInt();
+				const cloudData: number[][] = [];
+				// Read 2D-array of 64x64 bytes
+				for (let i = 0; i < 64; i++) {
+					cloudData[i] = [... data.readBytes(64)]
+				}
+				const recvCloudState: RecvCloudState = {
+					requestID,
+					arraySize,
+					data: cloudData
+				};
+				this.emit("cloudState", recvCloudState);
+				break;
 			default:
 				console.log("UNK", data)
 				break;
@@ -219,21 +257,10 @@ class SimConnect extends EventEmitter {
 			this.writeBuffer.writeInt(SimConnectBuild.SP2_XPACK);	// major build
 			this.writeBuffer.writeInt(0);		// minor build
 		} else {
-			console.log("YEYE")
 			//throw new IllegalArgumentException(Messages.getString("SimConnect.InvalidProtocol")); //$NON-NLS-1$
 		}
 		this.sendPacket(0x01);	
 	}
-
-
-	subscribeToSystemEvent(clientEventID: number, eventName: string) {
-		this.clean(this.writeBuffer);
-		this.writeBuffer.writeInt(clientEventID);
-		this.writeBuffer.writeString256(eventName);
-		this.sendPacket(0x17);
-	}
-
-	_definitionIds = []
 
 	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType?: SimConnectDataType, epsilon?: number, datumId?: number) {
 		this.clean(this.writeBuffer);
@@ -259,6 +286,12 @@ class SimConnect extends EventEmitter {
 		this.sendPacket(0x0E);
 	}
 
+	clearDataDefinition(dataDefinitionId: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataDefinitionId);
+		this.sendPacket(0x0d);
+	}
+
 	requestDataOnSimObjectType(dataRequestId: number, dataDefinitionId: number, radiusMeters: number, type: SimObjectType) {
 		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(dataRequestId);
@@ -266,6 +299,96 @@ class SimConnect extends EventEmitter {
 		this.writeBuffer.writeInt(radiusMeters);
 		this.writeBuffer.writeInt(type);
 		this.sendPacket(0x0f);
+	}
+
+	subscribeToSystemEvent(clientEventID: number, eventName: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(clientEventID);
+		this.writeBuffer.writeString256(eventName);
+		this.sendPacket(0x17);
+	}
+
+	unsubscribeFromSystemEvent(clientEventID: number) {
+    	this.clean(this.writeBuffer);
+    	this.writeBuffer.writeInt(clientEventID);
+		this.sendPacket(0x18);
+	}
+
+	requestSystemState(dataRequestID: number, state: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeString256(state);
+		this.sendPacket(0x35);
+	}
+
+	setSystemState(state: string, paramInt: number, paramFloat: number, paramString: string) {
+    	this.clean(this.writeBuffer);
+		this.writeBuffer.writeString256(state);
+		this.writeBuffer.writeInt(paramInt);
+		this.writeBuffer.writeFloat(paramFloat);
+		this.writeBuffer.writeString256(paramString);
+		this.writeBuffer.writeInt(0);
+		this.sendPacket(0x36);
+	}
+
+	addClientEventToNotificationGroup(notificationGroupID: number, clientEventID: number, maskable: boolean) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(notificationGroupID);
+		this.writeBuffer.writeInt(clientEventID);
+		this.writeBuffer.writeInt(maskable ? 1 : 0);
+		this.sendPacket(0x07);
+	}
+
+	mapClientEventToSimEvent(clientEventId: number, eventName?: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(clientEventId);
+		this.writeBuffer.writeString256(eventName || "");
+		this.sendPacket(0x04);
+	}
+
+	transmitClientEvent(objectID: number, eventID: number, data: number, groupID: number, flags: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(objectID);
+		this.writeBuffer.writeInt(eventID);
+		this.writeBuffer.writeInt(data);
+		this.writeBuffer.writeInt(groupID);
+		this.writeBuffer.writeInt(flags);
+		this.sendPacket(0x05);
+	}
+
+	setSystemEventState(eventID: number, state: boolean) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(eventID);
+		this.writeBuffer.writeInt(state ? 1 : 0);
+		this.sendPacket(0x06);
+	}
+
+	removeClientEvent(groupID: number, eventID: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(eventID);
+		this.writeBuffer.writeInt(eventID);
+		this.sendPacket(0x08);
+	}
+
+	setNotificationGroupPriority(groupID: number, priority: NotificationPriority) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(groupID);
+		this.writeBuffer.writeInt(priority);
+		this.sendPacket(0x09);
+	}
+
+	clearNotificationGroup(groupID: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(groupID);
+		this.sendPacket(0x0A);
+	}
+
+	requestNotificationGroup(groupID: number, reserved: number, flags: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(groupID);
+		this.writeBuffer.writeInt(reserved);
+		this.writeBuffer.writeInt(flags);
+		this.sendPacket(0x0B);
 	}
 
 	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: DataToSet) {
@@ -292,6 +415,146 @@ class SimConnect extends EventEmitter {
 		}
 
 		this.sendPacket(0x10);
+	}
+
+	mapInputEventToClientEvent(inputGroupID: number, inputDefinition: string, clientEventDownID: number, downValue?: number, clientEventUpID?: number, upValue?: number, maskable?: boolean) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(inputGroupID);
+		this.writeBuffer.writeString256(inputDefinition);
+		this.writeBuffer.writeInt(clientEventDownID);
+		this.writeBuffer.writeInt(downValue || 0);
+		this.writeBuffer.writeInt(clientEventUpID || SimConnectConstants.UNUSED);
+		this.writeBuffer.writeInt(upValue || 0);
+		this.writeBuffer.writeInt(maskable ? 1 : 0);
+		this.sendPacket(0x11);
+	}
+
+	setInputGroupPriority(inputGroupID: number, priority: NotificationPriority) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(inputGroupID);
+		this.writeBuffer.writeInt(priority);
+		this.sendPacket(0x12);
+	}
+
+	removeInputEvent(inputGroupID: number, inputDefinition: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(inputGroupID);
+		this.writeBuffer.writeString256(inputDefinition);
+		this.sendPacket(0x13);
+	}
+
+	clearInputGroup(inputGroupID: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(inputGroupID);
+		this.sendPacket(0x14);
+	}
+
+	setInputGroupState(inputGroupID: number, state: boolean) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(inputGroupID);
+		this.writeBuffer.writeInt(state ? 1 : 0);
+		this.sendPacket(0x15);
+	}
+
+	requestReservedKey(eventID: number, keyChoice1?: string, keyChoice2?: string, keyChoice3?: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(eventID);
+		this.writeBuffer.writeString30(keyChoice1 || "");
+		this.writeBuffer.writeString30(keyChoice2 || "");
+		this.writeBuffer.writeString30(keyChoice3 || "");
+		this.sendPacket(0x16);
+	}
+
+	weatherRequestInterpolatedObservation(dataRequestID: number, lat: number, lon: number, alt: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeFloat(lat);
+		this.writeBuffer.writeFloat(lon);
+		this.writeBuffer.writeFloat(alt);
+		this.sendPacket(0x19);
+	}
+
+	weatherRequestObservationAtStation(dataRequestID: number, ICAO: string)  {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeString(ICAO, 5);		// ICAO is 4 chars, null terminated
+		this.sendPacket(0x1A);
+	}
+
+	weatherRequestObservationAtNearestStation(dataRequestID: number, lat: number, lon: number)  {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeFloat(lat);
+		this.writeBuffer.writeFloat(lon);
+		this.sendPacket(0x1B);
+	}
+
+	weatherCreateStation(dataRequestID: number, ICAO: string, name: string, lat: number, lon: number, alt: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeString(ICAO, 5);
+		this.writeBuffer.writeString(name, 256);
+		this.writeBuffer.writeFloat(lat);
+		this.writeBuffer.writeFloat(lon);
+		this.writeBuffer.writeFloat(alt);
+		this.sendPacket(0x1C);
+	}
+
+	weatherRemoveStation(dataRequestID: number, ICAO: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeString(ICAO, 5);
+		this.sendPacket(0x1D);
+	}
+
+	weatherSetObservation(seconds: number, metar: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(seconds);
+		this.writeBuffer.writeString(metar);
+		this.writeBuffer.writeByte(0);		// null terminated
+		this.sendPacket(0x1E);
+	}
+
+	weatherSetModeServer(port: number, seconds: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(port);
+		this.writeBuffer.writeInt(seconds);
+		this.sendPacket(0x1F);
+	}
+
+	weatherSetModeTheme(themeName: string) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeString(themeName, 256);
+		this.sendPacket(0x20);
+	}
+
+	weatherSetModeGlobal() {
+		this.clean(this.writeBuffer);
+		this.sendPacket(0x21);
+	}
+
+	weatherSetModeCustom() {
+		this.clean(this.writeBuffer);
+		this.sendPacket(0x22);
+	}
+
+	weatherSetDynamicUpdateRate(rate: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(rate);
+		this.sendPacket(0x23	);
+	}
+
+	weatherRequestCloudState(dataRequestID: number, minLat: number, minLon: number, minAlt: number, maxLat: number, maxLon: number, maxAlt: number, flags?: number) {
+		this.clean(this.writeBuffer);
+		this.writeBuffer.writeInt(dataRequestID);
+		this.writeBuffer.writeFloat(minLat);
+		this.writeBuffer.writeFloat(minLon);
+		this.writeBuffer.writeFloat(minAlt);
+		this.writeBuffer.writeFloat(maxLat);
+		this.writeBuffer.writeFloat(maxLon);
+		this.writeBuffer.writeFloat(maxAlt);
+		this.writeBuffer.writeInt(flags || 0);
+		this.sendPacket(0x24);
 	}
 }
 
