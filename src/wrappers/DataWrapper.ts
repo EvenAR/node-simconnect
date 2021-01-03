@@ -1,22 +1,28 @@
 import ByteBuffer = require("bytebuffer");
-import InitPosition from "./data/InitPosition";
-import SimConnectData from "./data/SimConnectData";
-import MarkerState from "./data/MarkerState";
-import Waypoint from "./data/Waypoint";
-import LatLonAlt from "./data/LatLonAlt";
-import XYZ from "./data/XYZ";
+import InitPosition from "../data/InitPosition";
+import SimConnectData from "../data/SimConnectData";
+import MarkerState from "../data/MarkerState";
+import Waypoint from "../data/Waypoint";
+import LatLonAlt from "../data/LatLonAlt";
+import XYZ from "../data/XYZ";
 
 class DataWrapper {
     private readonly buffer: ByteBuffer;
 
     constructor(b: Buffer | number) {
         if (typeof b === "number") {
-            this.buffer = ByteBuffer.allocate(b, true);
+            this.buffer = ByteBuffer.allocate(b).LE(true);
         } else {
             this.buffer = ByteBuffer.wrap(b).LE(true);
         }
     }
 
+    clear() {
+        this.buffer.clear()
+    }
+    setOffset(offset: number) {
+        this.buffer.offset = offset;
+    }
     flip() {
         this.buffer.flip();
     }
@@ -25,14 +31,13 @@ class DataWrapper {
         return this.buffer.offset;
     }
 
-    getBufferCopy() {
+    getBuffer(): Buffer {
+        this.buffer.flip();
         return this.buffer.toBuffer(true);
     }
-
-	prepare() {
-		this.buffer.clear()
-		this.buffer.offset = 16;
-	}
+	write(bytes: Buffer) {
+        this.buffer.append(bytes)
+    }
 	writeByte(byte: number) {
         this.buffer.writeByte(byte);
     }

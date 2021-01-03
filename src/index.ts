@@ -7,3 +7,4 @@ export * from './SimConnectException'
 export * from './SimObjectType'
 
 export * from './data'
+export {default as DataWrapper} from './wrappers/DataWrapper'

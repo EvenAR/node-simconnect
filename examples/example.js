@@ -1,4 +1,4 @@
-const {SimConnectDataType, SimConnect, SimConnectConstants, SimConnectPeriod, SimObjectType, InitPosition} = require("..")
+const {SimConnectDataType, SimConnect, SimConnectConstants, SimConnectPeriod, SimObjectType, InitPosition, DataWrapper} = require("..")
 
 const sc = new SimConnect("My app", "", 2);
 
@@ -18,6 +18,8 @@ sc.on("simObjectData", (recvSimObjectData) => {
             console.log("Alt:", recvSimObjectData.data.readDouble());
             console.log("Cat:", recvSimObjectData.data.readStringV());
             break;
+        case 4:
+            console.log("Thr:", recvSimObjectData.data.readDouble());
     }
 });
 
@@ -29,28 +31,37 @@ sc.on("simObjectDataByType", (recv) => {
     }
 });
 
+const data = new DataWrapper(512);
 
 sc.on("open", (recvOpen) => {
-    console.log(recvOpen);
+    console.log("Connected to", recvOpen);
     sc.subscribeToSystemEvent(1, "pause");
 
+    // Get position every second
     sc.addToDataDefinition(1, "PLANE LATITUDE", "degrees", SimConnectDataType.FLOAT64, 0, SimConnectConstants.UNUSED);
     sc.addToDataDefinition(1, "PLANE LONGITUDE", "degrees", SimConnectDataType.FLOAT64, 0, SimConnectConstants.UNUSED);
     sc.addToDataDefinition(1, "Indicated Altitude", "feet", SimConnectDataType.FLOAT64, 0, SimConnectConstants.UNUSED);
     sc.addToDataDefinition(1, "Category", null, SimConnectDataType.STRING32, 0, SimConnectConstants.UNUSED);
     sc.requestDataOnSimObject(1, 1, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SECOND, 0, 0, 0, 0);
 
+    // Request LATLONALT structure
     sc.addToDataDefinition(2, "STRUCT LATLONALT", null, SimConnectDataType.LATLONALT, 0, SimConnectConstants.UNUSED);
-    sc.requestDataOnSimObjectType(2, 2, 0, SimObjectType.USER)
+    sc.requestDataOnSimObjectType(2, 2, 0, SimObjectType.USER);
+
+    // Set throttle to 50%
+    sc.addToDataDefinition(3, "GENERAL ENG THROTTLE LEVER POSITION:1", "percent");
+    data.writeDouble(50.0);
+    sc.setDataOnSimObject(3, SimConnectConstants.OBJECT_ID_USER, { buffer: data, arrayCount: 1, tagged: false });
 
     const initPosition = new InitPosition();
     initPosition.latitude = 60;
     initPosition.longitude = 11;
-    initPosition.altitude = 50000;
+    initPosition.altitude = 2000;
     initPosition.airspeed = 80;
 
-    console.log(initPosition)
+    sc.addToDataDefinition(5, "Initial Position", null, SimConnectDataType.INITPOSITION);
+    sc.setDataOnSimObject(5, SimConnectConstants.OBJECT_ID_USER, [initPosition])
 
-    sc.addToDataDefinition(3, "Initial Position", null, SimConnectDataType.INITPOSITION);
-    sc.setDataOnSimObject(3, SimConnectConstants.OBJECT_ID_USER, [initPosition])
+    // Get throttle value whenever it changes
+    sc.requestDataOnSimObject(4, 3, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SIM_FRAME, SimConnectConstants.CLIENT_DATA_REQUEST_FLAG_CHANGED)
 });

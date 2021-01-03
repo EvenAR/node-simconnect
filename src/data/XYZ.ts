@@ -1,5 +1,5 @@
 import SimConnectData from "./SimConnectData";
-import DataWrapper from "../DataWrapper";
+import DataWrapper from "../wrappers/DataWrapper";
 
 class XYZ implements SimConnectData {
     x: number = 0;

@@ -1,6 +1,6 @@
 import {Socket} from "net";
 import {Duplex} from "stream";
-import DataWrapper from "./DataWrapper";
+import DataWrapper from "./wrappers/DataWrapper";
 
 const HEADER_LENGTH = 4;
 

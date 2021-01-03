@@ -1,5 +1,5 @@
 import SimConnectData from "./SimConnectData";
-import DataWrapper from "../DataWrapper";
+import DataWrapper from "../wrappers/DataWrapper";
 
 class Waypoint implements SimConnectData {
     latitude: number = 0;   // degrees

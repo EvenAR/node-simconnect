@@ -3,7 +3,7 @@ import {SimConnectDataType} from "./SimConnectDataType";
 import {SimConnectPeriod} from "./SimConnectPeriod";
 import {SimObjectType} from "./SimObjectType";
 import {SimConnectConstants} from "./SimConnectConstants";
-import DataWrapper from "./DataWrapper";
+import DataWrapper from "./wrappers/DataWrapper";
 import {RecvID, SimConnectMessage, SimConnectSocket} from "./SimConnectSocket";
 import {findSimConnectPortIPv4, SimConnectBuild} from "./configuration";
 import SimConnectData from "./data/SimConnectData";
@@ -61,6 +61,8 @@ interface RecvSystemState {
 	dataFloat: number,
 	dataString: string
 }
+
+type DataToSet = { buffer: DataWrapper, arrayCount: number, tagged: boolean } | SimConnectData[]
 
 declare interface SimConnect {
     on(event: "open", handler: (recvOpen: RecvOpen) => void): this;
@@ -172,6 +174,11 @@ class SimConnect extends EventEmitter {
 		}
 	}
 
+	clean(buffer: DataWrapper) {
+		buffer.clear()
+		buffer.setOffset(16);
+	}
+
     sendPacket(type: number) {
 		// finalize packet
 		const packetSize = this.writeBuffer.getOffset();
@@ -179,8 +186,7 @@ class SimConnect extends EventEmitter {
 		this.writeBuffer.writeInt(this.ourProtocol, 4);
 		this.writeBuffer.writeInt(0xF0000000 | type, 8);
 		this.writeBuffer.writeInt(this.currentIndex++, 12);
-		this.writeBuffer.flip();
-		const data = this.writeBuffer.getBufferCopy();
+		const data = this.writeBuffer.getBuffer();
 		this.clientSocket.write(data);
 		this.packetsSent++;
 		this.bytesSent += packetSize;
@@ -190,7 +196,7 @@ class SimConnect extends EventEmitter {
 	//////////////////////////////////////
 
     _open() {
-		this.writeBuffer.prepare();
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeString256(this.appName)
 		this.writeBuffer.writeInt(0);
 		this.writeBuffer.writeByte(0x00);
@@ -221,7 +227,7 @@ class SimConnect extends EventEmitter {
 
 
 	subscribeToSystemEvent(clientEventID: number, eventName: string) {
-		this.writeBuffer.prepare();
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(clientEventID);
 		this.writeBuffer.writeString256(eventName);
 		this.sendPacket(0x17);
@@ -230,7 +236,7 @@ class SimConnect extends EventEmitter {
 	_definitionIds = []
 
 	addToDataDefinition(dataDefId: number, datumName: string, unitsName: string | null, dataType?: SimConnectDataType, epsilon?: number, datumId?: number) {
-		this.writeBuffer.prepare();
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(dataDefId);
 		this.writeBuffer.writeString256(datumName);
 		this.writeBuffer.writeString256(unitsName);
@@ -241,7 +247,7 @@ class SimConnect extends EventEmitter {
 	}
 
 	requestDataOnSimObject(dataRequestId: number, dataDefinitionId: number, objectId: number, period: SimConnectPeriod, flags?: number, origin?: number, interval?: number, limit?: number) {
-		this.writeBuffer.prepare();
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(dataRequestId);
 		this.writeBuffer.writeInt(dataDefinitionId);
 		this.writeBuffer.writeInt(objectId);
@@ -254,7 +260,7 @@ class SimConnect extends EventEmitter {
 	}
 
 	requestDataOnSimObjectType(dataRequestId: number, dataDefinitionId: number, radiusMeters: number, type: SimObjectType) {
-		this.writeBuffer.prepare();
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(dataRequestId);
 		this.writeBuffer.writeInt(dataDefinitionId);
 		this.writeBuffer.writeInt(radiusMeters);
@@ -262,17 +268,29 @@ class SimConnect extends EventEmitter {
 		this.sendPacket(0x0f);
 	}
 
-	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: SimConnectData[]) {
-		this.writeBuffer.prepare();
+	setDataOnSimObject(dataDefinitionID: number, objectID: number, data: DataToSet) {
+		this.clean(this.writeBuffer);
 		this.writeBuffer.writeInt(dataDefinitionID);
 		this.writeBuffer.writeInt(objectID);
-		this.writeBuffer.writeInt(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
-		this.writeBuffer.writeInt(data.length);
-		this.writeBuffer.writeInt(0);		// size
-		data.forEach(sd => {
-			sd.write(this.writeBuffer);
-		});
-		this.writeBuffer.writeInt(32, this.writeBuffer.getOffset() - 36);
+
+		if (data instanceof Array) {
+			this.writeBuffer.writeInt(SimConnectConstants.DATA_SET_FLAG_DEFAULT);
+			this.writeBuffer.writeInt(data.length);
+			this.writeBuffer.writeInt(0);		// size
+			data.forEach(simConnectData => {
+				simConnectData.write(this.writeBuffer);
+			});
+			this.writeBuffer.writeInt(this.writeBuffer.getOffset() - 36, 32);
+		} else {
+			let { tagged, arrayCount, buffer } = data;
+			this.writeBuffer.writeInt(tagged ? SimConnectConstants.DATA_SET_FLAG_TAGGED : SimConnectConstants.DATA_SET_FLAG_DEFAULT);
+			if (arrayCount == 0) arrayCount = 1;
+			this.writeBuffer.writeInt(arrayCount);
+			const bytes = buffer.getBuffer();
+			this.writeBuffer.writeInt(bytes.length);
+			this.writeBuffer.write(bytes);
+		}
+
 		this.sendPacket(0x10);
 	}
 }

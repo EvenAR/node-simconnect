@@ -1,4 +1,4 @@
-import DataWrapper from "../DataWrapper";
+import DataWrapper from "../wrappers/DataWrapper";
 
 export default interface SimConnectData {
     readonly read: (buffer: DataWrapper) => void;

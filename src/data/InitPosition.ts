@@ -1,5 +1,5 @@
 import SimConnectData from "./SimConnectData";
-import DataWrapper from "../DataWrapper";
+import DataWrapper from "../wrappers/DataWrapper";
 
 enum Airspeed {
     Keep = -2,
