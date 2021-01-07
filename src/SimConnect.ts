@@ -17,7 +17,7 @@ import { TextType } from './TextType';
 import { FacilityListType } from './FacilityListType';
 import { ClientDataPeriod } from './ClientDataPeriod';
 
-enum ProtocolVersions {
+enum Protocol {
     FSX_RTM = 0x2,
     FSX_SP1 = 0x3, // supports enhanced client data, facilites, and modeless ui
     FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
@@ -132,11 +132,7 @@ class SimConnect extends EventEmitter {
     currentIndex: number;
     clientSocket: SimConnectSocket;
 
-    constructor(
-        appName: string,
-        protocolVersion: ProtocolVersions,
-        config?: any
-    ) {
+    constructor(appName: string, protocolVersion: Protocol, config?: any) {
         super();
         this.appName = appName;
         this.packetsSent = 0;
@@ -905,7 +901,7 @@ class SimConnect extends EventEmitter {
         epsilon?: number,
         datumId?: number
     ) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(dataDefineID);
@@ -932,7 +928,7 @@ class SimConnect extends EventEmitter {
         interval?: number,
         limit?: number
     ) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(clientDataID);
@@ -985,7 +981,7 @@ class SimConnect extends EventEmitter {
         this.clean(this.writeBuffer);
         this.writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
 
-        if (this.ourProtocol >= 0x4) {
+        if (this.ourProtocol >= Protocol.FSX_SP2) {
             if (title == null) title = fileName;
             this.writeBuffer.writeString(title, SimConnectConstants.MAX_PATH);
         }
@@ -1010,7 +1006,7 @@ class SimConnect extends EventEmitter {
         eventId: number,
         message: string
     ) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         // packet id 0x40
         this.clean(this.writeBuffer);
@@ -1034,7 +1030,7 @@ class SimConnect extends EventEmitter {
         prompt?: string,
         ...items: string[]
     ) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         // packet id 0x40
 
@@ -1062,7 +1058,7 @@ class SimConnect extends EventEmitter {
     }
 
     requestFacilitiesList(type: FacilityListType, eventId: number) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
         // ID 0x43
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(type);
@@ -1071,7 +1067,7 @@ class SimConnect extends EventEmitter {
     }
 
     subscribeToFacilities(type: FacilityListType, eventId: number) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         // ID 0x41
         this.clean(this.writeBuffer);
@@ -1081,7 +1077,7 @@ class SimConnect extends EventEmitter {
     }
 
     unSubscribeToFacilities(type: FacilityListType) {
-        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
 
         // ID 0x42
         this.clean(this.writeBuffer);
