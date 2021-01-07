@@ -12,6 +12,16 @@ import {
 import { discoverServer } from './Utils';
 import SimConnectData from './data/SimConnectData';
 import { NotificationPriority } from './NotificationPriority';
+import { InitPosition } from './data';
+import { TextType } from './TextType';
+import { FacilityListType } from './FacilityListType';
+import { ClientDataPeriod } from './ClientDataPeriod';
+
+enum ProtocolVersions {
+    FSX_RTM = 0x2,
+    FSX_SP1 = 0x3, // supports enhanced client data, facilites, and modeless ui
+    FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
+}
 
 enum SimConnectBuild {
     SP0 = 60905,
@@ -122,13 +132,17 @@ class SimConnect extends EventEmitter {
     currentIndex: number;
     clientSocket: SimConnectSocket;
 
-    constructor(appName: string, config: any, simConnectProtocol: number) {
+    constructor(
+        appName: string,
+        protocolVersion: ProtocolVersions,
+        config?: any
+    ) {
         super();
         this.appName = appName;
         this.packetsSent = 0;
         this.bytesSent = 0;
         this.currentIndex = 0;
-        this.ourProtocol = simConnectProtocol;
+        this.ourProtocol = protocolVersion;
         this.writeBuffer = new DataWrapper(RECEIVE_SIZE);
 
         this.clientSocket = new SimConnectSocket();
@@ -671,6 +685,414 @@ class SimConnect extends EventEmitter {
         this.writeBuffer.writeFloat(maxAlt);
         this.writeBuffer.writeInt(flags || 0);
         this.sendPacket(0x24);
+    }
+
+    weatherCreateThermal(
+        dataRequestID: number,
+        lat: number,
+        lon: number,
+        alt: number,
+        radius: number,
+        height: number,
+        coreRate: number,
+        coreTurbulence: number,
+        sinkRate: number,
+        sinkTurbulence: number,
+        coreSize: number,
+        coreTransitionSize: number,
+        sinkLayerSize: number,
+        sinkTransitionSize: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeFloat(lat);
+        this.writeBuffer.writeFloat(lon);
+        this.writeBuffer.writeFloat(alt);
+        this.writeBuffer.writeFloat(radius);
+        this.writeBuffer.writeFloat(height);
+        this.writeBuffer.writeFloat(coreRate);
+        this.writeBuffer.writeFloat(coreTurbulence);
+        this.writeBuffer.writeFloat(sinkRate);
+        this.writeBuffer.writeFloat(sinkTurbulence);
+        this.writeBuffer.writeFloat(coreSize);
+        this.writeBuffer.writeFloat(coreTransitionSize);
+        this.writeBuffer.writeFloat(sinkLayerSize);
+        this.writeBuffer.writeFloat(sinkTransitionSize);
+        this.sendPacket(0x25);
+    }
+
+    weatherRemoveThermal(objectID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(objectID);
+        this.sendPacket(0x26);
+    }
+
+    aICreateParkedATCAircraft(
+        containerTitle: string,
+        tailNumber: string,
+        airportID: string,
+        dataRequestID: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(containerTitle, 256);
+        this.writeBuffer.writeString(tailNumber, 12);
+        this.writeBuffer.writeString(airportID, 5);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x27);
+    }
+
+    aICreateEnrouteATCAircraft(
+        containerTitle: string,
+        tailNumber: string,
+        flightNumber: number,
+        flightPlanPath: string,
+        flightPlanPosition: number,
+        touchAndGo: boolean,
+        dataRequestID: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(containerTitle, 256);
+        this.writeBuffer.writeString(tailNumber, 12);
+        this.writeBuffer.writeInt(flightNumber);
+        this.writeBuffer.writeString(flightPlanPath, 260);
+        this.writeBuffer.writeDouble(flightPlanPosition);
+        this.writeBuffer.writeInt(touchAndGo ? 1 : 0);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x28);
+    }
+
+    aICreateNonATCAircraft(
+        containerTitle: string,
+        tailNumber: string,
+        initPos: InitPosition,
+        dataRequestID: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(containerTitle, 256);
+        this.writeBuffer.writeString(tailNumber, 12);
+        initPos.write(this.writeBuffer);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x29);
+    }
+
+    aICreateSimulatedObject(
+        containerTitle: string,
+        initPos: InitPosition,
+        dataRequestID: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(containerTitle, 256);
+        initPos.write(this.writeBuffer);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x2a);
+    }
+
+    aIReleaseControl(objectID: number, dataRequestID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x2b);
+    }
+
+    aIRemoveObject(objectID: number, dataRequestID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x2c);
+    }
+
+    aISetAircraftFlightPlan(
+        objectID: number,
+        flightPlanPath: string,
+        dataRequestID: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeString(flightPlanPath, 260);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.sendPacket(0x2d);
+    }
+
+    executeMissionAction(guidInstanceId: Buffer) {
+        if (guidInstanceId.length != 16) throw 'SimConnect.GUID_invalid_size';
+        this.clean(this.writeBuffer);
+        this.writeBuffer.write(guidInstanceId);
+        this.sendPacket(0x2e);
+    }
+
+    completeCustomMissionAction(guidInstanceId: Buffer) {
+        if (guidInstanceId.length != 16) throw 'SimConnect.GUID_invalid_size'; //$NON-NLS-1$
+        this.clean(this.writeBuffer);
+        this.writeBuffer.write(guidInstanceId);
+        this.sendPacket(0x2f);
+    }
+
+    cameraSetRelative6DOF(
+        deltaX: number,
+        deltaY: number,
+        deltaZ: number,
+        pitchDeg: number,
+        bankDeg: number,
+        headingDeg: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeFloat(deltaX);
+        this.writeBuffer.writeFloat(deltaY);
+        this.writeBuffer.writeFloat(deltaZ);
+        this.writeBuffer.writeFloat(pitchDeg);
+        this.writeBuffer.writeFloat(bankDeg);
+        this.writeBuffer.writeFloat(headingDeg);
+        this.sendPacket(0x30);
+    }
+
+    menuAddItem(menuItem: string, clientMenuEventID: number, data: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(menuItem, 256);
+        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeInt(data);
+        this.sendPacket(0x31);
+    }
+
+    menuDeleteItem(clientMenuEventID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientMenuEventID);
+        this.sendPacket(0x32);
+    }
+
+    menuAddSubItem(
+        clientMenuEventID: number,
+        menuItem: string,
+        clientSubMenuEventID: number,
+        data: number
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeString(menuItem, 256);
+        this.writeBuffer.writeInt(clientSubMenuEventID);
+        this.writeBuffer.writeInt(data);
+        this.sendPacket(0x33);
+    }
+
+    menuDeleteSubItem(clientMenuEventID: number, clientSubMenuEventID: number) {
+        // packet size 0x18
+        // packet id 0x34
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeInt(clientSubMenuEventID);
+        this.sendPacket(0x34);
+    }
+
+    mapClientDataNameToID(clientDataName: string, clientDataID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(clientDataName, 256);
+        this.writeBuffer.writeInt(clientDataID);
+        this.sendPacket(0x37);
+    }
+
+    createClientData(clientDataID: number, size: number, readOnly: boolean) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(size);
+        this.writeBuffer.writeInt(readOnly ? 1 : 0);
+        this.sendPacket(0x38);
+    }
+
+    addToClientDataDefinition(
+        dataDefineID: number,
+        offset: number,
+        sizeOrType: number,
+        epsilon?: number,
+        datumId?: number
+    ) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(dataDefineID);
+        this.writeBuffer.writeInt(offset);
+        this.writeBuffer.writeInt(sizeOrType);
+        this.writeBuffer.writeFloat(epsilon || 0);
+        this.writeBuffer.writeInt(datumId || 0);
+        this.sendPacket(0x39);
+    }
+
+    clearClientDataDefinition(dataDefineID: number) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(dataDefineID);
+        this.sendPacket(0x3a);
+    }
+
+    requestClientData(
+        clientDataID: number,
+        dataRequestID: number,
+        clientDataDefineID: number,
+        period: ClientDataPeriod,
+        flags: number,
+        origin?: number,
+        interval?: number,
+        limit?: number
+    ) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(clientDataDefineID);
+        this.writeBuffer.writeInt(period);
+        this.writeBuffer.writeInt(flags);
+        this.writeBuffer.writeInt(origin || 0);
+        this.writeBuffer.writeInt(interval || 0);
+        this.writeBuffer.writeInt(limit || 0);
+        this.sendPacket(0x3b);
+    }
+
+    setClientData(
+        clientDataID: number,
+        clientDataDefineID: number,
+        reserved: number,
+        arrayCount: number,
+        unitSize: number,
+        data: Buffer
+    ) {
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(clientDataDefineID);
+        this.writeBuffer.writeInt(0); // do not use arg
+        this.writeBuffer.writeInt(1); // do not use arg
+        // TODO: add support for arrays https://github.com/mharj/jsimconnect/blob/master/src/flightsim/simconnect/SimConnect.java#L3803
+        this.writeBuffer.writeInt(unitSize);
+        this.writeBuffer.write(data);
+        this.sendPacket(0x3c);
+    }
+
+    flightLoad(fileName: string) {
+        // packet size 0x114
+        // packet id 0x3D
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
+        this.sendPacket(0x3d);
+    }
+
+    flightSave(
+        fileName: string,
+        title: string | null,
+        description: string,
+        flags?: number
+    ) {
+        // packet size 0x918 (SP1), 0xA1C (SP2)
+        // packet id 0x3E
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
+
+        if (this.ourProtocol >= 0x4) {
+            if (title == null) title = fileName;
+            this.writeBuffer.writeString(title, SimConnectConstants.MAX_PATH);
+        }
+
+        this.writeBuffer.writeString(description, 2048);
+        this.writeBuffer.writeInt(SimConnectConstants.UNUSED);
+        this.sendPacket(0x3e);
+    }
+
+    flightPlanLoad(fileName: string) {
+        // packet size 0x114
+        // packet id 0x3F
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
+        this.sendPacket(0x3f);
+    }
+
+    text(
+        type: TextType,
+        timeSeconds: number,
+        eventId: number,
+        message: string
+    ) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        // packet id 0x40
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(type);
+        this.writeBuffer.writeFloat(timeSeconds);
+        this.writeBuffer.writeInt(eventId);
+        if (message != null && message.length > 0) {
+            this.writeBuffer.writeInt(message.length + 1);
+            this.writeBuffer.writeString(message);
+        } else {
+            this.writeBuffer.writeInt(1);
+        }
+        this.writeBuffer.writeByte(0);
+        this.sendPacket(0x40);
+    }
+
+    menu(
+        timeSeconds: number,
+        eventId: number,
+        title?: string,
+        prompt?: string,
+        ...items: string[]
+    ) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        // packet id 0x40
+
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(TextType.MENU);
+        this.writeBuffer.writeFloat(timeSeconds);
+        this.writeBuffer.writeInt(eventId);
+        this.writeBuffer.writeInt(0); // size, will be set later
+        if (!title && !prompt && items.length == 0) {
+            this.writeBuffer.writeByte(0);
+        } else if (title && prompt) {
+            this.writeBuffer.writeString(title);
+            this.writeBuffer.writeByte(0);
+            this.writeBuffer.writeString(prompt);
+            this.writeBuffer.writeByte(0);
+            items.forEach((s) => {
+                this.writeBuffer.writeString(s);
+                this.writeBuffer.writeByte(0);
+            });
+        }
+        // set size
+        this.writeBuffer.writeInt(28, this.writeBuffer.getOffset() - 32);
+
+        this.sendPacket(0x40);
+    }
+
+    requestFacilitiesList(type: FacilityListType, eventId: number) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        // ID 0x43
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(type);
+        this.writeBuffer.writeInt(eventId);
+        this.sendPacket(0x43);
+    }
+
+    subscribeToFacilities(type: FacilityListType, eventId: number) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        // ID 0x41
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(type);
+        this.writeBuffer.writeInt(eventId);
+        this.sendPacket(0x41);
+    }
+
+    unSubscribeToFacilities(type: FacilityListType) {
+        if (this.ourProtocol < 0x3) throw 'SimConnect.badversion'; //$NON-NLS-1$
+
+        // ID 0x42
+        this.clean(this.writeBuffer);
+        this.writeBuffer.writeInt(type);
+        this.sendPacket(0x42);
+    }
+
+    /////
+
+    getLastSentPacketID() {
+        return this.currentIndex - 1;
     }
 }
 

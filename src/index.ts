@@ -2,6 +2,7 @@ export * from './SimConnect';
 
 export * from './SimConnectConstants';
 export * from './SimConnectDataType';
+export * from './TextType';
 export * from './SimConnectPeriod';
 export * from './SimConnectException';
 export * from './SimObjectType';
