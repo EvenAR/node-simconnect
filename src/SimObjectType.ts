@@ -1,7 +1,7 @@
 export enum SimObjectType {
-	/** Specifies the user's aircraft. */
-	USER,
-	/** Specifies all AI controlled objects. */
+    /** Specifies the user's aircraft. */
+    USER,
+    /** Specifies all AI controlled objects. */
     ALL,
     /** Specifies all aircraft. */
     AIRCRAFT,
@@ -11,7 +11,7 @@ export enum SimObjectType {
     BOAT,
     /** Specifies all AI controlled ground vehicles */
     GROUND,
-    
+
     /** for invalid values */
-    INVALID
+    INVALID,
 }

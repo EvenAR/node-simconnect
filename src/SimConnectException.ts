@@ -42,5 +42,5 @@ export enum SimConnectException {
     /** @since 0.5 */
     OBJECT_ATC,
     /** @since 0.5 */
-    OBJECT_SCHEDULE
-} 
+    OBJECT_SCHEDULE,
+}

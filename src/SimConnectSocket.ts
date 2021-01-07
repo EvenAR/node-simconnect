@@ -1,6 +1,6 @@
-import net, {Socket} from "net";
-import {Duplex} from "stream";
-import DataWrapper from "./wrappers/DataWrapper";
+import net, { Socket } from 'net';
+import { Duplex } from 'stream';
+import DataWrapper from './wrappers/DataWrapper';
 
 const HEADER_LENGTH = 4;
 
@@ -31,13 +31,13 @@ enum RecvID {
     ID_EVENT_MULTIPLAYER_CLIENT_STARTED,
     ID_EVENT_MULTIPLAYER_SESSION_ENDED,
     ID_EVENT_RACE_END,
-    ID_EVENT_RACE_LAP
+    ID_EVENT_RACE_LAP,
 }
 
 interface SimConnectMessage {
-    version: number,
-    id: RecvID,
-    data: DataWrapper
+    version: number;
+    id: RecvID;
+    data: DataWrapper;
 }
 
 /**
@@ -57,21 +57,20 @@ class SimConnectSocket extends Duplex {
         this._wrapSocket();
     }
 
-    connect(address: string | {host: string, port: number}) {
-        if (typeof address === "string") {
+    connect(address: string | { host: string; port: number }) {
+        if (typeof address === 'string') {
             this._socket.connect(address);
-        }
-        else {
+        } else {
             this._socket.connect(address.port, address.host);
         }
     }
 
     _wrapSocket() {
-        this._socket.on('close', hadError => this.emit('close', hadError));
+        this._socket.on('close', (hadError) => this.emit('close', hadError));
         this._socket.on('connect', () => this.emit('connect'));
         this._socket.on('drain', () => this.emit('drain'));
         this._socket.on('end', () => this.emit('end'));
-        this._socket.on('error', err => this.emit('error', err));
+        this._socket.on('error', (err) => this.emit('error', err));
         this._socket.on('lookup', (err, address, family, host) => this.emit('lookup', err, address, family, host)); // prettier-ignore
         this._socket.on('ready', () => this.emit('ready'));
         this._socket.on('timeout', () => this.emit('timeout'));
@@ -98,7 +97,7 @@ class SimConnectSocket extends Duplex {
                 // Mandatory fields
                 version: body.readInt32LE(0),
                 id: body.readInt32LE(4),
-                data: new DataWrapper(body.slice(8))
+                data: new DataWrapper(body.slice(8)),
             };
 
             // Add object to read buffer
@@ -119,4 +118,4 @@ class SimConnectSocket extends Duplex {
     }
 }
 
-export {SimConnectSocket, RecvID, SimConnectMessage};
+export { SimConnectSocket, RecvID, SimConnectMessage };

@@ -1,10 +1,10 @@
-import SimConnectData from "./SimConnectData";
-import DataWrapper from "../wrappers/DataWrapper";
+import SimConnectData from './SimConnectData';
+import DataWrapper from '../wrappers/DataWrapper';
 
 class Waypoint implements SimConnectData {
-    latitude: number = 0;   // degrees
-    longitude: number = 0;  // degrees
-    altitude: number = 0;   // feet
+    latitude: number = 0; // degrees
+    longitude: number = 0; // degrees
+    altitude: number = 0; // feet
     /** flags of waypoints
      * @see flightsim.simconnect.SimConnectConstants#WAYPOINT_ON_GROUND
      * @see flightsim.simconnect.SimConnectConstants#WAYPOINT_REVERSE
@@ -15,8 +15,8 @@ class Waypoint implements SimConnectData {
      *
      */
     flags: number = 0;
-    speed: number = 0;      // knots
-    throttle: number = 0;   // percent
+    speed: number = 0; // knots
+    throttle: number = 0; // percent
 
     read(buffer: DataWrapper) {
         this.latitude = buffer.readDouble();
@@ -25,11 +25,9 @@ class Waypoint implements SimConnectData {
         this.flags = buffer.readInt();
         this.speed = buffer.readDouble();
         this.throttle = buffer.readDouble();
-    };
+    }
 
-    write(buffer: DataWrapper) {
-
-    };
+    write(buffer: DataWrapper) {}
 }
 
 export default Waypoint;

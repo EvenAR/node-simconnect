@@ -1,9 +1,9 @@
-import SimConnectData from "./SimConnectData";
-import DataWrapper from "../wrappers/DataWrapper";
+import SimConnectData from './SimConnectData';
+import DataWrapper from '../wrappers/DataWrapper';
 
 enum Airspeed {
     Keep = -2,
-    Cruise = -1
+    Cruise = -1,
 }
 
 export default class InitPosition implements SimConnectData {

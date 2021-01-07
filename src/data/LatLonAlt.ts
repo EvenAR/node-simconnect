@@ -1,5 +1,5 @@
-import SimConnectData from "./SimConnectData";
-import DataWrapper from "../wrappers/DataWrapper";
+import SimConnectData from './SimConnectData';
+import DataWrapper from '../wrappers/DataWrapper';
 
 class LatLonAlt implements SimConnectData {
     latitude: number = 0;
@@ -10,11 +10,9 @@ class LatLonAlt implements SimConnectData {
         this.latitude = buffer.readDouble();
         this.longitude = buffer.readDouble();
         this.altitude = buffer.readDouble();
-    };
+    }
 
-    write(buffer: DataWrapper) {
-
-    };
+    write(buffer: DataWrapper) {}
 }
 
 export default LatLonAlt;

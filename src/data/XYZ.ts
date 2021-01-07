@@ -1,5 +1,5 @@
-import SimConnectData from "./SimConnectData";
-import DataWrapper from "../wrappers/DataWrapper";
+import SimConnectData from './SimConnectData';
+import DataWrapper from '../wrappers/DataWrapper';
 
 class XYZ implements SimConnectData {
     x: number = 0;
@@ -10,11 +10,9 @@ class XYZ implements SimConnectData {
         this.x = buffer.readDouble();
         this.y = buffer.readDouble();
         this.z = buffer.readDouble();
-    };
+    }
 
-    write(buffer: DataWrapper) {
-
-    };
+    write(buffer: DataWrapper) {}
 }
 
 export default XYZ;

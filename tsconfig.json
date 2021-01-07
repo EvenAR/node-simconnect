@@ -11,7 +11,5 @@
     "inlineSourceMap": true,
     "inlineSources": true
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }
