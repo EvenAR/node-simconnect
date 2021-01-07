@@ -5,9 +5,15 @@ import {SimObjectType} from "./SimObjectType";
 import {SimConnectConstants} from "./SimConnectConstants";
 import DataWrapper from "./wrappers/DataWrapper";
 import {RecvID, SimConnectMessage, SimConnectSocket} from "./SimConnectSocket";
-import {findSimConnectPortIPv4, SimConnectBuild} from "./configuration";
+import {discoverServer} from "./Utils";
 import SimConnectData from "./data/SimConnectData";
 import {NotificationPriority} from "./NotificationPriority";
+
+enum SimConnectBuild{
+	SP0		    = 60905,
+	SP1		    = 61355,
+	SP2_XPACK	= 61259
+}
 
 const RECEIVE_SIZE = 65536;
 
@@ -105,14 +111,11 @@ class SimConnect extends EventEmitter {
 		this.writeBuffer = new DataWrapper(RECEIVE_SIZE);
 
 		this.clientSocket = new SimConnectSocket();
-
-		findSimConnectPortIPv4().then(port => {
+		discoverServer().then((address) => {
 			this.clientSocket.on("connect", this._open.bind(this));
 			this.clientSocket.on("data", this.handleMessage.bind(this));
-			this.clientSocket.connect({host: "localhost", port: port})
-		}).catch(() => {
-			console.log("Port not found")
-		})
+			this.clientSocket.connect(address)
+		});
     }
 
 	handleMessage({id, data}: SimConnectMessage) {

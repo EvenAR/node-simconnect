@@ -1,4 +1,4 @@
-import {Socket} from "net";
+import net, {Socket} from "net";
 import {Duplex} from "stream";
 import DataWrapper from "./wrappers/DataWrapper";
 
@@ -57,8 +57,13 @@ class SimConnectSocket extends Duplex {
         this._wrapSocket();
     }
 
-    connect({host, port}: {host: string, port: number}) {
-        this._socket.connect(port, host);
+    connect(address: string | {host: string, port: number}) {
+        if (typeof address === "string") {
+            this._socket.connect(address);
+        }
+        else {
+            this._socket.connect(address.port, address.host);
+        }
     }
 
     _wrapSocket() {
