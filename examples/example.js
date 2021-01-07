@@ -5,11 +5,11 @@ const {
     SimConnectConstants,
     SimConnectPeriod,
     SimObjectType,
-    InitPosition,
     DataWrapper,
+    Protocol,
 } = require('..');
 
-const sc = new SimConnect('My app', '', 3);
+const sc = new SimConnect('My app', Protocol.FSX_SP2);
 
 sc.on('event', (recvEvent) => {
     switch (recvEvent.eventID) {
@@ -146,7 +146,5 @@ sc.on('open', (recvOpen) => {
         SimConnectConstants.CLIENT_DATA_REQUEST_FLAG_CHANGED
     );
 
-    //  sc.text(TextType.PRINT_CYAN, 5, 7788, "Detta er en melding")
-
-    sc.menu(0, 78678, 'Titteln min', 'KLIKK HER DA VEL', 'hallo', 'hei ja');
+    sc.text(TextType.PRINT_CYAN, 5, 1234, 'Hello world');
 });

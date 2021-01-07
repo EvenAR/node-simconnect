@@ -17,7 +17,7 @@ import { TextType } from './TextType';
 import { FacilityListType } from './FacilityListType';
 import { ClientDataPeriod } from './ClientDataPeriod';
 
-enum Protocol {
+export enum Protocol {
     FSX_RTM = 0x2,
     FSX_SP1 = 0x3, // supports enhanced client data, facilites, and modeless ui
     FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
@@ -123,6 +123,10 @@ declare interface SimConnect {
     ): this;
 }
 
+export interface SimConnectOptions {
+    remote?: { host: string; port: number };
+}
+
 class SimConnect extends EventEmitter {
     appName: string;
     writeBuffer: DataWrapper;
@@ -132,7 +136,11 @@ class SimConnect extends EventEmitter {
     currentIndex: number;
     clientSocket: SimConnectSocket;
 
-    constructor(appName: string, protocolVersion: Protocol, config?: any) {
+    constructor(
+        appName: string,
+        protocolVersion: Protocol,
+        options?: SimConnectOptions
+    ) {
         super();
         this.appName = appName;
         this.packetsSent = 0;
@@ -142,11 +150,17 @@ class SimConnect extends EventEmitter {
         this.writeBuffer = new DataWrapper(RECEIVE_SIZE);
 
         this.clientSocket = new SimConnectSocket();
-        discoverServer().then((address) => {
-            this.clientSocket.on('connect', this._open.bind(this));
-            this.clientSocket.on('data', this.handleMessage.bind(this));
-            this.clientSocket.connect(address);
-        });
+
+        this.clientSocket.on('connect', this._open.bind(this));
+        this.clientSocket.on('data', this.handleMessage.bind(this));
+
+        if (options?.remote) {
+            this.clientSocket.connect(options?.remote);
+        } else {
+            discoverServer().then((address) => {
+                this.clientSocket.connect(address);
+            });
+        }
     }
 
     handleMessage({ id, data }: SimConnectMessage) {
@@ -1095,4 +1109,5 @@ class SimConnect extends EventEmitter {
 module.exports = {
     SimConnect,
     SimConnectSocket,
+    Protocol,
 };
