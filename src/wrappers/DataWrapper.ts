@@ -143,6 +143,9 @@ class DataWrapper {
     readXYZ(): XYZ {
         return this.getData(new XYZ());
     }
+    remaining() {
+        return this.buffer.remaining();
+    }
 }
 
 function makeString(bf: ByteBuffer, maxLength: number) {

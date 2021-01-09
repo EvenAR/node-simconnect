@@ -4,11 +4,6 @@ import { SimConnectPeriod } from './SimConnectPeriod';
 import { SimObjectType } from './SimObjectType';
 import { SimConnectConstants } from './SimConnectConstants';
 import DataWrapper from './wrappers/DataWrapper';
-import {
-    RecvID,
-    SimConnectMessage,
-    SimConnectSocket,
-} from './SimConnectSocket';
 import { discoverServer } from './Utils';
 import SimConnectData from './data/SimConnectData';
 import { NotificationPriority } from './NotificationPriority';
@@ -16,6 +11,33 @@ import { InitPosition } from './data';
 import { TextType } from './TextType';
 import { FacilityListType } from './FacilityListType';
 import { ClientDataPeriod } from './ClientDataPeriod';
+import {
+    RecvID,
+    SimConnectMessage,
+    SimConnectSocket,
+} from './SimConnectSocket';
+import {
+    RecvAirportList,
+    RecvAssignedObjectID,
+    RecvCloudState,
+    RecvCustomAction,
+    RecvEvent,
+    RecvEventAddRemove,
+    RecvEventFilename,
+    RecvEventFrame,
+    RecvNDBList,
+    RecvOpen,
+    RecvReservedKey,
+    RecvSimObjectData,
+    RecvSystemState,
+    RecvVORList,
+    RecvWaypointList,
+    RecvEventWeatherMode,
+    RecvWeatherObservation,
+    RecvEventRaceEnd,
+    RecvEventRaceLap,
+    RecvException,
+} from './recv';
 
 const RECEIVE_SIZE = 65536;
 
@@ -31,62 +53,56 @@ export enum SimConnectBuild {
     SP2_XPACK = 61259,
 }
 
-export interface RecvOpen {
-    applicationName: string;
-    applicationVersionMajor: number;
-    applicationVersionMinor: number;
-    applicationBuildMajor: number;
-    applicationBuildMinor: number;
-    simConnectVersionMajor: number;
-    simConnectVersionMinor: number;
-    simConnectBuildMajor: number;
-    simConnectBuildMinor: number;
-    reserved1: number;
-    reserved2: number;
-}
-
-export interface RecvSimObjectData {
-    requestID: number;
-    objectID: number;
-    defineID: number;
-    flags: number;
-    entryNumber: number;
-    outOf: number;
-    defineCount: number;
-    data: DataWrapper;
-}
-
-export interface RecvEvent {
-    groupID: number;
-    eventID: number;
-    data: number;
-}
-
-export interface RecvSystemState {
-    requestID: number;
-    dataInteger: number;
-    dataFloat: number;
-    dataString: string;
-}
-
-export interface RecvWeatherObservation {
-    requestID: number;
-    metar: string;
-}
-
-export interface RecvCloudState {
-    requestID: number;
-    arraySize: number;
-    data: number[][];
-}
-
 type DataToSet =
     | { buffer: DataWrapper; arrayCount: number; tagged: boolean }
     | SimConnectData[];
 
 export declare interface SimConnect {
     on(event: 'open', handler: (recvOpen: RecvOpen) => void): this;
+    on(event: 'quit', handler: () => void): this;
     on(event: 'event', handler: (recvEvent: RecvEvent) => void): this;
+    on(
+        event: 'airportList',
+        handler: (recvAirportList: RecvAirportList) => void
+    ): this;
+    on(event: 'vorList', handler: (recvVORList: RecvVORList) => void): this;
+    on(event: 'ndbList', handler: (recvVORList: RecvNDBList) => void): this;
+    on(
+        event: 'waypointList',
+        handler: (recvWaypointList: RecvWaypointList) => void
+    ): this;
+    on(
+        event: 'reservedKey',
+        handler: (recvReservedKey: RecvReservedKey) => void
+    ): this;
+    on(
+        event: 'customAction',
+        handler: (recvCustomAction: RecvCustomAction) => void
+    ): this;
+    on(
+        event: 'clientData',
+        handler: (recvSimObjectData: RecvSimObjectData) => void
+    ): this;
+    on(
+        event: 'eventWeatherMode',
+        handler: (recvWeatherMode: RecvEventWeatherMode) => void
+    ): this;
+    on(
+        event: 'assignedObjectID',
+        handler: (recvAssignedObjectID: RecvAssignedObjectID) => void
+    ): this;
+    on(
+        event: 'eventFilename',
+        handler: (recvEventFilename: RecvEventFilename) => void
+    ): this;
+    on(
+        event: 'eventFrame',
+        handler: (recvEventFrame: RecvEventFrame) => void
+    ): this;
+    on(
+        event: 'eventAddRemove',
+        handler: (recvEvent: RecvEventAddRemove) => void
+    ): this;
     on(
         event: 'simObjectData',
         handler: (recvSimObjectData: RecvSimObjectData) => void
@@ -107,6 +123,18 @@ export declare interface SimConnect {
         event: 'cloudState',
         handler: (recvCloudState: RecvCloudState) => void
     ): this;
+    on(event: 'eventMultiplayerServerStarted', handler: () => void): this;
+    on(event: 'eventMultiplayerClientStarted', handler: () => void): this;
+    on(event: 'eventMultiplayerSessionEnded', handler: () => void): this;
+    on(
+        event: 'eventRaceEnd',
+        handler: (recvEventRaceEnd: RecvEventRaceEnd) => void
+    ): this;
+    on(
+        event: 'eventRaceLap',
+        handler: (recvEventRaceLap: RecvEventRaceLap) => void
+    ): this;
+    on(event: 'eventRaceLap', handler: () => void): this;
 }
 
 export interface SimConnectOptions {
@@ -151,94 +179,88 @@ export class SimConnect extends EventEmitter {
 
     handleMessage({ id, data }: SimConnectMessage) {
         switch (id) {
+            case RecvID.ID_NULL:
+                break;
             case RecvID.ID_EXCEPTION:
-                this.emit('Exception', {
-                    exception: data.readInt(),
-                    sendId: data.readInt(),
-                    index: data.readInt(),
-                });
+                this.emit('Exception', new RecvException(data));
                 break;
             case RecvID.ID_OPEN:
-                this.emit('open', {
-                    applicationName: data.readString256(),
-                    applicationVersionMajor: data.readInt(),
-                    applicationVersionMinor: data.readInt(),
-                    applicationBuildMajor: data.readInt(),
-                    applicationBuildMinor: data.readInt(),
-                    simConnectVersionMajor: data.readInt(),
-                    simConnectVersionMinor: data.readInt(),
-                    simConnectBuildMajor: data.readInt(),
-                    simConnectBuildMinor: data.readInt(),
-                    reserved1: data.readInt(),
-                    reserved2: data.readInt(),
-                });
+                this.emit('open', new RecvOpen(data));
+                break;
+            case RecvID.ID_QUIT:
+                this.emit('quit');
                 break;
             case RecvID.ID_EVENT:
-                const recvEvent: RecvEvent = {
-                    groupID: data.readInt(),
-                    eventID: data.readInt(),
-                    data: data.readInt(),
-                };
-                this.emit('event', recvEvent);
+                this.emit('event', new RecvEvent(data));
+                break;
+            case RecvID.ID_EVENT_OBJECT_ADDREMOVE:
+                this.emit('eventAddRemove', new RecvEventAddRemove(data));
+                break;
+            case RecvID.ID_EVENT_FILENAME:
+                this.emit('eventFilename', new RecvEventFilename(data));
+                break;
+            case RecvID.ID_EVENT_FRAME:
+                this.emit('eventFrame', new RecvEventFrame(data));
                 break;
             case RecvID.ID_SIMOBJECT_DATA:
-                //data.skip(8)
-                const recvSimObjectData: RecvSimObjectData = {
-                    requestID: data.readInt(),
-                    objectID: data.readInt(),
-                    defineID: data.readInt(),
-                    flags: data.readInt(),
-                    entryNumber: data.readInt(),
-                    outOf: data.readInt(),
-                    defineCount: data.readInt(),
-                    data: data,
-                };
-
-                this.emit('simObjectData', recvSimObjectData);
+                this.emit('simObjectData', new RecvSimObjectData(data));
                 break;
             case RecvID.ID_SIMOBJECT_DATA_BYTYPE:
-                const recvSimObjectDataByType: RecvSimObjectData = {
-                    requestID: data.readInt(),
-                    objectID: data.readInt(),
-                    defineID: data.readInt(),
-                    flags: data.readInt(),
-                    entryNumber: data.readInt(),
-                    outOf: data.readInt(),
-                    defineCount: data.readInt(),
-                    data: data,
-                };
-                this.emit('simObjectDataByType', recvSimObjectDataByType);
-                break;
-            case RecvID.ID_SYSTEM_STATE:
-                const recvSystemState: RecvSystemState = {
-                    requestID: data.readInt(),
-                    dataInteger: data.readInt(),
-                    dataFloat: data.readFloat(),
-                    dataString: data.readString(SimConnectConstants.MAX_PATH),
-                };
-                this.emit('systemState', recvSystemState);
+                this.emit('simObjectDataByType', new RecvSimObjectData(data));
                 break;
             case RecvID.ID_WEATHER_OBSERVATION:
-                const recvWeatherObservation: RecvWeatherObservation = {
-                    requestID: data.readInt(),
-                    metar: data.readStringV(),
-                };
-                this.emit('weatherObservation', recvWeatherObservation);
+                this.emit(
+                    'weatherObservation',
+                    new RecvWeatherObservation(data)
+                );
                 break;
             case RecvID.ID_CLOUD_STATE:
-                const requestID = data.readInt();
-                const arraySize = data.readInt();
-                const cloudData: number[][] = [];
-                // Read 2D-array of 64x64 bytes
-                for (let i = 0; i < 64; i++) {
-                    cloudData[i] = [...data.readBytes(64)];
-                }
-                const recvCloudState: RecvCloudState = {
-                    requestID,
-                    arraySize,
-                    data: cloudData,
-                };
-                this.emit('cloudState', recvCloudState);
+                this.emit('cloudState', new RecvCloudState(data));
+                break;
+            case RecvID.ID_ASSIGNED_OBJECT_ID:
+                this.emit('assignedObjectID', new RecvAssignedObjectID(data));
+                break;
+            case RecvID.ID_RESERVED_KEY:
+                this.emit('reservedKey', new RecvReservedKey(data));
+                break;
+            case RecvID.ID_CUSTOM_ACTION:
+                this.emit('customAction', new RecvCustomAction(data));
+                break;
+            case RecvID.ID_SYSTEM_STATE:
+                this.emit('systemState', new RecvSystemState(data));
+                break;
+            case RecvID.ID_CLIENT_DATA:
+                this.emit('clientData', new RecvSimObjectData(data));
+                break;
+            case RecvID.ID_EVENT_WEATHER_MODE:
+                this.emit('eventWeatherMode', new RecvEventWeatherMode(data));
+                break;
+            case RecvID.ID_AIRPORT_LIST:
+                this.emit('airportList', new RecvAirportList(data));
+                break;
+            case RecvID.ID_VOR_LIST:
+                this.emit('vorList', new RecvVORList(data));
+                break;
+            case RecvID.ID_NDB_LIST:
+                this.emit('ndbList', new RecvNDBList(data));
+                break;
+            case RecvID.ID_WAYPOINT_LIST:
+                this.emit('waypointList', new RecvWaypointList(data));
+                break;
+            case RecvID.ID_EVENT_MULTIPLAYER_SERVER_STARTED:
+                this.emit('eventMultiplayerServerStarted');
+                break;
+            case RecvID.ID_EVENT_MULTIPLAYER_CLIENT_STARTED:
+                this.emit('eventMultiplayerClientStarted');
+                break;
+            case RecvID.ID_EVENT_MULTIPLAYER_SESSION_ENDED:
+                this.emit('eventMultiplayerSessionEnded');
+                break;
+            case RecvID.ID_EVENT_RACE_END:
+                this.emit('eventRaceEnd', new RecvEventRaceEnd(data));
+                break;
+            case RecvID.ID_EVENT_RACE_LAP:
+                this.emit('eventRaceLap', new RecvEventRaceLap(data));
                 break;
             default:
                 console.log('UNK', data);

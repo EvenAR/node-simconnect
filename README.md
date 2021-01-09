@@ -43,6 +43,7 @@ Tested ok:
 -   `weatherRequestObservationAtNearestStation`
 -   `weatherRequestCloudState`
 -   `text`
+-   `requestFacilitiesList`
 
 Implemented but not tested:
 
@@ -95,6 +96,5 @@ Implemented but not tested:
 -   `flightSave`
 -   `flightPlanLoad`
 -   `menu`
--   `requestFacilitiesList`
 -   `subscribeToFacilities`
 -   `unSubscribeToFacilities`
