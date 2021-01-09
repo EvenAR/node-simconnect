@@ -17,21 +17,21 @@ import { TextType } from './TextType';
 import { FacilityListType } from './FacilityListType';
 import { ClientDataPeriod } from './ClientDataPeriod';
 
+const RECEIVE_SIZE = 65536;
+
 export enum Protocol {
     FSX_RTM = 0x2,
     FSX_SP1 = 0x3, // supports enhanced client data, facilites, and modeless ui
     FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
 }
 
-enum SimConnectBuild {
+export enum SimConnectBuild {
     SP0 = 60905,
     SP1 = 61355,
     SP2_XPACK = 61259,
 }
 
-const RECEIVE_SIZE = 65536;
-
-interface RecvOpen {
+export interface RecvOpen {
     applicationName: string;
     applicationVersionMajor: number;
     applicationVersionMinor: number;
@@ -45,7 +45,7 @@ interface RecvOpen {
     reserved2: number;
 }
 
-interface RecvSimObjectData {
+export interface RecvSimObjectData {
     requestID: number;
     objectID: number;
     defineID: number;
@@ -56,39 +56,25 @@ interface RecvSimObjectData {
     data: DataWrapper;
 }
 
-interface RecvOpen {
-    applicationName: string;
-    applicationVersionMajor: number;
-    applicationVersionMinor: number;
-    applicationBuildMajor: number;
-    applicationBuildMinor: number;
-    simConnectVersionMajor: number;
-    simConnectVersionMinor: number;
-    simConnectBuildMajor: number;
-    simConnectBuildMinor: number;
-    reserved1: number;
-    reserved2: number;
-}
-
-interface RecvEvent {
+export interface RecvEvent {
     groupID: number;
     eventID: number;
     data: number;
 }
 
-interface RecvSystemState {
+export interface RecvSystemState {
     requestID: number;
     dataInteger: number;
     dataFloat: number;
     dataString: string;
 }
 
-interface RecvWeatherObservation {
+export interface RecvWeatherObservation {
     requestID: number;
     metar: string;
 }
 
-interface RecvCloudState {
+export interface RecvCloudState {
     requestID: number;
     arraySize: number;
     data: number[][];
@@ -98,7 +84,7 @@ type DataToSet =
     | { buffer: DataWrapper; arrayCount: number; tagged: boolean }
     | SimConnectData[];
 
-declare interface SimConnect {
+export declare interface SimConnect {
     on(event: 'open', handler: (recvOpen: RecvOpen) => void): this;
     on(event: 'event', handler: (recvEvent: RecvEvent) => void): this;
     on(
@@ -127,7 +113,7 @@ export interface SimConnectOptions {
     remote?: { host: string; port: number };
 }
 
-class SimConnect extends EventEmitter {
+export class SimConnect extends EventEmitter {
     appName: string;
     writeBuffer: DataWrapper;
     ourProtocol: number;
@@ -1108,6 +1094,4 @@ class SimConnect extends EventEmitter {
 
 module.exports = {
     SimConnect,
-    SimConnectSocket,
-    Protocol,
 };

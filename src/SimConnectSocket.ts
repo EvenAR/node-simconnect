@@ -1,4 +1,4 @@
-import net, { Socket } from 'net';
+import { Socket } from 'net';
 import { Duplex } from 'stream';
 import DataWrapper from './wrappers/DataWrapper';
 
