@@ -170,3 +170,7 @@ export const SimConnectConstants = {
     /** @see SimConnect#addToClientDataDefinition(int, int, int, float, int) */
     CLIENT_DATA_TYPE_FLOAT64: -6,
 };
+
+module.exports = {
+    SimConnectConstants,
+};

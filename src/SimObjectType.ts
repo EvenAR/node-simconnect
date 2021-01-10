@@ -15,3 +15,7 @@ export enum SimObjectType {
     /** for invalid values */
     INVALID,
 }
+
+module.exports = {
+    SimObjectType,
+};

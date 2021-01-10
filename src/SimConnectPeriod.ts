@@ -11,3 +11,7 @@ export enum SimConnectPeriod {
     /** Specifies that the data should be sent once every second. */
     SECOND,
 }
+
+module.exports = {
+    SimConnectPeriod,
+};

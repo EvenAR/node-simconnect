@@ -44,3 +44,7 @@ export enum SimConnectException {
     /** @since 0.5 */
     OBJECT_SCHEDULE,
 }
+
+module.exports = {
+    SimConnectException,
+};

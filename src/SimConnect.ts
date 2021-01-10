@@ -47,98 +47,62 @@ export enum Protocol {
     FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
 }
 
-export enum SimConnectBuild {
+enum SimConnectBuild {
     SP0 = 60905,
     SP1 = 61355,
     SP2_XPACK = 61259,
+}
+
+export interface SimConnectOptions {
+    remote?: { host: string; port: number };
 }
 
 type DataToSet =
     | { buffer: DataWrapper; arrayCount: number; tagged: boolean }
     | SimConnectData[];
 
-export declare interface SimConnect {
-    on(event: 'open', handler: (recvOpen: RecvOpen) => void): this;
-    on(event: 'quit', handler: () => void): this;
-    on(event: 'event', handler: (recvEvent: RecvEvent) => void): this;
-    on(
-        event: 'airportList',
-        handler: (recvAirportList: RecvAirportList) => void
-    ): this;
-    on(event: 'vorList', handler: (recvVORList: RecvVORList) => void): this;
-    on(event: 'ndbList', handler: (recvVORList: RecvNDBList) => void): this;
-    on(
-        event: 'waypointList',
-        handler: (recvWaypointList: RecvWaypointList) => void
-    ): this;
-    on(
-        event: 'reservedKey',
-        handler: (recvReservedKey: RecvReservedKey) => void
-    ): this;
-    on(
-        event: 'customAction',
-        handler: (recvCustomAction: RecvCustomAction) => void
-    ): this;
-    on(
-        event: 'clientData',
-        handler: (recvSimObjectData: RecvSimObjectData) => void
-    ): this;
-    on(
-        event: 'eventWeatherMode',
-        handler: (recvWeatherMode: RecvEventWeatherMode) => void
-    ): this;
-    on(
-        event: 'assignedObjectID',
-        handler: (recvAssignedObjectID: RecvAssignedObjectID) => void
-    ): this;
-    on(
-        event: 'eventFilename',
-        handler: (recvEventFilename: RecvEventFilename) => void
-    ): this;
-    on(
-        event: 'eventFrame',
-        handler: (recvEventFrame: RecvEventFrame) => void
-    ): this;
-    on(
-        event: 'eventAddRemove',
-        handler: (recvEvent: RecvEventAddRemove) => void
-    ): this;
-    on(
-        event: 'simObjectData',
-        handler: (recvSimObjectData: RecvSimObjectData) => void
-    ): this;
-    on(
-        event: 'simObjectDataByType',
-        handler: (recvSimObjectData: RecvSimObjectData) => void
-    ): this;
-    on(
-        event: 'systemState',
-        handler: (recvSystemState: RecvSystemState) => void
-    ): this;
-    on(
-        event: 'weatherObservation',
-        handler: (recvWeatherObservation: RecvWeatherObservation) => void
-    ): this;
-    on(
-        event: 'cloudState',
-        handler: (recvCloudState: RecvCloudState) => void
-    ): this;
-    on(event: 'eventMultiplayerServerStarted', handler: () => void): this;
-    on(event: 'eventMultiplayerClientStarted', handler: () => void): this;
-    on(event: 'eventMultiplayerSessionEnded', handler: () => void): this;
-    on(
-        event: 'eventRaceEnd',
-        handler: (recvEventRaceEnd: RecvEventRaceEnd) => void
-    ): this;
-    on(
-        event: 'eventRaceLap',
-        handler: (recvEventRaceLap: RecvEventRaceLap) => void
-    ): this;
-    on(event: 'eventRaceLap', handler: () => void): this;
+interface SimConnectEvents {
+    open: (recvOpen: RecvOpen) => void;
+    close: () => void;
+    quit: () => void;
+    exception: (recvException: RecvException) => void;
+    event: (recvEvent: RecvEvent) => void;
+    airportList: (recvAirportList: RecvAirportList) => void;
+    vorList: (recvVORList: RecvVORList) => void;
+    ndbList: (recvNDBList: RecvNDBList) => void;
+    waypointList: (recvWaypointList: RecvWaypointList) => void;
+    reservedKey: (recvReservedKey: RecvReservedKey) => void;
+    customAction: (recvCustomAction: RecvCustomAction) => void;
+    clientData: (recvSimObjectData: RecvSimObjectData) => void;
+    eventWeatherMode: (recvWeatherMode: RecvEventWeatherMode) => void;
+    assignedObjectID: (recvAssignedObjectID: RecvAssignedObjectID) => void;
+    eventFilename: (recvEventFilename: RecvEventFilename) => void;
+    eventFrame: (recvEventFrame: RecvEventFrame) => void;
+    eventAddRemove: (recvEvent: RecvEventAddRemove) => void;
+    simObjectData: (recvSimObjectData: RecvSimObjectData) => void;
+    simObjectDataByType: (recvSimObjectData: RecvSimObjectData) => void;
+    systemState: (recvSystemState: RecvSystemState) => void;
+    weatherObservation: (
+        recvWeatherObservation: RecvWeatherObservation
+    ) => void;
+    cloudState: (recvCloudState: RecvCloudState) => void;
+    eventMultiplayerServerStarted: () => void;
+    eventMultiplayerClientStarted: () => void;
+    eventMultiplayerSessionEnded: () => void;
+    eventRaceEnd: (recvEventRaceEnd: RecvEventRaceEnd) => void;
+    eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
 }
 
-export interface SimConnectOptions {
-    remote?: { host: string; port: number };
+export declare interface SimConnect extends EventEmitter {
+    on<U extends keyof SimConnectEvents>(
+        event: U,
+        listener: SimConnectEvents[U]
+    ): this;
+
+    emit<U extends keyof SimConnectEvents>(
+        event: U,
+        ...args: Parameters<SimConnectEvents[U]>
+    ): boolean;
 }
 
 export class SimConnect extends EventEmitter {
@@ -167,13 +131,16 @@ export class SimConnect extends EventEmitter {
 
         this.clientSocket.on('connect', this._open.bind(this));
         this.clientSocket.on('data', this.handleMessage.bind(this));
+        this.clientSocket.on('close', () => this.emit('close'));
 
         if (options?.remote) {
             this.clientSocket.connect(options?.remote);
         } else {
-            discoverServer().then((address) => {
-                this.clientSocket.connect(address);
-            });
+            try {
+                discoverServer().then((address) => {
+                    this.clientSocket.connect(address);
+                });
+            } catch (e) {}
         }
     }
 
@@ -182,7 +149,7 @@ export class SimConnect extends EventEmitter {
             case RecvID.ID_NULL:
                 break;
             case RecvID.ID_EXCEPTION:
-                this.emit('Exception', new RecvException(data));
+                this.emit('exception', new RecvException(data));
                 break;
             case RecvID.ID_OPEN:
                 this.emit('open', new RecvOpen(data));
@@ -289,7 +256,7 @@ export class SimConnect extends EventEmitter {
 
     //////////////////////////////////////
 
-    _open() {
+    private _open() {
         this.clean(this.writeBuffer);
         this.writeBuffer.writeString256(this.appName);
         this.writeBuffer.writeInt(0);
@@ -1107,6 +1074,10 @@ export class SimConnect extends EventEmitter {
         this.sendPacket(0x42);
     }
 
+    close() {
+        this.clientSocket.close();
+    }
+
     /////
 
     getLastSentPacketID() {
@@ -1116,4 +1087,6 @@ export class SimConnect extends EventEmitter {
 
 module.exports = {
     SimConnect,
+    Protocol,
+    RecvOpen,
 };

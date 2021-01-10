@@ -10,4 +10,5 @@ export * from './FacilityListType';
 
 export * from './facility';
 export * from './data';
+export * from './recv';
 export { default as DataWrapper } from './wrappers/DataWrapper';

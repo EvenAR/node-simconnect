@@ -65,6 +65,10 @@ class SimConnectSocket extends Duplex {
         }
     }
 
+    close() {
+        this._socket.destroy();
+    }
+
     _wrapSocket() {
         this._socket.on('close', (hadError) => this.emit('close', hadError));
         this._socket.on('connect', () => this.emit('connect'));
