@@ -1,4 +1,4 @@
-import DataWrapper from './wrappers/DataWrapper';
+import DataWrapper from '../wrappers/DataWrapper';
 
 export class FacilityAirport {
     icao: string;

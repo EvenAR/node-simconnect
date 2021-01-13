@@ -1,13 +1,13 @@
-import DataWrapper from './wrappers/DataWrapper';
-import { SimObjectType } from './SimObjectType';
-import { WeatherMode } from './WeatherMode';
+import DataWrapper from '../wrappers/DataWrapper';
+import { SimObjectType } from '../enums/SimObjectType';
+import { WeatherMode } from '../enums/WeatherMode';
 import {
     FacilityAirport,
     FacilityNDB,
     FacilityVOR,
     FacilityWaypoint,
 } from './facility';
-import { SimConnectConstants } from './SimConnectConstants';
+import { SimConnectConstants } from '../SimConnectConstants';
 
 export class RecvOpen {
     applicationName: string;

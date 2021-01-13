@@ -1,16 +1,16 @@
 import { EventEmitter } from 'events';
-import { SimConnectDataType } from './SimConnectDataType';
-import { SimConnectPeriod } from './SimConnectPeriod';
-import { SimObjectType } from './SimObjectType';
+import { SimConnectDataType } from './enums/SimConnectDataType';
+import { SimConnectPeriod } from './enums/SimConnectPeriod';
+import { SimObjectType } from './enums/SimObjectType';
 import { SimConnectConstants } from './SimConnectConstants';
 import DataWrapper from './wrappers/DataWrapper';
 import { discoverServer } from './Utils';
 import SimConnectData from './data/SimConnectData';
-import { NotificationPriority } from './NotificationPriority';
+import { NotificationPriority } from './enums/NotificationPriority';
 import { InitPosition } from './data';
-import { TextType } from './TextType';
-import { FacilityListType } from './FacilityListType';
-import { ClientDataPeriod } from './ClientDataPeriod';
+import { TextType } from './enums/TextType';
+import { FacilityListType } from './recv/FacilityListType';
+import { ClientDataPeriod } from './enums/ClientDataPeriod';
 import {
     RecvID,
     SimConnectMessage,
@@ -38,6 +38,7 @@ import {
     RecvEventRaceLap,
     RecvException,
 } from './recv';
+import { ErrorMessage } from './texts';
 
 const RECEIVE_SIZE = 65536;
 
@@ -64,6 +65,7 @@ type DataToSet =
 interface SimConnectEvents {
     open: (recvOpen: RecvOpen) => void;
     close: () => void;
+    error: (error: Error) => void;
     quit: () => void;
     exception: (recvException: RecvException) => void;
     event: (recvEvent: RecvEvent) => void;
@@ -132,6 +134,7 @@ export class SimConnect extends EventEmitter {
         this.clientSocket.on('connect', this._open.bind(this));
         this.clientSocket.on('data', this.handleMessage.bind(this));
         this.clientSocket.on('close', () => this.emit('close'));
+        this.clientSocket.on('error', (err) => this.emit('error', err));
 
         if (options?.remote) {
             this.clientSocket.connect(options?.remote);
@@ -280,7 +283,7 @@ export class SimConnect extends EventEmitter {
             this.writeBuffer.writeInt(SimConnectBuild.SP2_XPACK); // major build
             this.writeBuffer.writeInt(0); // minor build
         } else {
-            //throw new IllegalArgumentException(Messages.getString("SimConnect.InvalidProtocol")); //$NON-NLS-1$
+            throw ErrorMessage['SimConnect.InvalidProtocol']; //$NON-NLS-1$
         }
         this.sendPacket(0x01);
     }
@@ -799,17 +802,27 @@ export class SimConnect extends EventEmitter {
     }
 
     executeMissionAction(guidInstanceId: Buffer) {
-        if (guidInstanceId.length != 16) throw 'SimConnect.GUID_invalid_size';
+        if (guidInstanceId.length != 16)
+            throw ErrorMessage['SimConnect.GUID_invalid_size'];
         this.clean(this.writeBuffer);
         this.writeBuffer.write(guidInstanceId);
         this.sendPacket(0x2e);
     }
 
     completeCustomMissionAction(guidInstanceId: Buffer) {
-        if (guidInstanceId.length != 16) throw 'SimConnect.GUID_invalid_size'; //$NON-NLS-1$
+        if (guidInstanceId.length != 16)
+            throw ErrorMessage['SimConnect.GUID_invalid_size']; //$NON-NLS-1$
         this.clean(this.writeBuffer);
         this.writeBuffer.write(guidInstanceId);
         this.sendPacket(0x2f);
+    }
+
+    requestResponseTimes(nCount: number) {
+        // TODO: implement simconnect function
+        // this one needs special care: it send a packet (id 0x03, one param : nCount)
+        // and receive 8 float data (with response id 0x00010001) . Some calculations
+        // has to be done
+        throw ErrorMessage['SimConnect.Unimplemented'];
     }
 
     cameraSetRelative6DOF(
@@ -890,7 +903,8 @@ export class SimConnect extends EventEmitter {
         epsilon?: number,
         datumId?: number
     ) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(dataDefineID);
@@ -917,7 +931,8 @@ export class SimConnect extends EventEmitter {
         interval?: number,
         limit?: number
     ) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(clientDataID);
@@ -995,7 +1010,8 @@ export class SimConnect extends EventEmitter {
         eventId: number,
         message: string
     ) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         // packet id 0x40
         this.clean(this.writeBuffer);
@@ -1019,7 +1035,8 @@ export class SimConnect extends EventEmitter {
         prompt?: string,
         ...items: string[]
     ) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         // packet id 0x40
 
@@ -1047,7 +1064,8 @@ export class SimConnect extends EventEmitter {
     }
 
     requestFacilitiesList(type: FacilityListType, eventId: number) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
         // ID 0x43
         this.clean(this.writeBuffer);
         this.writeBuffer.writeInt(type);
@@ -1056,7 +1074,8 @@ export class SimConnect extends EventEmitter {
     }
 
     subscribeToFacilities(type: FacilityListType, eventId: number) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         // ID 0x41
         this.clean(this.writeBuffer);
@@ -1066,7 +1085,8 @@ export class SimConnect extends EventEmitter {
     }
 
     unSubscribeToFacilities(type: FacilityListType) {
-        if (this.ourProtocol < Protocol.FSX_SP1) throw 'SimConnect.badversion'; //$NON-NLS-1$
+        if (this.ourProtocol < Protocol.FSX_SP1)
+            throw ErrorMessage['SimConnect.badversion']; //$NON-NLS-1$
 
         // ID 0x42
         this.clean(this.writeBuffer);

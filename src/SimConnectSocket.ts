@@ -1,6 +1,7 @@
 import { Socket } from 'net';
 import { Duplex } from 'stream';
 import DataWrapper from './wrappers/DataWrapper';
+import { ErrorMessage } from './texts';
 
 const HEADER_LENGTH = 4;
 

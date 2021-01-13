@@ -31,17 +31,11 @@ export enum SimConnectException {
     DUPLICATE_ID,
     DATUM_ID,
     OUT_OF_BOUNDS,
-    /** @since 0.5 */
     ALREADY_CREATED,
-    /** @since 0.5 */
     OBJECT_OUTSIDE_REALITY_BUBBLE,
-    /** @since 0.5 */
     OBJECT_CONTAINER,
-    /** @since 0.5 */
     OBJECT_AI,
-    /** @since 0.5 */
     OBJECT_ATC,
-    /** @since 0.5 */
     OBJECT_SCHEDULE,
 }
 

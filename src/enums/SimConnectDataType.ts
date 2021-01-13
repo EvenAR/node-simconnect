@@ -1,5 +1,3 @@
-import { SimConnectException } from './SimConnectException';
-
 export enum SimConnectDataType {
     INVALID, // invalid data type
     /** Integer */
