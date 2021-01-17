@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <h1>Clouds</h1>
+        <script>
+            var canvas = document.createElement('canvas');
+            canvas.id = 'CursorLayer';
+            canvas.width = 512;
+            canvas.height = 512;
+            canvas.style.border = '1px solid';
+
+            document.getElementsByTagName('body')[0].appendChild(canvas);
+
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(100, 100, 200, 200);
+
+            // Connect to server
+            var webSocket = new WebSocket('ws://localhost:8080');
+            webSocket.onmessage = function (clouds) {
+                console.log(clouds);
+            };
+        </script>
+    </body>
+</html>
