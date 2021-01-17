@@ -2,31 +2,34 @@
 
 A SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
 
-### Credits
+## Credits
 
-This project is a rewrite of the Java client library [jsimconnect](https://github.com/mharj/jsimconnect), originally written by [lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581). 
-
--   [Docs](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description) (discovered thanks to [this](https://www.fsdeveloper.com/forum/threads/jsimconnect.140243/) thread on the FSDeveloper forum)
+This project is a rewrite of the Java client library
+[jsimconnect](https://github.com/mharj/jsimconnect), originally written by
+[lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581).
+Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description).
 
 ### Running over network?
 
-Set property `<Address>0.0.0.0</Address>` in `SimConnect.xml`
+1. Open `SimConnect.xml`.
 
-```xml
-<SimConnect.Comm>
-    <Descr>IP4 Server</Descr>
-    <Protocol>IPv4</Protocol>
-    <Scope>local</Scope>
-    <Port>501</Port>
-    <MaxClients>64</MaxClients>
-    <MaxRecvSize>41088</MaxRecvSize>
-    <Address>0.0.0.0</Address>
-</SimConnect.Comm>
-```
+    - FSX: `X:\Users\<USER>\AppData\Roaming\Microsoft\FSX`
+    - MSFS: `X:\Users\<USER>\AppData\Local\Packages\Microsoft.FlightSimulator_**********\LocalCache`.
 
-## TODOs
+1. Set property `<Address>0.0.0.0</Address>`:
+    ```xml
+    <SimConnect.Comm>
+        <Descr>IP4 Server</Descr>
+        <Protocol>IPv4</Protocol>
+        <Scope>local</Scope>
+        <Port>500</Port>
+        <MaxClients>64</MaxClients>
+        <MaxRecvSize>41088</MaxRecvSize>
+        <Address>0.0.0.0</Address>
+    </SimConnect.Comm>
+    ```
 
-Tested ok:
+### Tested methods:
 
 -   `addToDataDefinition`
 -   `requestDataOnSimObject`
@@ -41,7 +44,7 @@ Tested ok:
 -   `text`
 -   `requestFacilitiesList`
 
-Implemented but not tested:
+### Implemented but not tested:
 
 -   `setSystemState`
 -   `addClientEventToNotificationGroup`
