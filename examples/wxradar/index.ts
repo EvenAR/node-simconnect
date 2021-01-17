@@ -8,7 +8,10 @@ import {
     SimConnectPeriod,
 } from '../../dist';
 
-// WebSocket server ////////////////////
+/**
+ * Starts a websocket server, opens a browser and renders
+ * surrounding clouds on a canvas.
+ */
 
 const wss = new WebSocketServer({
     port: 8080,
@@ -21,16 +24,13 @@ wss.on('connection', (ws: WebSocket) => {
     client = ws;
 });
 
-const start =
+const command =
     process.platform == 'darwin'
         ? 'open'
         : process.platform == 'win32'
         ? 'start'
         : 'xdg-open';
-require('child_process').exec(
-    start +
-        ' file:///Users/evenrognlien/Documents/simconnect-js-client/examples/wxradar/index.html'
-);
+require('child_process').exec(`${command} file:///${__dirname}/index.html`);
 
 // SimConnect client ////////////////////
 
@@ -44,6 +44,9 @@ enum REQ_ID {
 }
 
 const sc = new SimConnect('Clouds example', Protocol.FSX_SP2);
+
+const RANGE = 0.5; // Degrees of lat/lng
+const ALT_RANGE = 1000; // Feet
 
 sc.on('open', (recvOpen) => {
     console.log(recvOpen);
@@ -68,18 +71,17 @@ sc.on('open', (recvOpen) => {
     sc.on('simObjectData', (data) => {
         if (data.requestID === REQ_ID.POSITION) {
             const pos = data.data.readLatLonAlt();
-
+            console.log(pos);
             const altFt = pos.altitude * 3.2808;
-            const range = 10;
-            const altRange = 100;
+
             sc.weatherRequestCloudState(
                 REQ_ID.CLOUD_STATE,
-                pos.latitude - range,
-                pos.longitude - range,
-                altFt - altRange,
-                pos.latitude + range,
-                pos.longitude + range,
-                altFt + altRange
+                pos.latitude - RANGE,
+                pos.longitude - RANGE,
+                altFt - ALT_RANGE,
+                pos.latitude + RANGE,
+                pos.longitude + RANGE,
+                altFt + ALT_RANGE
             );
         }
     });
