@@ -9,7 +9,7 @@ import SimConnectData from './data/SimConnectData';
 import { NotificationPriority } from './enums/NotificationPriority';
 import { InitPosition } from './data';
 import { TextType } from './enums/TextType';
-import { FacilityListType } from './recv/FacilityListType';
+import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
 import {
     RecvID,
@@ -1058,7 +1058,7 @@ export class SimConnect extends EventEmitter {
             });
         }
         // set size
-        this.writeBuffer.writeInt(28, this.writeBuffer.getOffset() - 32);
+        this.writeBuffer.writeInt(this.writeBuffer.getOffset() - 32, 28);
 
         this.sendPacket(0x40);
     }

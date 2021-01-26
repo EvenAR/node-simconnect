@@ -3,10 +3,12 @@ export * from './SimConnect';
 export * from './SimConnectConstants';
 export * from './enums/SimConnectDataType';
 export * from './enums/TextType';
+export * from './enums/TextResult';
 export * from './enums/SimConnectPeriod';
-export * from './recv/SimConnectException';
+export * from './enums/SimConnectException';
 export * from './enums/SimObjectType';
-export * from './recv/FacilityListType';
+export * from './enums/FacilityListType';
+export * from './enums/NotificationPriority';
 
 export * from './recv/facility';
 export * from './data';

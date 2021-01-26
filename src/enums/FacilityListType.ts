@@ -10,3 +10,7 @@ export enum FacilityListType {
     /** Not valid as a list type, but simply the number of list types. */
     COUNT,
 }
+
+module.exports = {
+    FacilityListType,
+};

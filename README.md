@@ -37,8 +37,11 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 -   `requestDataOnSimObjectType`
 -   `subscribeToSystemEvent`
 -   `unsubscribeFromSystemEvent`
+-   `menu`
 -   `requestSystemState`
 -   `setDataOnSimObject`
+-   `subscribeToFacilities`
+-   `unSubscribeToFacilities`
 -   `weatherRequestObservationAtNearestStation`
 -   `weatherRequestCloudState`
 -   `text`
@@ -94,6 +97,3 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 -   `flightLoad`
 -   `flightSave`
 -   `flightPlanLoad`
--   `menu`
--   `subscribeToFacilities`
--   `unSubscribeToFacilities`
