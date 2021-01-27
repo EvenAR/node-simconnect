@@ -26,11 +26,9 @@ class DataWrapper {
     flip() {
         this.buffer.flip();
     }
-
     getOffset(): number {
         return this.buffer.offset;
     }
-
     getBuffer(): Buffer {
         this.buffer.flip();
         return this.buffer.toBuffer(true);
@@ -124,27 +122,27 @@ class DataWrapper {
     readString(length: number) {
         return makeString(this.buffer, length);
     }
-    getData<T extends SimConnectData>(obj: T, offset?: number): T {
-        obj.read(this);
-        return obj;
-    }
     readInitPosition(): InitPosition {
-        return this.getData(new InitPosition());
+        return this.readData(new InitPosition());
     }
     readMarkerState(): MarkerState {
-        return this.getData(new MarkerState());
+        return this.readData(new MarkerState());
     }
     readWaypoint(): Waypoint {
-        return this.getData(new Waypoint());
+        return this.readData(new Waypoint());
     }
     readLatLonAlt(): LatLonAlt {
-        return this.getData(new LatLonAlt());
+        return this.readData(new LatLonAlt());
     }
     readXYZ(): XYZ {
-        return this.getData(new XYZ());
+        return this.readData(new XYZ());
     }
     remaining() {
         return this.buffer.remaining();
+    }
+    private readData<T extends SimConnectData>(obj: T, offset?: number): T {
+        obj.read(this);
+        return obj;
     }
 }
 
