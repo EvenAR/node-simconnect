@@ -116,11 +116,7 @@ export class SimConnect extends EventEmitter {
     currentIndex: number;
     clientSocket: SimConnectSocket;
 
-    constructor(
-        appName: string,
-        protocolVersion: Protocol,
-        options?: SimConnectOptions
-    ) {
+    constructor(appName: string, protocolVersion: Protocol) {
         super();
         this.appName = appName;
         this.packetsSent = 0;
@@ -135,7 +131,9 @@ export class SimConnect extends EventEmitter {
         this.clientSocket.on('data', this.handleMessage.bind(this));
         this.clientSocket.on('close', () => this.emit('close'));
         this.clientSocket.on('error', (err) => this.emit('error', err));
+    }
 
+    connect(options?: SimConnectOptions) {
         if (options?.remote) {
             this.clientSocket.connect(options?.remote);
         } else {
