@@ -16,17 +16,20 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
     - FSX: `X:\Users\<USER>\AppData\Roaming\Microsoft\FSX`
     - MSFS: `X:\Users\<USER>\AppData\Local\Packages\Microsoft.FlightSimulator_**********\LocalCache`.
 
-1. Set property `<Address>0.0.0.0</Address>`:
+1. Set property `<Address>0.0.0.0</Address>`. Example of a working SimConnect.xml file:
     ```xml
-    <SimConnect.Comm>
-        <Descr>IP4 Server</Descr>
-        <Protocol>IPv4</Protocol>
-        <Scope>local</Scope>
-        <Port>500</Port>
-        <MaxClients>64</MaxClients>
-        <MaxRecvSize>41088</MaxRecvSize>
-        <Address>0.0.0.0</Address>
-    </SimConnect.Comm>
+    <?xml version="1.0" encoding="Windows-1252"?>
+    <SimBase.Document Type="SimConnect" version="1,0">
+        <Filename>SimConnect.xml</Filename>
+        <SimConnect.Comm>
+            <Protocol>IPv4</Protocol>
+            <Scope>local</Scope>
+            <Port>5111</Port>
+            <MaxClients>64</MaxClients>
+            <MaxRecvSize>41088</MaxRecvSize>
+            <Address>0.0.0.0</Address>
+        </SimConnect.Comm>
+    </SimBase.Document>
     ```
 
 ### Tested methods:
@@ -47,7 +50,7 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 -   `text`
 -   `requestFacilitiesList`
 
-### Implemented but not tested:
+### Implemented but not fully verified:
 
 -   `setSystemState`
 -   `addClientEventToNotificationGroup`
