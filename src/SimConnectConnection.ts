@@ -4,10 +4,10 @@ import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { SimConnectConstants } from './SimConnectConstants';
 import DataWrapper from './wrappers/DataWrapper';
-import { discoverServer } from './Utils';
-import SimConnectData from './data/SimConnectData';
+import { discoverServer, SimConnectServerAddress } from './Utils';
+import SimConnectData from './types/SimConnectData';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { InitPosition } from './data';
+import { InitPosition } from './types';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
@@ -25,6 +25,10 @@ import {
     RecvEventAddRemove,
     RecvEventFilename,
     RecvEventFrame,
+    RecvEventRaceEnd,
+    RecvEventRaceLap,
+    RecvEventWeatherMode,
+    RecvException,
     RecvNDBList,
     RecvOpen,
     RecvReservedKey,
@@ -32,30 +36,18 @@ import {
     RecvSystemState,
     RecvVORList,
     RecvWaypointList,
-    RecvEventWeatherMode,
     RecvWeatherObservation,
-    RecvEventRaceEnd,
-    RecvEventRaceLap,
-    RecvException,
 } from './recv';
 import { ErrorMessage } from './texts';
+import { Protocol } from './enums/Protocol';
+import ConnectionOptions from './types/ConnectionOptions';
 
 const RECEIVE_SIZE = 65536;
-
-export enum Protocol {
-    FSX_RTM = 0x2,
-    FSX_SP1 = 0x3, // supports enhanced client data, facilites, and modeless ui
-    FSX_SP2 = 0x4, // FSX SP2/Acceleration, racing and another flight save
-}
 
 enum SimConnectBuild {
     SP0 = 60905,
     SP1 = 61355,
     SP2_XPACK = 61259,
-}
-
-export interface SimConnectOptions {
-    remote?: { host: string; port: number };
 }
 
 type DataToSet =
@@ -95,7 +87,7 @@ interface SimConnectEvents {
     eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
 }
 
-export declare interface SimConnect extends EventEmitter {
+declare interface SimConnectConnection extends EventEmitter {
     on<U extends keyof SimConnectEvents>(
         event: U,
         listener: SimConnectEvents[U]
@@ -107,7 +99,7 @@ export declare interface SimConnect extends EventEmitter {
     ): boolean;
 }
 
-export class SimConnect extends EventEmitter {
+class SimConnectConnection extends EventEmitter {
     appName: string;
     writeBuffer: DataWrapper;
     ourProtocol: number;
@@ -128,24 +120,28 @@ export class SimConnect extends EventEmitter {
         this.clientSocket = new SimConnectSocket();
 
         this.clientSocket.on('connect', this._open.bind(this));
-        this.clientSocket.on('data', this.handleMessage.bind(this));
+        this.clientSocket.on('data', this._handleMessage.bind(this));
         this.clientSocket.on('close', () => this.emit('close'));
-        this.clientSocket.on('error', (err) => this.emit('error', err));
+        this.clientSocket.on('error', (connectError: Error) =>
+            this.emit('error', connectError)
+        );
     }
 
-    connect(options?: SimConnectOptions) {
+    _connect(options?: ConnectionOptions) {
         if (options?.remote) {
-            this.clientSocket.connect(options?.remote);
+            this.clientSocket.connect({ type: 'ipv4', ...options.remote });
         } else {
-            try {
-                discoverServer().then((address) => {
+            discoverServer()
+                .then((address: SimConnectServerAddress) => {
                     this.clientSocket.connect(address);
+                })
+                .catch((connectError) => {
+                    this.emit('error', connectError);
                 });
-            } catch (e) {}
         }
     }
 
-    handleMessage({ id, data }: SimConnectMessage) {
+    private _handleMessage({ id, data }: SimConnectMessage) {
         switch (id) {
             case RecvID.ID_NULL:
                 break;
@@ -1103,8 +1099,5 @@ export class SimConnect extends EventEmitter {
     }
 }
 
-module.exports = {
-    SimConnect,
-    Protocol,
-    RecvOpen,
-};
+export { SimConnectConnection };
+module.exports = { SimConnectConnection };

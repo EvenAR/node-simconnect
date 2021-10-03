@@ -1,4 +1,5 @@
 import {
+    open,
     Protocol,
     RecvEvent,
     RecvOpen,
@@ -10,7 +11,7 @@ import {
 } from '../dist';
 
 /**
- * SimConnect FaciliitesData sample
+ * SimConnectConnection FaciliitesData sample
  *
  *      Description:
  *                              Ctrl F1 displays the Get Facilities menu on the screen
@@ -58,9 +59,7 @@ const SUBSCRIBE_FACILITIES_MENU_OPTIONS: string[] = [
     'Close menu',
 ];
 
-const sc = new SimConnect('My app', Protocol.FSX_SP2);
-
-sc.on('open', (recvOpen: RecvOpen) => {
+open('My app', Protocol.FSX_SP2, (recvOpen: RecvOpen, sc: SimConnect) => {
     console.log('Connected: ', recvOpen);
 
     sc.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_1);
@@ -98,17 +97,16 @@ sc.on('open', (recvOpen: RecvOpen) => {
         3,
         'Press Ctrl-F1 for Get Facilities, Ctrl-F2 for Subscribe to Facilities'
     );
-});
 
-sc.on('event', ({ eventID, data }: RecvEvent) => {
-    switch (eventID) {
-        case EVENT_ID.OPEN_MENU_1:
-            openMenu(GET_FACILITIES_MENU_OPTIONS);
-            break;
-        case EVENT_ID.OPEN_MENU_2:
-            openMenu(SUBSCRIBE_FACILITIES_MENU_OPTIONS);
-            break;
-        case EVENT_ID.EVENT_MENU_1:
+    sc.on('event', ({ eventID, data }: RecvEvent) => {
+        switch (eventID) {
+            case EVENT_ID.OPEN_MENU_1:
+                openMenu(GET_FACILITIES_MENU_OPTIONS);
+                break;
+            case EVENT_ID.OPEN_MENU_2:
+                openMenu(SUBSCRIBE_FACILITIES_MENU_OPTIONS);
+                break;
+            case EVENT_ID.EVENT_MENU_1:
             {
                 if (data > TextResult.MENU_SELECT_10) return;
                 if (data < FacilityListType.COUNT) {
@@ -118,8 +116,8 @@ sc.on('event', ({ eventID, data }: RecvEvent) => {
                     );
                 }
             }
-            break;
-        case EVENT_ID.EVENT_MENU_2:
+                break;
+            case EVENT_ID.EVENT_MENU_2:
             {
                 if (data > TextResult.MENU_SELECT_10) return;
                 if (data < FacilityListType.COUNT) {
@@ -133,32 +131,33 @@ sc.on('event', ({ eventID, data }: RecvEvent) => {
                     );
                 }
             }
-            break;
+                break;
+        }
+    });
+
+    function openMenu(items: string[]) {
+        sc.menu(
+            0.0,
+            EVENT_ID.EVENT_MENU_1,
+            'SimConnectConnection Facilities Test',
+            'Choose which item:',
+            ...items
+        );
     }
-});
 
-function openMenu(items: string[]) {
-    sc.menu(
-        0.0,
-        EVENT_ID.EVENT_MENU_1,
-        'SimConnect Facilities Test',
-        'Choose which item:',
-        ...items
-    );
-}
+    sc.on('airportList', (recvAirportList) => {
+        console.log(recvAirportList.aiports.map((ap) => ap.icao).join(','));
+    });
 
-sc.on('airportList', (recvAirportList) => {
-    console.log(recvAirportList.aiports.map((ap) => ap.icao).join(','));
-});
+    sc.on('ndbList', (recvNDBList) => {
+        console.log(recvNDBList.ndbs.map((ndb) => ndb.icao).join(','));
+    });
 
-sc.on('ndbList', (recvNDBList) => {
-    console.log(recvNDBList.ndbs.map((ndb) => ndb.icao).join(','));
-});
+    sc.on('vorList', (recvVORList) => {
+        console.log(recvVORList.vors.map((vor) => vor.icao).join(','));
+    });
 
-sc.on('vorList', (recvVORList) => {
-    console.log(recvVORList.vors.map((vor) => vor.icao).join(','));
-});
-
-sc.on('waypointList', (recvWaypointList) => {
-    console.log(recvWaypointList.waypoints.map((wp) => wp.icao).join(','));
-});
+    sc.on('waypointList', (recvWaypointList) => {
+        console.log(recvWaypointList.waypoints.map((wp) => wp.icao).join(','));
+    });
+})

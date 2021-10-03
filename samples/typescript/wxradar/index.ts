@@ -32,7 +32,7 @@ const command =
         : 'xdg-open';
 require('child_process').exec(`${command} file:///${__dirname}/index.html`);
 
-// SimConnect client ////////////////////
+// SimConnectConnection client ////////////////////
 
 enum DEF_ID {
     POSITION,

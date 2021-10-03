@@ -1,10 +1,10 @@
 import ByteBuffer = require('bytebuffer');
-import InitPosition from '../data/InitPosition';
-import SimConnectData from '../data/SimConnectData';
-import MarkerState from '../data/MarkerState';
-import Waypoint from '../data/Waypoint';
-import LatLonAlt from '../data/LatLonAlt';
-import XYZ from '../data/XYZ';
+import InitPosition from '../types/InitPosition';
+import SimConnectData from '../types/SimConnectData';
+import MarkerState from '../types/MarkerState';
+import Waypoint from '../types/Waypoint';
+import LatLonAlt from '../types/LatLonAlt';
+import XYZ from '../types/XYZ';
 
 class DataWrapper {
     private readonly buffer: ByteBuffer;
@@ -110,7 +110,7 @@ class DataWrapper {
         putString(this.buffer, value, 260);
     }
     readStringV() {
-        const offset = this.buffer.offset;
+        let bytesRead = 0;
         let strLen = 0;
         while (this.buffer.offset < this.buffer.limit) {
             strLen++;
@@ -151,7 +151,8 @@ function makeString(bf: ByteBuffer, maxLength: number) {
         .slice(bf.offset, bf.offset + maxLength)
         .indexOf(0x00);
     const output = bf.readString(length);
-    bf.skip(maxLength - length);
+    const unusedBytes = maxLength - length;
+    bf.skip(unusedBytes);
     return output;
 }
 

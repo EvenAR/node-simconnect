@@ -5,6 +5,7 @@ import {
     SimConnectConstants,
     SimConnectDataType,
     SimConnectPeriod,
+    open
 } from '../dist';
 
 /**
@@ -24,6 +25,9 @@ const enum REQ_ID {
 }
 
 const sc = new SimConnect('My app', Protocol.FSX_SP2);
+
+open('My app', Protocol.FSX_SP2)
+    .then()
 
 sc.on('open', (recvOpen: RecvOpen) => {
     console.log('Connected:', recvOpen);

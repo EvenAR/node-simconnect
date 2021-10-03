@@ -1,7 +1,7 @@
 import { Socket } from 'net';
 import { Duplex } from 'stream';
 import DataWrapper from './wrappers/DataWrapper';
-import { ErrorMessage } from './texts';
+import { SimConnectServerAddress } from './Utils';
 
 const HEADER_LENGTH = 4;
 
@@ -58,11 +58,14 @@ class SimConnectSocket extends Duplex {
         this._wrapSocket();
     }
 
-    connect(address: string | { host: string; port: number }) {
-        if (typeof address === 'string') {
-            this._socket.connect(address);
-        } else {
-            this._socket.connect(address.port, address.host);
+    connect(address: SimConnectServerAddress) {
+        switch (address.type) {
+            case 'pipe':
+                this._socket.connect(address.address);
+                break;
+            case 'ipv4':
+                this._socket.connect(address.port, address.host);
+                break;
         }
     }
 
