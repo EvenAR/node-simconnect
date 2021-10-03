@@ -112,11 +112,19 @@ class DataWrapper {
     readStringV() {
         let bytesRead = 0;
         let strLen = 0;
+        let endFound = false;
         while (this.buffer.offset < this.buffer.limit) {
+            const currentByte = this.buffer.readByte();
+            bytesRead++;
+            if (endFound && currentByte !== 0) {
+                break; // Reached beginning of new value
+            } else if (currentByte === 0) {
+                endFound = true;
+            }
             strLen++;
-            if (this.buffer.readByte() === 0) break;
         }
-        this.buffer.offset -= strLen;
+        // Reset offset so we can read the same bytes later
+        this.buffer.offset -= bytesRead;
         return makeString(this.buffer, strLen);
     }
     readString(length: number) {
