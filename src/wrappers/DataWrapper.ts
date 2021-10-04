@@ -154,14 +154,10 @@ class DataWrapper {
     }
 }
 
-function makeString(bf: ByteBuffer, maxLength: number) {
-    const length = bf.buffer
-        .slice(bf.offset, bf.offset + maxLength)
-        .indexOf(0x00);
-    const output = bf.readString(length);
-    const unusedBytes = maxLength - length;
-    bf.skip(unusedBytes);
-    return output;
+function makeString(bf: ByteBuffer, expectedLength: number) {
+    const content = bf.readCString(bf.offset);
+    bf.skip(expectedLength);
+    return content.string;
 }
 
 function putString(bf: ByteBuffer, s: string | null, fixed: number) {
