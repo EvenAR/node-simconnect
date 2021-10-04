@@ -141,8 +141,8 @@ class SimConnectConnection extends EventEmitter {
         }
     }
 
-    private _handleMessage({ id, data }: SimConnectMessage) {
-        switch (id) {
+    private _handleMessage({ packetTypeId, data }: SimConnectMessage) {
+        switch (packetTypeId) {
             case RecvID.ID_NULL:
                 break;
             case RecvID.ID_EXCEPTION:

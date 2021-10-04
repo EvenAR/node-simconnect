@@ -36,8 +36,8 @@ enum RecvID {
 }
 
 interface SimConnectMessage {
-    version: number;
-    id: RecvID;
+    protocolVersion: number;
+    packetTypeId: RecvID;
     data: DataWrapper;
 }
 
@@ -103,8 +103,8 @@ class SimConnectSocket extends Duplex {
 
             const message: SimConnectMessage = {
                 // Mandatory fields
-                version: body.readInt32LE(0),
-                id: body.readInt32LE(4),
+                protocolVersion: body.readInt32LE(0),
+                packetTypeId: body.readInt32LE(4),
                 data: new DataWrapper(body.slice(8)),
             };
 
