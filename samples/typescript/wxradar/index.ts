@@ -1,12 +1,12 @@
 const WebSocketServer = require('ws').Server;
 import {
+    open,
     Protocol,
     RecvCloudState,
-    SimConnect,
     SimConnectConstants,
     SimConnectDataType,
     SimConnectPeriod,
-} from '../../dist';
+} from '../../../dist';
 
 /**
  * Starts a websocket server, opens a browser and renders
@@ -20,19 +20,20 @@ const wss = new WebSocketServer({
 let client: WebSocket | undefined;
 
 wss.on('connection', (ws: WebSocket) => {
-    console.log('CONNECTED');
+    console.log('WebSocket client connected');
     client = ws;
 });
 
-const command =
+const startCommand =
     process.platform == 'darwin'
         ? 'open'
         : process.platform == 'win32'
         ? 'start'
         : 'xdg-open';
-require('child_process').exec(`${command} file:///${__dirname}/index.html`);
 
-// SimConnectConnection client ////////////////////
+require('child_process').exec(`${startCommand} file:///${__dirname}/index.html`);
+
+// SimConnect client ////////////////////
 
 enum DEF_ID {
     POSITION,
@@ -43,46 +44,47 @@ enum REQ_ID {
     CLOUD_STATE,
 }
 
-const sc = new SimConnect('Clouds example', Protocol.FSX_SP2);
-
 const RANGE = 0.5; // Degrees of lat/lng
 const ALT_RANGE = 1000; // Feet
 
-sc.on('open', (recvOpen) => {
-    console.log(recvOpen);
+open('Clouds example', Protocol.FSX_SP2)
+    .then(({ recvOpen, handle }) => {
+        console.log(recvOpen);
+        handle.addToDataDefinition(
+            DEF_ID.POSITION,
+            'STRUCT LATLONALT',
+            null,
+            SimConnectDataType.LATLONALT
+        );
+        handle.requestDataOnSimObject(
+            REQ_ID.POSITION,
+            DEF_ID.POSITION,
+            SimConnectConstants.OBJECT_ID_USER,
+            SimConnectPeriod.SECOND
+        );
 
-    sc.addToDataDefinition(
-        DEF_ID.POSITION,
-        'STRUCT LATLONALT',
-        null,
-        SimConnectDataType.LATLONALT
-    );
-    sc.requestDataOnSimObject(
-        REQ_ID.POSITION,
-        DEF_ID.POSITION,
-        SimConnectConstants.OBJECT_ID_USER,
-        SimConnectPeriod.SECOND
-    );
+        handle.on('cloudState', (cloudState: RecvCloudState) => {
+            client?.send(JSON.stringify(cloudState.data));
+        });
 
-    sc.on('cloudState', (cloudState: RecvCloudState) => {
-        client?.send(JSON.stringify(cloudState.data));
+        handle.on('simObjectData', (data) => {
+            if (data.requestID === REQ_ID.POSITION) {
+                const pos = data.data.readLatLonAlt();
+                console.log(pos);
+                const altFt = pos.altitude * 3.2808;
+
+                handle.weatherRequestCloudState(
+                    REQ_ID.CLOUD_STATE,
+                    pos.latitude - RANGE,
+                    pos.longitude - RANGE,
+                    altFt - ALT_RANGE,
+                    pos.latitude + RANGE,
+                    pos.longitude + RANGE,
+                    altFt + ALT_RANGE
+                );
+            }
+        });
+    })
+    .catch((error) => {
+        console.log('Failed to connect', error);
     });
-
-    sc.on('simObjectData', (data) => {
-        if (data.requestID === REQ_ID.POSITION) {
-            const pos = data.data.readLatLonAlt();
-            console.log(pos);
-            const altFt = pos.altitude * 3.2808;
-
-            sc.weatherRequestCloudState(
-                REQ_ID.CLOUD_STATE,
-                pos.latitude - RANGE,
-                pos.longitude - RANGE,
-                altFt - ALT_RANGE,
-                pos.latitude + RANGE,
-                pos.longitude + RANGE,
-                altFt + ALT_RANGE
-            );
-        }
-    });
-});

@@ -2,6 +2,7 @@ import { RecvOpen } from './recv';
 import { SimConnectConnection } from './SimConnectConnection';
 import { Protocol } from './enums/Protocol';
 import ConnectionOptions from './types/ConnectionOptions';
+import OpenEvent from './types/OpenEvent';
 
 export * from './SimConnectConstants';
 export * from './enums/SimConnectDataType';
@@ -29,14 +30,14 @@ export function open(
     appName: string,
     protocolVersion: Protocol,
     options?: ConnectionOptions
-): Promise<{ recvOpen: RecvOpen; handle: ConnectionHandle }> {
+): Promise<OpenEvent> {
     const simConnectConnection = new SimConnectConnection(
         appName,
         protocolVersion
     );
     simConnectConnection._connect(options);
-    return new Promise((resolve, reject) => {
-        simConnectConnection.on('open', (data: RecvOpen) => {
+    return new Promise<OpenEvent>((resolve, reject) => {
+        simConnectConnection.on('open', (data) => {
             resolve({ recvOpen: data, handle: simConnectConnection });
         });
         simConnectConnection.on('error', (err) => {

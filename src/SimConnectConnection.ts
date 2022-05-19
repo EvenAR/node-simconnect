@@ -54,7 +54,7 @@ type DataToSet =
     | { buffer: DataWrapper; arrayCount: number; tagged: boolean }
     | SimConnectData[];
 
-interface SimConnectEvents {
+interface SimConnectRecvEvents {
     open: (recvOpen: RecvOpen) => void;
     close: () => void;
     error: (error: Error) => void;
@@ -88,14 +88,14 @@ interface SimConnectEvents {
 }
 
 declare interface SimConnectConnection extends EventEmitter {
-    on<U extends keyof SimConnectEvents>(
+    on<U extends keyof SimConnectRecvEvents>(
         event: U,
-        listener: SimConnectEvents[U]
+        listener: SimConnectRecvEvents[U]
     ): this;
 
-    emit<U extends keyof SimConnectEvents>(
+    emit<U extends keyof SimConnectRecvEvents>(
         event: U,
-        ...args: Parameters<SimConnectEvents[U]>
+        ...args: Parameters<SimConnectRecvEvents[U]>
     ): boolean;
 }
 

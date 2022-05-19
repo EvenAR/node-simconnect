@@ -23,3 +23,5 @@ const command =
         : 'xdg-open';
 
 require('child_process').exec(`${command} file:///${__dirname}/index.html`);
+
+export { client };

@@ -20,6 +20,7 @@
             // Connect to server
             var webSocket = new WebSocket('ws://localhost:8080');
             webSocket.onmessage = function (message) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 var clouds = JSON.parse(message.data);
 
                 for (let x = 0; x < 64; x++) {
@@ -30,8 +31,6 @@
                         ctx.fillRect(x * size, y * size, size, size);
                     }
                 }
-
-                ctx.clearRect(0, 0, ctx.width, ctx.height);
             };
         </script>
     </body>

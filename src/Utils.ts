@@ -13,7 +13,7 @@ async function findSimConnectPortIPv4(): Promise<number> {
 function readRegistryValue(subKey: string): Promise<string> {
     const FS_KEY =
         'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
                 reject();

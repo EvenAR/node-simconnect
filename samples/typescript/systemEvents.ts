@@ -1,4 +1,4 @@
-import { SimConnect, Protocol, RecvOpen } from '../dist';
+import { open, Protocol, RecvOpen, ConnectionHandle } from '../../dist';
 
 /**
  * Demonstrates a few system events
@@ -11,35 +11,43 @@ const enum EVENT_ID {
     NEW_WEATHER_MODE,
 }
 
-const sc = new SimConnect('My app', Protocol.FSX_SP2);
+open('My app', Protocol.FSX_SP2)
+    .then(({ recvOpen, handle }) => {
+        console.log('Connected: ', recvOpen);
 
-sc.on('open', (recvOpen: RecvOpen) => {
-    console.log('Connected: ', recvOpen);
+        handle.subscribeToSystemEvent(EVENT_ID.PAUSE, 'Pause');
+        handle.subscribeToSystemEvent(
+            EVENT_ID.AIRCRAFT_LOADED,
+            'AircraftLoaded'
+        );
+        handle.subscribeToSystemEvent(EVENT_ID.FRAME, 'Frame');
+        handle.subscribeToSystemEvent(
+            EVENT_ID.NEW_WEATHER_MODE,
+            'WeatherModeChanged'
+        );
 
-    sc.subscribeToSystemEvent(EVENT_ID.PAUSE, 'Pause');
-    sc.subscribeToSystemEvent(EVENT_ID.AIRCRAFT_LOADED, 'AircraftLoaded');
-    sc.subscribeToSystemEvent(EVENT_ID.FRAME, 'Frame');
-    sc.subscribeToSystemEvent(EVENT_ID.NEW_WEATHER_MODE, 'WeatherModeChanged');
-});
+        handle.on('event', (recvEvent) => {
+            switch (recvEvent.eventID) {
+                case EVENT_ID.PAUSE:
+                    console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
+                    break;
+                case EVENT_ID.AIRCRAFT_LOADED:
+                    break;
+            }
+        });
 
-sc.on('event', (recvEvent) => {
-    switch (recvEvent.eventID) {
-        case EVENT_ID.PAUSE:
-            console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
-            break;
-        case EVENT_ID.AIRCRAFT_LOADED:
-            break;
-    }
-});
+        handle.on('eventFilename', (recvEventFilename) => {
+            console.log('New aircraft:', recvEventFilename.fileName);
+        });
 
-sc.on('eventFilename', (recvEventFilename) => {
-    console.log('New aircraft:', recvEventFilename.fileName);
-});
+        handle.on('eventWeatherMode', (recvWeatherMode) => {
+            console.log('New weather mode:', recvWeatherMode.mode);
+        });
 
-sc.on('eventWeatherMode', (recvWeatherMode) => {
-    console.log('New weather mode:', recvWeatherMode.mode);
-});
-
-sc.on('eventFrame', (recvEventFrame) => {
-    //console.log('Framerate:', recvEventFrame.frameRate);
-});
+        handle.on('eventFrame', (recvEventFrame) => {
+            //console.log('Framerate:', recvEventFrame.frameRate);
+        });
+    })
+    .catch((error) => {
+        console.log('Failed to connect', error);
+    });

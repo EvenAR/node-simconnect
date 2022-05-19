@@ -1,4 +1,14 @@
-import {ConnectionHandle, open, Protocol, SimConnectDataType, SimObjectType} from '../../dist';
+import {
+    ConnectionHandle,
+    DataWrapper,
+    open,
+    Protocol,
+    SimConnectConstants,
+    SimConnectDataType,
+    SimConnectPeriod,
+    SimObjectType,
+} from '../../../dist';
+import { client } from './websocketServer';
 
 /**
  * Lists all aircraft within a 10 km radius
@@ -10,37 +20,62 @@ const enum DEF_ID {
 
 const enum REQ_ID {
     NEARBY_AIRCRAFT,
+    MY_POSITION,
 }
 
 open('My app', Protocol.FSX_SP2)
     .then(({ recvOpen, handle }) => {
         console.log('Connected:', recvOpen);
 
-
-        // Register the data structure we are interested in
-        registerDefinition(handle);
-
-        // Request info about all aircraft in a 10 NM radius
-        handle.requestDataOnSimObjectType(
-            REQ_ID.NEARBY_AIRCRAFT,
+        registerAircraftDetailsDefinition(handle);
+        handle.requestDataOnSimObject(
+            REQ_ID.MY_POSITION,
             DEF_ID.AIRCRAFT_DETAILS,
-            10000,
-            SimObjectType.AIRCRAFT
+            SimConnectConstants.OBJECT_ID_USER,
+            SimConnectPeriod.SECOND
         );
 
+        handle.on('simObjectData', (recvSimObjectData) => {
+            switch (recvSimObjectData.requestID as REQ_ID) {
+                case REQ_ID.MY_POSITION:
+                    {
+                        const aircraftDetails = readAircraftPosition(
+                            recvSimObjectData.data
+                        );
+                        client?.send(
+                            JSON.stringify({
+                                type: 'myPosition',
+                                data: aircraftDetails,
+                            })
+                        );
+
+                        // Request info about all aircraft in a 10 NM radius
+                        handle.requestDataOnSimObjectType(
+                            REQ_ID.NEARBY_AIRCRAFT,
+                            DEF_ID.AIRCRAFT_DETAILS,
+                            10000,
+                            SimObjectType.AIRCRAFT
+                        );
+                    }
+                    break;
+            }
+        });
+
         handle.on('simObjectDataByType', (recvSimObjectData) => {
-            if (recvSimObjectData.requestID === REQ_ID.NEARBY_AIRCRAFT) {
-                const dataBuffer = recvSimObjectData.data;
-                console.log({
-                    // Read order is important
-                    lat: dataBuffer.readDouble(),
-                    lng: dataBuffer.readDouble(),
-                    altitude: dataBuffer.readInt(),
-                    model: dataBuffer.readString(32),
-                    id: dataBuffer.readString(32),
-                    airline: dataBuffer.readString(64),
-                    flightNumber: dataBuffer.readString(8),
-                });
+            switch (recvSimObjectData.requestID as REQ_ID) {
+                case REQ_ID.NEARBY_AIRCRAFT:
+                    {
+                        const aircraftDetails = readAircraftPosition(
+                            recvSimObjectData.data
+                        );
+                        client?.send(
+                            JSON.stringify({
+                                type: 'traffic',
+                                data: aircraftDetails,
+                            })
+                        );
+                    }
+                    break;
             }
         });
     })
@@ -48,7 +83,7 @@ open('My app', Protocol.FSX_SP2)
         console.log('Failed to connect', error);
     });
 
-function registerDefinition(handle: ConnectionHandle) {
+function registerAircraftDetailsDefinition(handle: ConnectionHandle) {
     handle.addToDataDefinition(
         DEF_ID.AIRCRAFT_DETAILS,
         'Plane Latitude',
@@ -91,4 +126,17 @@ function registerDefinition(handle: ConnectionHandle) {
         null,
         SimConnectDataType.STRING8
     );
+}
+
+function readAircraftPosition(dataBuffer: DataWrapper) {
+    return {
+        // Read order is important
+        lat: dataBuffer.readDouble(),
+        lng: dataBuffer.readDouble(),
+        altitude: dataBuffer.readInt(),
+        model: dataBuffer.readString(32),
+        id: dataBuffer.readString(32),
+        airline: dataBuffer.readString(64),
+        flightNumber: dataBuffer.readString(8),
+    };
 }

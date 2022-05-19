@@ -2,16 +2,14 @@ import {
     open,
     Protocol,
     RecvEvent,
-    RecvOpen,
-    SimConnect,
     TextType,
     TextResult,
     FacilityListType,
     NotificationPriority,
-} from '../dist';
+} from '../../dist';
 
 /**
- * SimConnectConnection FaciliitesData sample
+ * SimConnect FaciliitesData sample
  *
  *      Description:
  *                              Ctrl F1 displays the Get Facilities menu on the screen
@@ -59,105 +57,112 @@ const SUBSCRIBE_FACILITIES_MENU_OPTIONS: string[] = [
     'Close menu',
 ];
 
-open('My app', Protocol.FSX_SP2, (recvOpen: RecvOpen, sc: SimConnect) => {
-    console.log('Connected: ', recvOpen);
+open('My app', Protocol.FSX_SP2)
+    .then(({ recvOpen, handle }) => {
+        console.log('Connected: ', recvOpen);
 
-    sc.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_1);
-    sc.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_2);
-    sc.addClientEventToNotificationGroup(
-        NOTIFICATION_GROUP_ID.GROUP0,
-        EVENT_ID.OPEN_MENU_1,
-        true
-    );
-    sc.addClientEventToNotificationGroup(
-        NOTIFICATION_GROUP_ID.GROUP0,
-        EVENT_ID.OPEN_MENU_2,
-        true
-    );
-    sc.setNotificationGroupPriority(
-        NOTIFICATION_GROUP_ID.GROUP0,
-        NotificationPriority.HIGHEST
-    );
-    sc.mapInputEventToClientEvent(
-        INPUT_GROUP_ID.INPUT0,
-        'Ctrl+F1',
-        EVENT_ID.OPEN_MENU_1
-    );
-    sc.mapInputEventToClientEvent(
-        INPUT_GROUP_ID.INPUT0,
-        'Ctrl+F2',
-        EVENT_ID.OPEN_MENU_2
-    );
-    sc.setInputGroupState(INPUT_GROUP_ID.INPUT0, true);
-
-    sc.text(TextType.PRINT_RED, 15, 3, 'Facilities Data');
-    sc.text(
-        TextType.PRINT_RED,
-        15,
-        3,
-        'Press Ctrl-F1 for Get Facilities, Ctrl-F2 for Subscribe to Facilities'
-    );
-
-    sc.on('event', ({ eventID, data }: RecvEvent) => {
-        switch (eventID) {
-            case EVENT_ID.OPEN_MENU_1:
-                openMenu(GET_FACILITIES_MENU_OPTIONS);
-                break;
-            case EVENT_ID.OPEN_MENU_2:
-                openMenu(SUBSCRIBE_FACILITIES_MENU_OPTIONS);
-                break;
-            case EVENT_ID.EVENT_MENU_1:
-            {
-                if (data > TextResult.MENU_SELECT_10) return;
-                if (data < FacilityListType.COUNT) {
-                    sc.requestFacilitiesList(
-                        data as FacilityListType,
-                        REQUEST_ID.REQUEST_0
-                    );
-                }
-            }
-                break;
-            case EVENT_ID.EVENT_MENU_2:
-            {
-                if (data > TextResult.MENU_SELECT_10) return;
-                if (data < FacilityListType.COUNT) {
-                    sc.subscribeToFacilities(
-                        data as FacilityListType,
-                        REQUEST_ID.REQUEST_1
-                    );
-                } else if (data < 2 * FacilityListType.COUNT) {
-                    sc.unSubscribeToFacilities(
-                        (data - FacilityListType.COUNT) as FacilityListType
-                    );
-                }
-            }
-                break;
-        }
-    });
-
-    function openMenu(items: string[]) {
-        sc.menu(
-            0.0,
-            EVENT_ID.EVENT_MENU_1,
-            'SimConnectConnection Facilities Test',
-            'Choose which item:',
-            ...items
+        handle.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_1);
+        handle.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_2);
+        handle.addClientEventToNotificationGroup(
+            NOTIFICATION_GROUP_ID.GROUP0,
+            EVENT_ID.OPEN_MENU_1,
+            true
         );
-    }
+        handle.addClientEventToNotificationGroup(
+            NOTIFICATION_GROUP_ID.GROUP0,
+            EVENT_ID.OPEN_MENU_2,
+            true
+        );
+        handle.setNotificationGroupPriority(
+            NOTIFICATION_GROUP_ID.GROUP0,
+            NotificationPriority.HIGHEST
+        );
+        handle.mapInputEventToClientEvent(
+            INPUT_GROUP_ID.INPUT0,
+            'Ctrl+F1',
+            EVENT_ID.OPEN_MENU_1
+        );
+        handle.mapInputEventToClientEvent(
+            INPUT_GROUP_ID.INPUT0,
+            'Ctrl+F2',
+            EVENT_ID.OPEN_MENU_2
+        );
+        handle.setInputGroupState(INPUT_GROUP_ID.INPUT0, true);
 
-    sc.on('airportList', (recvAirportList) => {
-        console.log(recvAirportList.aiports.map((ap) => ap.icao).join(','));
-    });
+        handle.text(TextType.PRINT_RED, 15, 3, 'Facilities Data');
+        handle.text(
+            TextType.PRINT_RED,
+            15,
+            3,
+            'Press Ctrl-F1 for Get Facilities, Ctrl-F2 for Subscribe to Facilities'
+        );
 
-    sc.on('ndbList', (recvNDBList) => {
-        console.log(recvNDBList.ndbs.map((ndb) => ndb.icao).join(','));
-    });
+        handle.on('event', ({ eventID, data }: RecvEvent) => {
+            switch (eventID) {
+                case EVENT_ID.OPEN_MENU_1:
+                    openMenu(GET_FACILITIES_MENU_OPTIONS);
+                    break;
+                case EVENT_ID.OPEN_MENU_2:
+                    openMenu(SUBSCRIBE_FACILITIES_MENU_OPTIONS);
+                    break;
+                case EVENT_ID.EVENT_MENU_1:
+                    {
+                        if (data > TextResult.MENU_SELECT_10) return;
+                        if (data < FacilityListType.COUNT) {
+                            handle.requestFacilitiesList(
+                                data as FacilityListType,
+                                REQUEST_ID.REQUEST_0
+                            );
+                        }
+                    }
+                    break;
+                case EVENT_ID.EVENT_MENU_2:
+                    {
+                        if (data > TextResult.MENU_SELECT_10) return;
+                        if (data < FacilityListType.COUNT) {
+                            handle.subscribeToFacilities(
+                                data as FacilityListType,
+                                REQUEST_ID.REQUEST_1
+                            );
+                        } else if (data < 2 * FacilityListType.COUNT) {
+                            handle.unSubscribeToFacilities(
+                                (data -
+                                    FacilityListType.COUNT) as FacilityListType
+                            );
+                        }
+                    }
+                    break;
+            }
+        });
 
-    sc.on('vorList', (recvVORList) => {
-        console.log(recvVORList.vors.map((vor) => vor.icao).join(','));
-    });
+        function openMenu(items: string[]) {
+            handle.menu(
+                0.0,
+                EVENT_ID.EVENT_MENU_1,
+                'SimConnect Facilities Test',
+                'Choose which item:',
+                ...items
+            );
+        }
 
-    sc.on('waypointList', (recvWaypointList) => {
-        console.log(recvWaypointList.waypoints.map((wp) => wp.icao).join(','));
+        handle.on('airportList', (recvAirportList) => {
+            console.log(recvAirportList.aiports.map((ap) => ap.icao).join(','));
+        });
+
+        handle.on('ndbList', (recvNDBList) => {
+            console.log(recvNDBList.ndbs.map((ndb) => ndb.icao).join(','));
+        });
+
+        handle.on('vorList', (recvVORList) => {
+            console.log(recvVORList.vors.map((vor) => vor.icao).join(','));
+        });
+
+        handle.on('waypointList', (recvWaypointList) => {
+            console.log(
+                recvWaypointList.waypoints.map((wp) => wp.icao).join(',')
+            );
+        });
+    })
+    .catch((error) => {
+        console.log('Failed to connect', error);
     });
-})
