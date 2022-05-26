@@ -1,12 +1,6 @@
 import ByteBuffer = require('bytebuffer');
-import InitPosition from '../types/InitPosition';
-import SimConnectData from '../types/SimConnectData';
-import MarkerState from '../types/MarkerState';
-import Waypoint from '../types/Waypoint';
-import LatLonAlt from '../types/LatLonAlt';
-import XYZ from '../types/XYZ';
 
-class DataWrapper {
+class RawBuffer {
     private readonly buffer: ByteBuffer;
 
     constructor(b: Buffer | number) {
@@ -130,27 +124,8 @@ class DataWrapper {
     readString(length: number) {
         return makeString(this.buffer, length);
     }
-    readInitPosition(): InitPosition {
-        return this.readData(new InitPosition());
-    }
-    readMarkerState(): MarkerState {
-        return this.readData(new MarkerState());
-    }
-    readWaypoint(): Waypoint {
-        return this.readData(new Waypoint());
-    }
-    readLatLonAlt(): LatLonAlt {
-        return this.readData(new LatLonAlt());
-    }
-    readXYZ(): XYZ {
-        return this.readData(new XYZ());
-    }
     remaining() {
         return this.buffer.remaining();
-    }
-    private readData<T extends SimConnectData>(obj: T, offset?: number): T {
-        obj.read(this);
-        return obj;
     }
 }
 
@@ -170,4 +145,4 @@ function putString(bf: ByteBuffer, s: string | null, fixed: number) {
     }
 }
 
-export default DataWrapper;
+export { RawBuffer };

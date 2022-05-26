@@ -3,11 +3,10 @@ import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { SimConnectConstants } from './SimConnectConstants';
-import DataWrapper from './wrappers/DataWrapper';
+import { RawBuffer } from './RawBuffer';
 import { discoverServer, SimConnectServerAddress } from './Utils';
-import SimConnectData from './types/SimConnectData';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { InitPosition } from './types';
+import { InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
@@ -40,7 +39,6 @@ import {
 } from './recv';
 import { ErrorMessage } from './texts';
 import { Protocol } from './enums/Protocol';
-import ConnectionOptions from './types/ConnectionOptions';
 
 const RECEIVE_SIZE = 65536;
 
@@ -51,7 +49,7 @@ enum SimConnectBuild {
 }
 
 type DataToSet =
-    | { buffer: DataWrapper; arrayCount: number; tagged: boolean }
+    | { buffer: RawBuffer; arrayCount: number; tagged: boolean }
     | SimConnectData[];
 
 interface SimConnectRecvEvents {
@@ -99,9 +97,13 @@ declare interface SimConnectConnection extends EventEmitter {
     ): boolean;
 }
 
+interface ConnectionOptions {
+    remote: { host: string; port: number };
+}
+
 class SimConnectConnection extends EventEmitter {
     appName: string;
-    writeBuffer: DataWrapper;
+    writeBuffer: RawBuffer;
     ourProtocol: number;
     packetsSent: number;
     bytesSent: number;
@@ -115,7 +117,7 @@ class SimConnectConnection extends EventEmitter {
         this.bytesSent = 0;
         this.currentIndex = 0;
         this.ourProtocol = protocolVersion;
-        this.writeBuffer = new DataWrapper(RECEIVE_SIZE);
+        this.writeBuffer = new RawBuffer(RECEIVE_SIZE);
 
         this.clientSocket = new SimConnectSocket();
 
@@ -232,7 +234,7 @@ class SimConnectConnection extends EventEmitter {
         }
     }
 
-    clean(buffer: DataWrapper) {
+    clean(buffer: RawBuffer) {
         buffer.clear();
         buffer.setOffset(16);
     }
@@ -1099,5 +1101,5 @@ class SimConnectConnection extends EventEmitter {
     }
 }
 
-export { SimConnectConnection };
+export { SimConnectConnection, ConnectionOptions };
 module.exports = { SimConnectConnection };

@@ -1,12 +1,12 @@
-import SimConnectData from './SimConnectData';
-import DataWrapper from '../wrappers/DataWrapper';
+import { SimConnectData } from './SimConnectData';
+import { RawBuffer } from '../RawBuffer';
 
 enum Airspeed {
     Keep = -2,
     Cruise = -1,
 }
 
-export default class InitPosition implements SimConnectData {
+class InitPosition implements SimConnectData {
     latitude: number = 0;
     longitude: number = 0;
     altitude: number = 0;
@@ -16,7 +16,7 @@ export default class InitPosition implements SimConnectData {
     onGround: boolean = false;
     airspeed: Airspeed | number = 0;
 
-    read(buffer: DataWrapper) {
+    read(buffer: RawBuffer) {
         this.latitude = buffer.readDouble();
         this.longitude = buffer.readDouble();
         this.altitude = buffer.readDouble();
@@ -27,7 +27,7 @@ export default class InitPosition implements SimConnectData {
         this.airspeed = buffer.readInt();
     }
 
-    write(buffer: DataWrapper) {
+    write(buffer: RawBuffer) {
         buffer.writeDouble(this.latitude);
         buffer.writeDouble(this.longitude);
         buffer.writeDouble(this.altitude);
@@ -38,3 +38,5 @@ export default class InitPosition implements SimConnectData {
         buffer.writeInt(this.airspeed);
     }
 }
+
+export {InitPosition}

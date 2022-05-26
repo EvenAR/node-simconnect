@@ -4,6 +4,7 @@ import {
     SimConnectDataType,
     SimConnectPeriod,
     open,
+    readLatLonAlt,
 } from '../../dist';
 
 /**
@@ -74,7 +75,7 @@ open('My app', Protocol.FSX_SP2)
             if (recvSimObjectData.requestID === REQ_ID.LIVE_DATA) {
                 console.log({
                     // Read order is important
-                    position: recvSimObjectData.data.readLatLonAlt(),
+                    position: readLatLonAlt(recvSimObjectData.data),
                     airspeed: recvSimObjectData.data.readInt(),
                     verticalSpeed: recvSimObjectData.data.readInt(),
                     heading: recvSimObjectData.data.readInt(),

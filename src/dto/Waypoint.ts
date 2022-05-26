@@ -1,5 +1,5 @@
-import SimConnectData from './SimConnectData';
-import DataWrapper from '../wrappers/DataWrapper';
+import { SimConnectData } from './SimConnectData';
+import { RawBuffer } from '../RawBuffer';
 
 class Waypoint implements SimConnectData {
     latitude: number = 0; // degrees
@@ -18,7 +18,7 @@ class Waypoint implements SimConnectData {
     speed: number = 0; // knots
     throttle: number = 0; // percent
 
-    read(buffer: DataWrapper) {
+    read(buffer: RawBuffer) {
         this.latitude = buffer.readDouble();
         this.longitude = buffer.readDouble();
         this.altitude = buffer.readDouble();
@@ -27,7 +27,7 @@ class Waypoint implements SimConnectData {
         this.throttle = buffer.readDouble();
     }
 
-    write(buffer: DataWrapper) {}
+    write(buffer: RawBuffer) {}
 }
 
-export default Waypoint;
+export { Waypoint };

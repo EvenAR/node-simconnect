@@ -1,50 +1,29 @@
-import DataWrapper from '../wrappers/DataWrapper';
-
-export class FacilityAirport {
-    icao: string;
-    latitude: number;
-    longitude: number;
-    altitude: number;
-
-    constructor(data: DataWrapper) {
-        this.icao = data.readString(9);
-        this.latitude = data.readDouble();
-        this.longitude = data.readDouble();
-        this.altitude = data.readDouble();
-    }
-}
-
-export class FacilityWaypoint extends FacilityAirport {
-    magVar: number;
-
-    constructor(data: DataWrapper) {
-        super(data);
-        this.magVar = data.readFloat();
-    }
-}
-
-export class FacilityNDB extends FacilityWaypoint {
-    frequency: number;
-    constructor(data: DataWrapper) {
-        super(data);
-        this.frequency = data.readInt();
-    }
-}
+import {RawBuffer}from "../RawBuffer";
+import { FacilityNDB } from "./FacilityNDB";
 
 export class FacilityVOR extends FacilityNDB {
+    
     public static HAS_NAV_SIGNAL = 0x00000001;
+
     public static HAS_LOCALIZER = 0x00000002;
+
     public static HAS_GLIDE_SLOPE = 0x00000004;
+
     public static HAS_DME = 0x00000008;
 
     flags: number;
+
     localizer: number;
+
     glideLat: number;
+
     glideLon: number;
+
     glideAlt: number;
+
     glideSlipeAngle: number;
 
-    constructor(data: DataWrapper) {
+    constructor(data: RawBuffer) {
         super(data);
         this.flags = data.readInt();
         this.localizer = data.readFloat();
@@ -55,7 +34,7 @@ export class FacilityVOR extends FacilityNDB {
     }
 
     hasFlag(flag: number): boolean {
-        return (this.flags & flag) != 0;
+        return (this.flags & flag) !== 0;
     }
 
     hasNavSignal(): boolean {

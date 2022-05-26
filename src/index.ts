@@ -1,8 +1,6 @@
-import { RecvOpen } from './recv';
-import { SimConnectConnection } from './SimConnectConnection';
+import { SimConnectConnection, ConnectionOptions } from './SimConnectConnection';
 import { Protocol } from './enums/Protocol';
-import ConnectionOptions from './types/ConnectionOptions';
-import OpenEvent from './types/OpenEvent';
+import {RecvOpen} from "./recv";
 
 export * from './SimConnectConstants';
 export * from './enums/SimConnectDataType';
@@ -15,10 +13,15 @@ export * from './enums/FacilityListType';
 export * from './enums/NotificationPriority';
 export * from './enums/Protocol';
 
-export * from './recv/facility';
-export * from './types';
+export * from './recv'
+export * from './dto';
 export * from './recv';
-export { default as DataWrapper } from './wrappers/DataWrapper';
+export {  RawBuffer } from './RawBuffer';
+
+export interface OpenEvent {
+    recvOpen: RecvOpen,
+    handle: SimConnectConnection
+}
 
 /***
  * Try opening a connection to SimConnect
