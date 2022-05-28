@@ -10,6 +10,8 @@ import { InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
+import { Protocol } from './enums/Protocol';
+
 import {
     RecvID,
     SimConnectMessage,
@@ -37,8 +39,6 @@ import {
     RecvWaypointList,
     RecvWeatherObservation,
 } from './recv';
-import { SimConnectError } from './texts';
-import { Protocol } from './enums/Protocol';
 
 const RECEIVE_SIZE = 65536;
 
@@ -99,6 +99,17 @@ declare interface SimConnectConnection extends EventEmitter {
 
 interface ConnectionOptions {
     remote: { host: string; port: number };
+}
+
+enum SimConnectError {
+    UnknownHost = 'Unknown host',
+    GuidInvalidSize = 'GUID is not 16 bytes long',
+    Unimplemented = 'Not yet implemented',
+    VersionMismatch = 'Invalid version2',
+    PacketTooLarge = 'Packet too large',
+    InvalidRead = 'Invalid read',
+    InvalidProtocol = 'Invalid protocol version',
+    BadVersion = 'Unsupported protocol version',
 }
 
 class SimConnectConnection extends EventEmitter {
