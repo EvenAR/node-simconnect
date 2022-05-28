@@ -1,4 +1,4 @@
-import  {RawBuffer} from "../RawBuffer";
+import { RawBuffer } from '../RawBuffer';
 
 export class RecvOpen {
     applicationName: string;

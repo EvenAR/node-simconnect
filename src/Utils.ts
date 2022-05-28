@@ -3,7 +3,8 @@ import * as ini from 'ini';
 import * as Path from 'path';
 import * as os from 'os';
 
-const regedit = require('regedit');
+// @ts-ignore // eslint-disable-line
+import regedit = require('regedit');
 
 async function findSimConnectPortIPv4(): Promise<number> {
     const port = await readRegistryValue('SimConnect_Port_IPv4');
@@ -14,6 +15,7 @@ function readRegistryValue(subKey: string): Promise<string> {
     const FS_KEY =
         'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
     return new Promise<string>((resolve, reject) => {
+        // eslint-disable-next-line
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
                 reject();
@@ -24,6 +26,7 @@ function readRegistryValue(subKey: string): Promise<string> {
     });
 }
 
+// eslint-disable-next-line
 type IniFile = { [key: string]: any };
 
 function readIniFile(path: string): Promise<IniFile> {
@@ -46,7 +49,7 @@ async function readSimConnectCfg(folder: string) {
 }
 
 async function checkIfNamedPipeExist(pipeName: string): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
+    return new Promise<boolean>((resolve) => {
         fs.access(pipeName, fs.constants.F_OK, (err) => {
             if (err) resolve(false);
             else resolve(true);
@@ -64,29 +67,37 @@ async function discoverServer(): Promise<SimConnectServerAddress> {
         const localConfig = await readSimConnectCfg(process.cwd());
         const { Address, Port } = localConfig[1];
         if (Address && Port) {
-            return Promise.resolve({ type: 'ipv4', host: Address, port: Port });
+            return {
+                type: 'ipv4',
+                host: Address,
+                port: Port,
+            };
         }
-    } catch {}
+    } catch {} // eslint-disable-line
 
     // Check for SimConnect.cfg in home directory
     try {
         const homeConfig = await readSimConnectCfg(os.homedir());
         const { Address, Port } = homeConfig[1];
         if (Address && Port) {
-            return Promise.resolve({ type: 'ipv4', host: Address, port: Port });
+            return {
+                type: 'ipv4',
+                host: Address,
+                port: Port,
+            };
         }
-    } catch {}
+    } catch {} // eslint-disable-line
 
     // Check if named pipe exist
     const PIPE = '\\\\.\\pipe\\Microsoft Flight Simulator\\SimConnect';
     const msfsSimconnectPipeOk = await checkIfNamedPipeExist(PIPE);
     if (msfsSimconnectPipeOk) {
-        return Promise.resolve({ type: 'pipe', address: PIPE });
+        return { type: 'pipe', address: PIPE };
     }
 
     // Read port number from Windows registry
     const ipv4port = await findSimConnectPortIPv4();
-    return Promise.resolve({ type: 'ipv4', host: 'localhost', port: ipv4port });
+    return { type: 'ipv4', host: 'localhost', port: ipv4port };
 }
 
 export { discoverServer };

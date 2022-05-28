@@ -7,13 +7,20 @@ enum Airspeed {
 }
 
 class InitPosition implements SimConnectData {
-    latitude: number = 0;
-    longitude: number = 0;
-    altitude: number = 0;
-    pitch: number = 0;
-    bank: number = 0;
-    heading: number = 0;
-    onGround: boolean = false;
+    latitude = 0;
+
+    longitude = 0;
+
+    altitude = 0;
+
+    pitch = 0;
+
+    bank = 0;
+
+    heading = 0;
+
+    onGround = false;
+
     airspeed: Airspeed | number = 0;
 
     read(buffer: RawBuffer) {
@@ -39,4 +46,4 @@ class InitPosition implements SimConnectData {
     }
 }
 
-export {InitPosition}
+export { InitPosition };

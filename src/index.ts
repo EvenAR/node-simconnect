@@ -1,6 +1,9 @@
-import { SimConnectConnection, ConnectionOptions } from './SimConnectConnection';
+import {
+    SimConnectConnection,
+    ConnectionOptions,
+} from './SimConnectConnection';
 import { Protocol } from './enums/Protocol';
-import {RecvOpen} from "./recv";
+import { RecvOpen } from './recv';
 
 export * from './SimConnectConstants';
 export * from './enums/SimConnectDataType';
@@ -13,17 +16,16 @@ export * from './enums/FacilityListType';
 export * from './enums/NotificationPriority';
 export * from './enums/Protocol';
 
-export * from './recv'
-export * from './dto';
 export * from './recv';
-export {  RawBuffer } from './RawBuffer';
+export * from './dto';
+export { RawBuffer } from './RawBuffer';
 
 export interface OpenEvent {
-    recvOpen: RecvOpen,
-    handle: SimConnectConnection
+    recvOpen: RecvOpen;
+    handle: SimConnectConnection;
 }
 
-/***
+/** *
  * Try opening a connection to SimConnect
  * @param appName An appropriate name for the client program
  * @param protocolVersion Lowest protocol version
@@ -38,7 +40,7 @@ export function open(
         appName,
         protocolVersion
     );
-    simConnectConnection._connect(options);
+    simConnectConnection.connect(options);
     return new Promise<OpenEvent>((resolve, reject) => {
         simConnectConnection.on('open', (data) => {
             resolve({ recvOpen: data, handle: simConnectConnection });

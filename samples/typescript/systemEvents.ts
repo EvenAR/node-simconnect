@@ -1,4 +1,4 @@
-import { open, Protocol, RecvOpen, ConnectionHandle } from '../../dist';
+import { open, Protocol } from '../../dist';
 
 /**
  * Demonstrates a few system events
@@ -45,7 +45,7 @@ open('My app', Protocol.FSX_SP2)
         });
 
         handle.on('eventFrame', (recvEventFrame) => {
-            //console.log('Framerate:', recvEventFrame.frameRate);
+            // console.log('Framerate:', recvEventFrame.frameRate);
         });
     })
     .catch((error) => {

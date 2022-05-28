@@ -2,9 +2,11 @@ import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
 
 class LatLonAlt implements SimConnectData {
-    latitude: number = 0;
-    longitude: number = 0;
-    altitude: number = 0;
+    latitude = 0;
+
+    longitude = 0;
+
+    altitude = 0;
 
     read(buffer: RawBuffer) {
         this.latitude = buffer.readDouble();
@@ -12,6 +14,7 @@ class LatLonAlt implements SimConnectData {
         this.altitude = buffer.readDouble();
     }
 
+    // eslint-disable-next-line
     write(buffer: RawBuffer) {}
 }
 

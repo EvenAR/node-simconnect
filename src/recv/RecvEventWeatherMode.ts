@@ -1,6 +1,6 @@
-import {RawBuffer}from "../RawBuffer";
-import { WeatherMode } from "../enums/WeatherMode";
-import { RecvEvent } from "./RecvEvent";
+import { RawBuffer } from '../RawBuffer';
+import { WeatherMode } from '../enums/WeatherMode';
+import { RecvEvent } from './RecvEvent';
 
 export class RecvEventWeatherMode extends RecvEvent {
     mode: WeatherMode;
@@ -13,4 +13,3 @@ export class RecvEventWeatherMode extends RecvEvent {
                 : this.data;
     }
 }
-

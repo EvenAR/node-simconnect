@@ -1,12 +1,14 @@
-const WebSocketServer = require('ws').Server;
 import {
     open,
     Protocol,
+    readLatLonAlt,
     RecvCloudState,
     SimConnectConstants,
     SimConnectDataType,
     SimConnectPeriod,
 } from '../../../dist';
+
+const WebSocketServer = require('ws').Server;
 
 /**
  * Starts a websocket server, opens a browser and renders
@@ -25,21 +27,23 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 const startCommand =
-    process.platform == 'darwin'
+    process.platform === 'darwin'
         ? 'open'
-        : process.platform == 'win32'
+        : process.platform === 'win32'
         ? 'start'
         : 'xdg-open';
 
-require('child_process').exec(`${startCommand} file:///${__dirname}/index.html`);
+require('child_process').exec(
+    `${startCommand} file:///${__dirname}/index.html`
+);
 
 // SimConnect client ////////////////////
 
-enum DEF_ID {
+enum DefinitionID {
     POSITION,
 }
 
-enum REQ_ID {
+enum RequestID {
     POSITION,
     CLOUD_STATE,
 }
@@ -51,14 +55,14 @@ open('Clouds example', Protocol.FSX_SP2)
     .then(({ recvOpen, handle }) => {
         console.log(recvOpen);
         handle.addToDataDefinition(
-            DEF_ID.POSITION,
+            DefinitionID.POSITION,
             'STRUCT LATLONALT',
             null,
             SimConnectDataType.LATLONALT
         );
         handle.requestDataOnSimObject(
-            REQ_ID.POSITION,
-            DEF_ID.POSITION,
+            RequestID.POSITION,
+            DefinitionID.POSITION,
             SimConnectConstants.OBJECT_ID_USER,
             SimConnectPeriod.SECOND
         );
@@ -68,13 +72,13 @@ open('Clouds example', Protocol.FSX_SP2)
         });
 
         handle.on('simObjectData', (data) => {
-            if (data.requestID === REQ_ID.POSITION) {
-                const pos = data.data.readLatLonAlt();
+            if (data.requestID === RequestID.POSITION) {
+                const pos = readLatLonAlt(data.data);
                 console.log(pos);
                 const altFt = pos.altitude * 3.2808;
 
                 handle.weatherRequestCloudState(
-                    REQ_ID.CLOUD_STATE,
+                    RequestID.CLOUD_STATE,
                     pos.latitude - RANGE,
                     pos.longitude - RANGE,
                     altFt - ALT_RANGE,

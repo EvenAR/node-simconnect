@@ -2,9 +2,11 @@ import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
 
 class XYZ implements SimConnectData {
-    x: number = 0;
-    y: number = 0;
-    z: number = 0;
+    x = 0;
+
+    y = 0;
+
+    z = 0;
 
     read(buffer: RawBuffer) {
         this.x = buffer.readDouble();
@@ -12,6 +14,7 @@ class XYZ implements SimConnectData {
         this.z = buffer.readDouble();
     }
 
+    // eslint-disable-next-line
     write(buffer: RawBuffer) {}
 }
 

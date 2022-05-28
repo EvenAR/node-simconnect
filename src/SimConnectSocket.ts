@@ -48,6 +48,7 @@ interface SimConnectMessage {
  */
 class SimConnectSocket extends Duplex {
     _socket: Socket;
+
     _readingPaused;
 
     constructor() {
@@ -66,6 +67,8 @@ class SimConnectSocket extends Duplex {
             case 'ipv4':
                 this._socket.connect(address.port, address.host);
                 break;
+            default:
+                throw Error('Unsupported address type. Must be ipv4 or type');
         }
     }
 
@@ -109,7 +112,7 @@ class SimConnectSocket extends Duplex {
             };
 
             // Add object to read buffer
-            let pushOk = this.push(message);
+            const pushOk = this.push(message);
 
             // Pause reading if consumer is slow
             if (!pushOk) this._readingPaused = true;
@@ -121,7 +124,11 @@ class SimConnectSocket extends Duplex {
         setImmediate(this._onReadable.bind(this));
     }
 
-    _write(data: Buffer, encoding: any, cb: any) {
+    _write(
+        data: Buffer,
+        encoding: BufferEncoding,
+        cb: (error?: Error | null) => void
+    ) {
         this._socket.write(data, encoding, cb);
     }
 }

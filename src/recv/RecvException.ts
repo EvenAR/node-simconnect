@@ -1,4 +1,4 @@
-import {RawBuffer}from "../RawBuffer";
+import { RawBuffer } from '../RawBuffer';
 
 export class RecvException {
     exception: number;
@@ -14,4 +14,4 @@ export class RecvException {
     }
 }
 
-module.exports = {RecvException};
+module.exports = { RecvException };

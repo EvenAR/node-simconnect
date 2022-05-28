@@ -1,6 +1,6 @@
-import {RawBuffer}from "../RawBuffer";
-import { FacilityAirport } from "../facility/FacilityAirport";
-import { RecvFacilitiesList } from "./RecvFacilitiesList";
+import { RawBuffer } from '../RawBuffer';
+import { FacilityAirport } from '../facility/FacilityAirport';
+import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvAirportList extends RecvFacilitiesList {
     aiports: FacilityAirport[];

@@ -1,5 +1,6 @@
-const WebSocketServer = require('ws').Server;
+import childProcess = require('child_process');
 
+import WebSocketServer = require('ws');
 /**
  * Starts a websocket server and opens the default browser
  */
@@ -16,12 +17,12 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 const command =
-    process.platform == 'darwin'
+    process.platform === 'darwin'
         ? 'open'
-        : process.platform == 'win32'
+        : process.platform === 'win32'
         ? 'start'
         : 'xdg-open';
 
-require('child_process').exec(`${command} file:///${__dirname}/index.html`);
+childProcess.exec(`${command} file:///${__dirname}/index.html`);
 
 export { client };

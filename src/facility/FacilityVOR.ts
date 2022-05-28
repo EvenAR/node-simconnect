@@ -1,8 +1,7 @@
-import {RawBuffer}from "../RawBuffer";
-import { FacilityNDB } from "./FacilityNDB";
+import { RawBuffer } from '../RawBuffer';
+import { FacilityNDB } from './FacilityNDB';
 
 export class FacilityVOR extends FacilityNDB {
-    
     public static HAS_NAV_SIGNAL = 0x00000001;
 
     public static HAS_LOCALIZER = 0x00000002;

@@ -1,6 +1,5 @@
-import { SimConnectConstants } from "../SimConnectConstants";
-import {RawBuffer}from "../RawBuffer";
-
+import { SimConnectConstants } from '../SimConnectConstants';
+import { RawBuffer } from '../RawBuffer';
 
 export class RecvSystemState {
     requestID: number;

@@ -1,6 +1,6 @@
-import {RawBuffer}from "../RawBuffer";
-import { FacilityVOR } from "../facility/FacilityVOR";
-import { RecvFacilitiesList } from "./RecvFacilitiesList";
+import { RawBuffer } from '../RawBuffer';
+import { FacilityVOR } from '../facility/FacilityVOR';
+import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvVORList extends RecvFacilitiesList {
     vors: FacilityVOR[];

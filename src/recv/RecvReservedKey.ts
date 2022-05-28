@@ -1,4 +1,4 @@
-import {RawBuffer}from "../RawBuffer";
+import { RawBuffer } from '../RawBuffer';
 
 export class RecvReservedKey {
     choiceReserved: string;
@@ -6,7 +6,7 @@ export class RecvReservedKey {
     reservedKey: string;
 
     constructor(data: RawBuffer) {
-        this.choiceReserved = data.readString(50)
-           this.reservedKey = data.readString(30)
+        this.choiceReserved = data.readString(50);
+        this.reservedKey = data.readString(30);
     }
 }

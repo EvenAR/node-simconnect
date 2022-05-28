@@ -1,6 +1,6 @@
-import {RawBuffer}from "../RawBuffer";
-import { FacilityNDB } from "../facility/FacilityNDB";
-import { RecvFacilitiesList } from "./RecvFacilitiesList";
+import { RawBuffer } from '../RawBuffer';
+import { FacilityNDB } from '../facility/FacilityNDB';
+import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvNDBList extends RecvFacilitiesList {
     ndbs: FacilityNDB[];

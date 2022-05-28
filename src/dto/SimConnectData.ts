@@ -5,4 +5,4 @@ interface SimConnectData {
     readonly write: (buffer: RawBuffer) => void;
 }
 
-export {SimConnectData}
+export { SimConnectData };

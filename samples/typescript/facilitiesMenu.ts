@@ -17,22 +17,22 @@ import {
  *
  */
 
-enum NOTIFICATION_GROUP_ID {
+enum NotificationGroupID {
     GROUP0,
 }
 
-enum EVENT_ID {
+enum EventID {
     OPEN_MENU_1,
     OPEN_MENU_2,
     EVENT_MENU_1,
     EVENT_MENU_2,
 }
 
-enum INPUT_GROUP_ID {
+enum InputGroupID {
     INPUT0,
 }
 
-enum REQUEST_ID {
+enum RequestID {
     REQUEST_0,
     REQUEST_1,
 }
@@ -61,33 +61,33 @@ open('My app', Protocol.FSX_SP2)
     .then(({ recvOpen, handle }) => {
         console.log('Connected: ', recvOpen);
 
-        handle.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_1);
-        handle.mapClientEventToSimEvent(EVENT_ID.OPEN_MENU_2);
+        handle.mapClientEventToSimEvent(EventID.OPEN_MENU_1);
+        handle.mapClientEventToSimEvent(EventID.OPEN_MENU_2);
         handle.addClientEventToNotificationGroup(
-            NOTIFICATION_GROUP_ID.GROUP0,
-            EVENT_ID.OPEN_MENU_1,
+            NotificationGroupID.GROUP0,
+            EventID.OPEN_MENU_1,
             true
         );
         handle.addClientEventToNotificationGroup(
-            NOTIFICATION_GROUP_ID.GROUP0,
-            EVENT_ID.OPEN_MENU_2,
+            NotificationGroupID.GROUP0,
+            EventID.OPEN_MENU_2,
             true
         );
         handle.setNotificationGroupPriority(
-            NOTIFICATION_GROUP_ID.GROUP0,
+            NotificationGroupID.GROUP0,
             NotificationPriority.HIGHEST
         );
         handle.mapInputEventToClientEvent(
-            INPUT_GROUP_ID.INPUT0,
+            InputGroupID.INPUT0,
             'Ctrl+F1',
-            EVENT_ID.OPEN_MENU_1
+            EventID.OPEN_MENU_1
         );
         handle.mapInputEventToClientEvent(
-            INPUT_GROUP_ID.INPUT0,
+            InputGroupID.INPUT0,
             'Ctrl+F2',
-            EVENT_ID.OPEN_MENU_2
+            EventID.OPEN_MENU_2
         );
-        handle.setInputGroupState(INPUT_GROUP_ID.INPUT0, true);
+        handle.setInputGroupState(InputGroupID.INPUT0, true);
 
         handle.text(TextType.PRINT_RED, 15, 3, 'Facilities Data');
         handle.text(
@@ -99,30 +99,30 @@ open('My app', Protocol.FSX_SP2)
 
         handle.on('event', ({ eventID, data }: RecvEvent) => {
             switch (eventID) {
-                case EVENT_ID.OPEN_MENU_1:
+                case EventID.OPEN_MENU_1:
                     openMenu(GET_FACILITIES_MENU_OPTIONS);
                     break;
-                case EVENT_ID.OPEN_MENU_2:
+                case EventID.OPEN_MENU_2:
                     openMenu(SUBSCRIBE_FACILITIES_MENU_OPTIONS);
                     break;
-                case EVENT_ID.EVENT_MENU_1:
+                case EventID.EVENT_MENU_1:
                     {
                         if (data > TextResult.MENU_SELECT_10) return;
                         if (data < FacilityListType.COUNT) {
                             handle.requestFacilitiesList(
                                 data as FacilityListType,
-                                REQUEST_ID.REQUEST_0
+                                RequestID.REQUEST_0
                             );
                         }
                     }
                     break;
-                case EVENT_ID.EVENT_MENU_2:
+                case EventID.EVENT_MENU_2:
                     {
                         if (data > TextResult.MENU_SELECT_10) return;
                         if (data < FacilityListType.COUNT) {
                             handle.subscribeToFacilities(
                                 data as FacilityListType,
-                                REQUEST_ID.REQUEST_1
+                                RequestID.REQUEST_1
                             );
                         } else if (data < 2 * FacilityListType.COUNT) {
                             handle.unSubscribeToFacilities(
@@ -138,7 +138,7 @@ open('My app', Protocol.FSX_SP2)
         function openMenu(items: string[]) {
             handle.menu(
                 0.0,
-                EVENT_ID.EVENT_MENU_1,
+                EventID.EVENT_MENU_1,
                 'SimConnect Facilities Test',
                 'Choose which item:',
                 ...items

@@ -1,6 +1,6 @@
-import { SimConnectConstants } from "../SimConnectConstants";
-import {RawBuffer}from "../RawBuffer";
-import { RecvEvent } from "./RecvEvent";
+import { SimConnectConstants } from '../SimConnectConstants';
+import { RawBuffer } from '../RawBuffer';
+import { RecvEvent } from './RecvEvent';
 
 export class RecvEventFilename extends RecvEvent {
     fileName: string;

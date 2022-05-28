@@ -11,15 +11,15 @@ import {
  * Demonstrates a few system events
  */
 
-const enum EVENT_ID {
+const enum EventID {
     PAUSE,
 }
 
-const enum DEF_ID {
+const enum DefinitionID {
     LIVE_DATA,
 }
 
-const enum REQ_ID {
+const enum RequestID {
     LIVE_DATA,
 }
 
@@ -27,52 +27,52 @@ open('My app', Protocol.FSX_SP2)
     .then(({ recvOpen, handle }) => {
         console.log('Connected:', recvOpen);
 
-        handle.subscribeToSystemEvent(EVENT_ID.PAUSE, 'Pause');
+        handle.subscribeToSystemEvent(EventID.PAUSE, 'Pause');
 
         handle.addToDataDefinition(
-            DEF_ID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             'STRUCT LATLONALT',
             null,
             SimConnectDataType.LATLONALT
         );
 
         handle.addToDataDefinition(
-            DEF_ID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             'AIRSPEED INDICATED',
             'knots',
             SimConnectDataType.INT32
         );
 
         handle.addToDataDefinition(
-            DEF_ID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             'VERTICAL SPEED',
             'Feet per second',
             SimConnectDataType.INT32
         );
 
         handle.addToDataDefinition(
-            DEF_ID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             'PLANE HEADING DEGREES TRUE',
             'Degrees',
             SimConnectDataType.INT32
         );
 
         handle.addToDataDefinition(
-            DEF_ID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             'LIGHT LANDING',
             'bool',
             SimConnectDataType.INT32
         );
 
         handle.requestDataOnSimObject(
-            REQ_ID.LIVE_DATA,
-            DEF_ID.LIVE_DATA,
+            RequestID.LIVE_DATA,
+            DefinitionID.LIVE_DATA,
             SimConnectConstants.OBJECT_ID_USER,
             SimConnectPeriod.SIM_FRAME
         );
 
         handle.on('simObjectData', (recvSimObjectData) => {
-            if (recvSimObjectData.requestID === REQ_ID.LIVE_DATA) {
+            if (recvSimObjectData.requestID === RequestID.LIVE_DATA) {
                 console.log({
                     // Read order is important
                     position: readLatLonAlt(recvSimObjectData.data),
@@ -85,7 +85,7 @@ open('My app', Protocol.FSX_SP2)
         });
 
         handle.on('event', (recvEvent) => {
-            if (recvEvent.eventID === EVENT_ID.PAUSE) {
+            if (recvEvent.eventID === EventID.PAUSE) {
                 console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
             }
         });

@@ -1,5 +1,5 @@
-import {RawBuffer}from "../RawBuffer";
-import { RecvEvent } from "./RecvEvent";
+import { RawBuffer } from '../RawBuffer';
+import { RecvEvent } from './RecvEvent';
 
 export class RecvEventRaceEnd extends RecvEvent {
     racerNumber: number; // The index of the racer the results are for
@@ -33,6 +33,6 @@ export class RecvEventRaceEnd extends RecvEvent {
         this.playerRole = data.readString(260);
         this.totalTime = data.readDouble();
         this.penaltyTime = data.readDouble();
-        this.disqualified = data.readInt() ===1;
+        this.disqualified = data.readInt() === 1;
     }
 }

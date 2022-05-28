@@ -2,9 +2,12 @@ import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
 
 class Waypoint implements SimConnectData {
-    latitude: number = 0; // degrees
-    longitude: number = 0; // degrees
-    altitude: number = 0; // feet
+    latitude = 0; // degrees
+
+    longitude = 0; // degrees
+
+    altitude = 0; // feet
+
     /** flags of waypoints
      * @see flightsim.simconnect.SimConnectConstants#WAYPOINT_ON_GROUND
      * @see flightsim.simconnect.SimConnectConstants#WAYPOINT_REVERSE
@@ -14,9 +17,11 @@ class Waypoint implements SimConnectData {
      * @see flightsim.simconnect.SimConnectConstants#WAYPOINT_THROTTLE_REQUESTED
      *
      */
-    flags: number = 0;
-    speed: number = 0; // knots
-    throttle: number = 0; // percent
+    flags = 0;
+
+    speed = 0; // knots
+
+    throttle = 0; // percent
 
     read(buffer: RawBuffer) {
         this.latitude = buffer.readDouble();
@@ -27,6 +32,7 @@ class Waypoint implements SimConnectData {
         this.throttle = buffer.readDouble();
     }
 
+    // eslint-disable-next-line
     write(buffer: RawBuffer) {}
 }
 
