@@ -40,14 +40,11 @@ export function open(
         appName,
         protocolVersion
     );
-    simConnectConnection.connect(options);
-    return new Promise<OpenEvent>((resolve, reject) => {
+    return new Promise<OpenEvent>((resolve) => {
         simConnectConnection.on('open', (data) => {
             resolve({ recvOpen: data, handle: simConnectConnection });
         });
-        simConnectConnection.on('error', (err) => {
-            reject(err);
-        });
+        simConnectConnection.connect(options);
     });
 }
 

@@ -150,13 +150,9 @@ class SimConnectConnection extends EventEmitter {
         if (options?.remote) {
             this.clientSocket.connect({ type: 'ipv4', ...options.remote });
         } else {
-            discoverServer()
-                .then((address: SimConnectServerAddress) => {
-                    this.clientSocket.connect(address);
-                })
-                .catch((connectError) => {
-                    this.emit('error', connectError);
-                });
+            discoverServer().then((address: SimConnectServerAddress) => {
+                this.clientSocket.connect(address);
+            });
         }
     }
 

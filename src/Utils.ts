@@ -14,11 +14,11 @@ async function findSimConnectPortIPv4(): Promise<number> {
 function readRegistryValue(subKey: string): Promise<string> {
     const FS_KEY =
         'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>((resolve) => {
         // eslint-disable-next-line
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
-                reject();
+                throw Error(`Failed to read registry value ${FS_KEY} (${err})`);
             } else {
                 resolve(result[FS_KEY].values[subKey].value);
             }
