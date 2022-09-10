@@ -1,7 +1,7 @@
 {
-  "name": "simconnect-js-client",
-  "version": "1.0.0",
-  "description": "",
+  "name": "node-simconnect",
+  "version": "3.0.0-alpha.1",
+  "description": "A SimConnect client library for Node.JS.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
