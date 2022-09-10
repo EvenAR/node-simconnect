@@ -135,4 +135,4 @@ class SimConnectSocket extends Duplex {
     }
 }
 
-export { SimConnectSocket, RecvID, SimConnectMessage };
+export { SimConnectSocket, RecvID, SimConnectMessage, SimConnectServerAddress };

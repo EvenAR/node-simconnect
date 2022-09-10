@@ -1,7 +1,7 @@
 # node-simconnect
 
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
-[![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
+[![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict "Strict TypeScript Checked")](https://www.typescriptlang.org)
 [![Build Status](https://app.travis-ci.com/EvenAR/node-simconnect.svg?branch=master)](https://app.travis-ci.com/EvenAR/node-simconnect)
 
 A SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
@@ -22,31 +22,29 @@ The API works similar to the SimConnect API described in the [official documenta
 ### Quick start
 
 ```js
-import { open, Protocol } from 'node-simconnect';
+import { open, Protocol } from "node-simconnect";
 
 const EVENT_ID_PAUSE = 1;
 
-open('My SimConnect client', Protocol.FSX_SP2)
+open("My SimConnect client", Protocol.FSX_SP2)
     .then(function ({ recvOpen, handle }) {
         // recvOpen: object containing simulator information
         // handle: the SimConnect handle
-        console.log('Connected to', recvOpen.applicationName);
-        handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
-        handle.on('event', function (recvEvent) {
+        console.log("Connected to", recvOpen.applicationName);
+        handle.subscribeToSystemEvent(EVENT_ID_PAUSE, "Pause");
+        handle.on("event", function (recvEvent) {
             switch (recvEvent.eventID) {
                 case EVENT_ID_PAUSE:
-                    console.log(
-                        recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused'
-                    );
+                    console.log(recvEvent.data === 1 ? "Sim paused" : "Sim unpaused");
                     break;
             }
         });
-        handle.on('quit', function () {
-            console.log('Simulator quit');
+        handle.on("quit", function () {
+            console.log("Simulator quit");
         });
     })
     .catch(function (error) {
-        console.log('Connection failed:', error);
+        console.log("Connection failed:", error);
     });
 ```
 
@@ -77,11 +75,9 @@ open('My SimConnect client', Protocol.FSX_SP2)
 1. Provide the IP address of the simulator PC and the port number when calling `open`:
 
     ```js
-    const options = { remote: { host: 'localhost', port: 5111 } };
+    const options = { remote: { host: "localhost", port: 5111 } };
 
-    open('My SimConnect client', Protocol.FSX_SP2, options)
-        .then(/* ... */)
-        .catch(/* try again? */);
+    open("My SimConnect client", Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
     ```
 
 ### Functionality

@@ -62,10 +62,6 @@ enum SimConnectBuild {
     SP2_XPACK = 61259,
 }
 
-type DataToSet =
-    | { buffer: RawBuffer; arrayCount: number; tagged: boolean }
-    | SimConnectData[];
-
 interface SimConnectRecvEvents {
     open: (recvOpen: RecvOpen) => void;
     close: () => void;
@@ -97,18 +93,6 @@ interface SimConnectRecvEvents {
     eventMultiplayerSessionEnded: () => void;
     eventRaceEnd: (recvEventRaceEnd: RecvEventRaceEnd) => void;
     eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
-}
-
-declare interface SimConnectConnection extends EventEmitter {
-    on<U extends keyof SimConnectRecvEvents>(
-        event: U,
-        listener: SimConnectRecvEvents[U]
-    ): this;
-
-    emit<U extends keyof SimConnectRecvEvents>(
-        event: U,
-        ...args: Parameters<SimConnectRecvEvents[U]>
-    ): boolean;
 }
 
 interface ConnectionOptions {
@@ -158,6 +142,24 @@ class SimConnectConnection extends EventEmitter {
         this.clientSocket.on('error', (connectError: Error) =>
             this.emit('error', connectError)
         );
+    }
+
+    private _untypedOn = this.on;
+
+    private _untypedEmit = this.emit;
+
+    on<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return this._untypedOn(event, listener);
+    }
+
+    emit<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        ...args: Parameters<SimConnectRecvEvents[U]>
+    ): boolean {
+        return this._untypedEmit(event, ...args);
     }
 
     connect(options?: ConnectionOptions) {
@@ -493,7 +495,9 @@ class SimConnectConnection extends EventEmitter {
     setDataOnSimObject(
         dataDefinitionId: DataDefinitionId,
         objectId: ObjectId,
-        data: DataToSet
+        data:
+            | { buffer: RawBuffer; arrayCount: number; tagged: boolean }
+            | SimConnectData[]
     ) {
         this.resetBuffer();
         this.writeBuffer.writeInt(dataDefinitionId);
@@ -1155,5 +1159,5 @@ class SimConnectConnection extends EventEmitter {
     }
 }
 
-export { SimConnectConnection, ConnectionOptions };
+export { SimConnectConnection, ConnectionOptions, SimConnectRecvEvents };
 module.exports = { SimConnectConnection };

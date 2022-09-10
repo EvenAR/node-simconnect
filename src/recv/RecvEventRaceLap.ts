@@ -1,26 +1,36 @@
-import { RawBuffer } from '../RawBuffer';
-import { RecvEvent } from './RecvEvent';
+import { RawBuffer } from "../RawBuffer";
+import { RecvEvent } from "./RecvEvent";
 
 export class RecvEventRaceLap extends RecvEvent {
-    lapIndex: number; // The index of the racer the results are for
+    /** The index of the racer the results are for */
+    lapIndex: number;
 
-    numberRacers: number; // The total number of racers
+    /** The total number of racers */
+    numberRacers: number;
 
-    missionGUID: Buffer; // The name of the mission to execute, NULL if no mission
+    /** The name of the mission to execute, NULL if no mission */
+    missionGUID: Buffer;
 
-    playerName: string; // The name of the player
+    /** The name of the player */
+    playerName: string;
 
-    sessionType: string; // The type of the multiplayer session: "LAN", "GAMESPY")
+    /** The type of the multiplayer session: "LAN", "GAMESPY") */
+    sessionType: string;
 
-    aircraft: string; // The aircraft type
+    /** The aircraft type */
+    aircraft: string;
 
-    playerRole: string; // The player role in the mission
+    /** The player role in the mission */
+    playerRole: string;
 
-    totalTime: number; // Total time in seconds, 0 means DNF
+    /** Total time in seconds, 0 means DNF */
+    totalTime: number;
 
-    penaltyTime: number; // Total penalty time in seconds
+    /** Total penalty time in seconds */
+    penaltyTime: number;
 
-    disqualified: boolean; // non 0 - disqualified, 0 - not disqualified
+    /** non 0 - disqualified, 0 - not disqualified */
+    disqualified: boolean;
 
     constructor(data: RawBuffer) {
         super(data);

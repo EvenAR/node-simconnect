@@ -10,6 +10,7 @@ export * from './RecvEventRaceEnd';
 export * from './RecvEventRaceLap';
 export * from './RecvEventWeatherMode';
 export * from './RecvException';
+export * from './RecvFacilitiesList';
 export * from './RecvNDBList';
 export * from './RecvOpen';
 export * from './RecvReservedKey';

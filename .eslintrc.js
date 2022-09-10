@@ -17,7 +17,7 @@ module.exports = {
             },
         },
     },
-    plugins: ['@typescript-eslint'],
+    plugins: ['@typescript-eslint', 'eslint-plugin-tsdoc'],
     extends: [
         'plugin:@typescript-eslint/recommended',
         'airbnb-base',
