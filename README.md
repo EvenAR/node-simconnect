@@ -11,7 +11,7 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 
 ## Instructions
 
-Please refer to the `/samples` folder for help. 
+Please refer to the `/samples` folder for help.
 
 The API works similar to the SimConnect API described in the [official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm).
 
@@ -25,7 +25,7 @@ const EVENT_ID_PAUSE = 1;
 open('My SimConnect client', Protocol.FSX_SP2)
     .then(function ({ recvOpen, handle }) {
         // recvOpen: object containing simulator information
-        // handle: the SimConnect handle 
+        // handle: the SimConnect handle
         console.log('Connected to', recvOpen.applicationName);
         handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
         handle.on('event', function (recvEvent) {
@@ -54,6 +54,7 @@ open('My SimConnect client', Protocol.FSX_SP2)
     - MSFS: `X:\Users\<USER>\AppData\Local\Packages\Microsoft.FlightSimulator_**********\LocalCache`.
 
 1. Set property `<Address>0.0.0.0</Address>`. Example of a working SimConnect.xml file:
+
     ```xml
     <?xml version="1.0" encoding="Windows-1252"?>
     <SimBase.Document Type="SimConnect" version="1,0">
@@ -70,84 +71,81 @@ open('My SimConnect client', Protocol.FSX_SP2)
     ```
 
 1. Provide the IP address of the simulator PC and the port number when calling `open`:
-   ```js 
-   const options = { remote: { host: "localhost", port: 5111 } }
 
-   open('My SimConnect client', Protocol.FSX_SP2, options) 
-       .then( /* ... */ )
-       .catch( /* try again? */ )
-   ```
+    ```js
+    const options = { remote: { host: 'localhost', port: 5111 } };
 
-- [x] jnjsf
-- [x] jnjsf
-
+    open('My SimConnect client', Protocol.FSX_SP2, options)
+        .then(/* ... */)
+        .catch(/* try again? */);
+    ```
 
 Refer to the
 [official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
 for a description of the available methods.
 
 | Method                                      | Implemented | Tested FSX | Tested P3D | Tested MSFS |
-|---------------------------------------------|-------------|------------|------------|-------------|
-| `addToDataDefinition`                       | ✅           | ✅          |            |             |
-| `requestDataOnSimObject`                    | ✅           | ✅          |            |             |
-| `clearDataDefinition`                       | ✅           | ✅          |            |             |
-| `requestDataOnSimObjectType`                | ✅           | ✅          |            |             |
-| `subscribeToSystemEvent`                    | ✅           | ✅          |            |             |
-| `unsubscribeFromSystemEvent`                | ✅           | ✅          |            |             |
-| `menu`                                      | ✅           | ✅          |            |             |
-| `requestSystemState`                        | ✅           | ✅          |            |             |
-| `setDataOnSimObject`                        | ✅           | ✅          |            |             |
-| `subscribeToFacilities`                     | ✅           | ✅          |            |             |
-| `unSubscribeToFacilities`                   | ✅           | ✅          |            |             |
-| `weatherRequestObservationAtNearestStation` | ✅           | ✅          |            |             |
-| `weatherRequestCloudState`                  | ✅           | ✅          |            |             |
-| `text`                                      | ✅           | ✅          |            |             |
-| `requestFacilitiesList`                     | ✅           | ✅          |            |             |
-| `setSystemState`                            | ✅           |            |            |             |
-| `addClientEventToNotificationGroup`         | ✅           |            |            |             |
-| `mapClientEventToSimEvent`                  | ✅           |            |            |             |
-| `setSystemEventState`                       | ✅           |            |            |             |
-| `removeClientEvent`                         | ✅           |            |            |             |
-| `setNotificationGroupPriority`              | ✅           |            |            |             |
-| `clearNotificationGroup`                    | ✅           |            |            |             |
-| `requestNotificationGroup`                  | ✅           |            |            |             |
-| `mapInputEventToClientEvent`                | ✅           |            |            |             |
-| `setInputGroupPriority`                     | ✅           |            |            |             |
-| `removeInputEvent`                          | ✅           |            |            |             |
-| `clearInputGroup`                           | ✅           |            |            |             |
-| `setInputGroupState`                        | ✅           |            |            |             |
-| `requestReservedKey`                        | ✅           |            |            |             |
-| `weatherRequestInterpolatedObservation`     | ✅           |            |            |             |
-| `weatherRequestObservationAtStation`        | ✅           |            |            |             |
-| `weatherCreateStation`                      | ✅           |            |            |             |
-| `weatherSetObservation`                     | ✅           |            |            |             |
-| `weatherSetModeServer`                      | ✅           |            |            |             |
-| `weatherSetModeTheme`                       | ✅           |            |            |             |
-| `weatherSetModeGlobal`                      | ✅           |            |            |             |
-| `weatherSetModeCustom`                      | ✅           |            |            |             |
-| `weatherSetDynamicUpdateRate`               | ✅           |            |            |             |
-| `weatherCreateThermal`                      | ✅           |            |            |             |
-| `weatherRemoveThermal`                      | ✅           |            |            |             |
-| `aICreateParkedATCAircraft`                 | ✅           |            |            |             |
-| `aICreateEnrouteATCAircraft`                | ✅           |            |            |             |
-| `aICreateNonATCAircraft`                    | ✅           |            |            |             |
-| `aICreateSimulatedObject`                   | ✅           |            |            |             |
-| `aIReleaseControl`                          | ✅           |            |            |             |
-| `aIRemoveObject`                            | ✅           |            |            |             |
-| `aISetAircraftFlightPlan`                   | ✅           |            |            |             |
-| `executeMissionAction`                      | ✅           |            |            |             |
-| `completeCustomMissionAction`               | ✅           |            |            |             |
-| `cameraSetRelative6DOF`                     | ✅           |            |            |             |
-| `menuAddItem`                               | ✅           |            |            |             |
-| `menuDeleteItem`                            | ✅           |            |            |             |
-| `menuAddSubItem`                            | ✅           |            |            |             |
-| `menuDeleteSubItem`                         | ✅           |            |            |             |
-| `mapClientDataNameToID`                     | ✅           |            |            |             |
-| `createClientData`                          | ✅           |            |            |             |
-| `addToClientDataDefinition`                 | ✅           |            |            |             |
-| `clearClientDataDefinition`                 | ✅           |            |            |             |
-| `requestClientData`                         | ✅           |            |            |             |
-| `setClientData`                             | ✅           |            |            |             |
-| `flightLoad`                                | ✅           |            |            |             |
-| `flightSave`                                | ✅           |            |            |             |
-| `flightPlanLoad`                            | ✅           |            |            |             |
+| ------------------------------------------- | ----------- | ---------- | ---------- | ----------- |
+| `addToDataDefinition`                       | ✅          | ✅         |            |             |
+| `requestDataOnSimObject`                    | ✅          | ✅         |            |             |
+| `clearDataDefinition`                       | ✅          | ✅         |            |             |
+| `requestDataOnSimObjectType`                | ✅          | ✅         |            |             |
+| `subscribeToSystemEvent`                    | ✅          | ✅         |            |             |
+| `unsubscribeFromSystemEvent`                | ✅          | ✅         |            |             |
+| `menu`                                      | ✅          | ✅         |            |             |
+| `requestSystemState`                        | ✅          | ✅         |            |             |
+| `setDataOnSimObject`                        | ✅          | ✅         |            |             |
+| `subscribeToFacilities`                     | ✅          | ✅         |            |             |
+| `unSubscribeToFacilities`                   | ✅          | ✅         |            |             |
+| `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            |             |
+| `weatherRequestCloudState`                  | ✅          | ✅         |            |             |
+| `text`                                      | ✅          | ✅         |            |             |
+| `requestFacilitiesList`                     | ✅          | ✅         |            |             |
+| `setSystemState`                            | ✅          |            |            |             |
+| `addClientEventToNotificationGroup`         | ✅          |            |            |             |
+| `mapClientEventToSimEvent`                  | ✅          |            |            |             |
+| `setSystemEventState`                       | ✅          |            |            |             |
+| `removeClientEvent`                         | ✅          |            |            |             |
+| `setNotificationGroupPriority`              | ✅          |            |            |             |
+| `clearNotificationGroup`                    | ✅          |            |            |             |
+| `requestNotificationGroup`                  | ✅          |            |            |             |
+| `mapInputEventToClientEvent`                | ✅          |            |            |             |
+| `setInputGroupPriority`                     | ✅          |            |            |             |
+| `removeInputEvent`                          | ✅          |            |            |             |
+| `clearInputGroup`                           | ✅          |            |            |             |
+| `setInputGroupState`                        | ✅          |            |            |             |
+| `requestReservedKey`                        | ✅          |            |            |             |
+| `weatherRequestInterpolatedObservation`     | ✅          |            |            |             |
+| `weatherRequestObservationAtStation`        | ✅          |            |            |             |
+| `weatherCreateStation`                      | ✅          |            |            |             |
+| `weatherSetObservation`                     | ✅          |            |            |             |
+| `weatherSetModeServer`                      | ✅          |            |            |             |
+| `weatherSetModeTheme`                       | ✅          |            |            |             |
+| `weatherSetModeGlobal`                      | ✅          |            |            |             |
+| `weatherSetModeCustom`                      | ✅          |            |            |             |
+| `weatherSetDynamicUpdateRate`               | ✅          |            |            |             |
+| `weatherCreateThermal`                      | ✅          |            |            |             |
+| `weatherRemoveThermal`                      | ✅          |            |            |             |
+| `aICreateParkedATCAircraft`                 | ✅          |            |            |             |
+| `aICreateEnrouteATCAircraft`                | ✅          |            |            |             |
+| `aICreateNonATCAircraft`                    | ✅          |            |            |             |
+| `aICreateSimulatedObject`                   | ✅          |            |            |             |
+| `aIReleaseControl`                          | ✅          |            |            |             |
+| `aIRemoveObject`                            | ✅          |            |            |             |
+| `aISetAircraftFlightPlan`                   | ✅          |            |            |             |
+| `executeMissionAction`                      | ✅          |            |            |             |
+| `completeCustomMissionAction`               | ✅          |            |            |             |
+| `cameraSetRelative6DOF`                     | ✅          |            |            |             |
+| `menuAddItem`                               | ✅          |            |            |             |
+| `menuDeleteItem`                            | ✅          |            |            |             |
+| `menuAddSubItem`                            | ✅          |            |            |             |
+| `menuDeleteSubItem`                         | ✅          |            |            |             |
+| `mapClientDataNameToID`                     | ✅          |            |            |             |
+| `createClientData`                          | ✅          |            |            |             |
+| `addToClientDataDefinition`                 | ✅          |            |            |             |
+| `clearClientDataDefinition`                 | ✅          |            |            |             |
+| `requestClientData`                         | ✅          |            |            |             |
+| `setClientData`                             | ✅          |            |            |             |
+| `flightLoad`                                | ✅          |            |            |             |
+| `flightSave`                                | ✅          |            |            |             |
+| `flightPlanLoad`                            | ✅          |            |            |             |
