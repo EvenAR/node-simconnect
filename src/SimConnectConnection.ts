@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
-import { SimConnectConstants } from './SimConnectConstants';
 import { RawBuffer } from './RawBuffer';
 import { discoverServer, SimConnectServerAddress } from './Utils';
 import { NotificationPriority } from './enums/NotificationPriority';
@@ -39,6 +38,21 @@ import {
     RecvWaypointList,
     RecvWeatherObservation,
 } from './recv';
+import { DataRequestFlag } from './flags/DataRequestFlag';
+import { EventFlag } from './flags/EventFlag';
+import { DataSetFlag } from './flags/DataSetFlag';
+import { ClientDataRequestFlag } from './flags/ClientDataRequestFlag';
+import { SimConnectConstants } from './SimConnectConstants';
+import {
+    ClientDataDefinitionId,
+    ClientDataId,
+    ClientEventId,
+    DataDefinitionId,
+    DataRequestId,
+    InputGroupId,
+    NotificationGroupId,
+    ObjectId,
+} from './Types';
 
 const RECEIVE_SIZE = 65536;
 
@@ -298,7 +312,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     addToDataDefinition(
-        dataDefId: number,
+        dataDefinitionId: DataDefinitionId,
         datumName: string,
         unitsName: string | null,
         dataType?: SimConnectDataType,
@@ -306,7 +320,7 @@ class SimConnectConnection extends EventEmitter {
         datumId?: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataDefId);
+        this.writeBuffer.writeInt(dataDefinitionId);
         this.writeBuffer.writeString256(datumName);
         this.writeBuffer.writeString256(unitsName);
         this.writeBuffer.writeInt(dataType || SimConnectDataType.FLOAT64);
@@ -316,11 +330,11 @@ class SimConnectConnection extends EventEmitter {
     }
 
     requestDataOnSimObject(
-        dataRequestId: number,
-        dataDefinitionId: number,
-        objectId: number,
+        dataRequestId: DataRequestId,
+        dataDefinitionId: DataDefinitionId,
+        objectId: ObjectId,
         period: SimConnectPeriod,
-        flags?: number,
+        flags?: DataRequestFlag,
         origin?: number,
         interval?: number,
         limit?: number
@@ -337,15 +351,15 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x0e);
     }
 
-    clearDataDefinition(dataDefinitionId: number) {
+    clearDataDefinition(dataDefinitionId: DataDefinitionId) {
         this.resetBuffer();
         this.writeBuffer.writeInt(dataDefinitionId);
         this.sendPacket(0x0d);
     }
 
     requestDataOnSimObjectType(
-        dataRequestId: number,
-        dataDefinitionId: number,
+        dataRequestId: DataRequestId,
+        dataDefinitionId: DataDefinitionId,
         radiusMeters: number,
         type: SimObjectType
     ) {
@@ -357,22 +371,22 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x0f);
     }
 
-    subscribeToSystemEvent(clientEventID: number, eventName: string) {
+    subscribeToSystemEvent(clientEventId: ClientEventId, eventName: string) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientEventID);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeString256(eventName);
         this.sendPacket(0x17);
     }
 
-    unsubscribeFromSystemEvent(clientEventID: number) {
+    unsubscribeFromSystemEvent(clientEventId: ClientEventId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientEventID);
+        this.writeBuffer.writeInt(clientEventId);
         this.sendPacket(0x18);
     }
 
-    requestSystemState(dataRequestID: number, state: string) {
+    requestSystemState(dataRequestId: DataRequestId, state: string) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeString256(state);
         this.sendPacket(0x35);
     }
@@ -393,18 +407,18 @@ class SimConnectConnection extends EventEmitter {
     }
 
     addClientEventToNotificationGroup(
-        notificationGroupID: number,
-        clientEventID: number,
+        notificationGroupId: NotificationGroupId,
+        clientEventId: ClientEventId,
         maskable: boolean
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(notificationGroupID);
-        this.writeBuffer.writeInt(clientEventID);
+        this.writeBuffer.writeInt(notificationGroupId);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeInt(maskable ? 1 : 0);
         this.sendPacket(0x07);
     }
 
-    mapClientEventToSimEvent(clientEventId: number, eventName?: string) {
+    mapClientEventToSimEvent(clientEventId: ClientEventId, eventName?: string) {
         this.resetBuffer();
         this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeString256(eventName || '');
@@ -412,72 +426,77 @@ class SimConnectConnection extends EventEmitter {
     }
 
     transmitClientEvent(
-        objectID: number,
-        eventID: number,
+        objectId: ObjectId,
+        clientEventId: ClientEventId,
         data: number,
-        groupID: number,
-        flags: number
+        notificationGroupId: NotificationGroupId,
+        flags: EventFlag
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(objectID);
-        this.writeBuffer.writeInt(eventID);
+        this.writeBuffer.writeInt(objectId);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeInt(data);
-        this.writeBuffer.writeInt(groupID);
+        this.writeBuffer.writeInt(notificationGroupId);
         this.writeBuffer.writeInt(flags);
         this.sendPacket(0x05);
     }
 
-    setSystemEventState(eventID: number, state: boolean) {
+    setSystemEventState(clientEventId: ClientEventId, state: boolean) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(eventID);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeInt(state ? 1 : 0);
         this.sendPacket(0x06);
     }
 
-    removeClientEvent(groupID: number, eventID: number) {
+    removeClientEvent(
+        notificationGroupId: NotificationGroupId,
+        clientEventId: ClientEventId
+    ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(eventID);
-        this.writeBuffer.writeInt(eventID);
+        this.writeBuffer.writeInt(notificationGroupId);
+        this.writeBuffer.writeInt(clientEventId);
         this.sendPacket(0x08);
     }
 
     setNotificationGroupPriority(
-        groupID: number,
+        notificationGroupId: NotificationGroupId,
         priority: NotificationPriority
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(groupID);
+        this.writeBuffer.writeInt(notificationGroupId);
         this.writeBuffer.writeInt(priority);
         this.sendPacket(0x09);
     }
 
-    clearNotificationGroup(groupID: number) {
+    clearNotificationGroup(notificationGroupId: NotificationGroupId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(groupID);
+        this.writeBuffer.writeInt(notificationGroupId);
         this.sendPacket(0x0a);
     }
 
-    requestNotificationGroup(groupID: number, reserved: number, flags: number) {
+    requestNotificationGroup(
+        notificationGroupId: NotificationGroupId,
+        reserved: number,
+        flags: number
+    ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(groupID);
+        this.writeBuffer.writeInt(notificationGroupId);
         this.writeBuffer.writeInt(reserved);
         this.writeBuffer.writeInt(flags);
         this.sendPacket(0x0b);
     }
 
     setDataOnSimObject(
-        dataDefinitionID: number,
-        objectID: number,
+        dataDefinitionId: DataDefinitionId,
+        objectId: ObjectId,
         data: DataToSet
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataDefinitionID);
-        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeInt(dataDefinitionId);
+        this.writeBuffer.writeInt(objectId);
 
         if (data instanceof Array) {
-            this.writeBuffer.writeInt(
-                SimConnectConstants.DATA_SET_FLAG_DEFAULT
-            );
+            this.writeBuffer.writeInt(DataSetFlag.DEFAULT);
             this.writeBuffer.writeInt(data.length);
             this.writeBuffer.writeInt(0); // size
             data.forEach((simConnectData) => {
@@ -487,9 +506,7 @@ class SimConnectConnection extends EventEmitter {
         } else {
             const { tagged, arrayCount, buffer } = data;
             this.writeBuffer.writeInt(
-                tagged
-                    ? SimConnectConstants.DATA_SET_FLAG_TAGGED
-                    : SimConnectConstants.DATA_SET_FLAG_DEFAULT
+                tagged ? DataSetFlag.TAGGED : DataSetFlag.DEFAULT
             );
             this.writeBuffer.writeInt(arrayCount === 0 ? 1 : arrayCount);
             const bytes = buffer.getBuffer();
@@ -501,16 +518,16 @@ class SimConnectConnection extends EventEmitter {
     }
 
     mapInputEventToClientEvent(
-        inputGroupID: number,
+        inputGroupId: InputGroupId,
         inputDefinition: string,
-        clientEventDownID: number,
+        clientEventDownID: ClientEventId,
         downValue?: number,
-        clientEventUpID?: number,
+        clientEventUpID?: ClientEventId,
         upValue?: number,
         maskable?: boolean
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(inputGroupID);
+        this.writeBuffer.writeInt(inputGroupId);
         this.writeBuffer.writeString256(inputDefinition);
         this.writeBuffer.writeInt(clientEventDownID);
         this.writeBuffer.writeInt(downValue || 0);
@@ -523,43 +540,43 @@ class SimConnectConnection extends EventEmitter {
     }
 
     setInputGroupPriority(
-        inputGroupID: number,
+        inputGroupId: InputGroupId,
         priority: NotificationPriority
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(inputGroupID);
+        this.writeBuffer.writeInt(inputGroupId);
         this.writeBuffer.writeInt(priority);
         this.sendPacket(0x12);
     }
 
-    removeInputEvent(inputGroupID: number, inputDefinition: string) {
+    removeInputEvent(inputGroupId: InputGroupId, inputDefinition: string) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(inputGroupID);
+        this.writeBuffer.writeInt(inputGroupId);
         this.writeBuffer.writeString256(inputDefinition);
         this.sendPacket(0x13);
     }
 
-    clearInputGroup(inputGroupID: number) {
+    clearInputGroup(inputGroupId: InputGroupId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(inputGroupID);
+        this.writeBuffer.writeInt(inputGroupId);
         this.sendPacket(0x14);
     }
 
-    setInputGroupState(inputGroupID: number, state: boolean) {
+    setInputGroupState(inputGroupId: InputGroupId, state: boolean) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(inputGroupID);
+        this.writeBuffer.writeInt(inputGroupId);
         this.writeBuffer.writeInt(state ? 1 : 0);
         this.sendPacket(0x15);
     }
 
     requestReservedKey(
-        eventID: number,
+        clientEventId: ClientEventId,
         keyChoice1?: string,
         keyChoice2?: string,
         keyChoice3?: string
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(eventID);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeString30(keyChoice1 || '');
         this.writeBuffer.writeString30(keyChoice2 || '');
         this.writeBuffer.writeString30(keyChoice3 || '');
@@ -567,40 +584,43 @@ class SimConnectConnection extends EventEmitter {
     }
 
     weatherRequestInterpolatedObservation(
-        dataRequestID: number,
+        dataRequestId: DataRequestId,
         lat: number,
         lon: number,
         alt: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeFloat(lat);
         this.writeBuffer.writeFloat(lon);
         this.writeBuffer.writeFloat(alt);
         this.sendPacket(0x19);
     }
 
-    weatherRequestObservationAtStation(dataRequestID: number, ICAO: string) {
+    weatherRequestObservationAtStation(
+        dataRequestId: DataRequestId,
+        ICAO: string
+    ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeString(ICAO, 5); // ICAO is 4 chars, null terminated
         this.sendPacket(0x1a);
     }
 
     weatherRequestObservationAtNearestStation(
-        dataRequestID: number,
+        dataRequestId: DataRequestId,
         lat: number,
         lon: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeFloat(lat);
         this.writeBuffer.writeFloat(lon);
         this.sendPacket(0x1b);
     }
 
     weatherCreateStation(
-        dataRequestID: number,
+        dataRequestId: DataRequestId,
         ICAO: string,
         name: string,
         lat: number,
@@ -608,7 +628,7 @@ class SimConnectConnection extends EventEmitter {
         alt: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeString(ICAO, 5);
         this.writeBuffer.writeString(name, 256);
         this.writeBuffer.writeFloat(lat);
@@ -617,9 +637,9 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x1c);
     }
 
-    weatherRemoveStation(dataRequestID: number, ICAO: string) {
+    weatherRemoveStation(dataRequestId: DataRequestId, ICAO: string) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeString(ICAO, 5);
         this.sendPacket(0x1d);
     }
@@ -662,7 +682,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     weatherRequestCloudState(
-        dataRequestID: number,
+        dataRequestId: DataRequestId,
         minLat: number,
         minLon: number,
         minAlt: number,
@@ -672,7 +692,7 @@ class SimConnectConnection extends EventEmitter {
         flags?: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeFloat(minLat);
         this.writeBuffer.writeFloat(minLon);
         this.writeBuffer.writeFloat(minAlt);
@@ -684,7 +704,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     weatherCreateThermal(
-        dataRequestID: number,
+        dataRequestId: DataRequestId,
         lat: number,
         lon: number,
         alt: number,
@@ -700,7 +720,7 @@ class SimConnectConnection extends EventEmitter {
         sinkTransitionSize: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeFloat(lat);
         this.writeBuffer.writeFloat(lon);
         this.writeBuffer.writeFloat(alt);
@@ -717,9 +737,9 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x25);
     }
 
-    weatherRemoveThermal(objectID: number) {
+    weatherRemoveThermal(objectId: ObjectId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeInt(objectId);
         this.sendPacket(0x26);
     }
 
@@ -727,13 +747,13 @@ class SimConnectConnection extends EventEmitter {
         containerTitle: string,
         tailNumber: string,
         airportID: string,
-        dataRequestID: number
+        dataRequestId: DataRequestId
     ) {
         this.resetBuffer();
         this.writeBuffer.writeString(containerTitle, 256);
         this.writeBuffer.writeString(tailNumber, 12);
         this.writeBuffer.writeString(airportID, 5);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x27);
     }
 
@@ -744,7 +764,7 @@ class SimConnectConnection extends EventEmitter {
         flightPlanPath: string,
         flightPlanPosition: number,
         touchAndGo: boolean,
-        dataRequestID: number
+        dataRequestId: DataRequestId
     ) {
         this.resetBuffer();
         this.writeBuffer.writeString(containerTitle, 256);
@@ -753,7 +773,7 @@ class SimConnectConnection extends EventEmitter {
         this.writeBuffer.writeString(flightPlanPath, 260);
         this.writeBuffer.writeDouble(flightPlanPosition);
         this.writeBuffer.writeInt(touchAndGo ? 1 : 0);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x28);
     }
 
@@ -761,51 +781,51 @@ class SimConnectConnection extends EventEmitter {
         containerTitle: string,
         tailNumber: string,
         initPos: InitPosition,
-        dataRequestID: number
+        dataRequestId: DataRequestId
     ) {
         this.resetBuffer();
         this.writeBuffer.writeString(containerTitle, 256);
         this.writeBuffer.writeString(tailNumber, 12);
         initPos.write(this.writeBuffer);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x29);
     }
 
     aICreateSimulatedObject(
         containerTitle: string,
         initPos: InitPosition,
-        dataRequestID: number
+        dataRequestId: DataRequestId
     ) {
         this.resetBuffer();
         this.writeBuffer.writeString(containerTitle, 256);
         initPos.write(this.writeBuffer);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x2a);
     }
 
-    aIReleaseControl(objectID: number, dataRequestID: number) {
+    aIReleaseControl(objectId: ObjectId, dataRequestId: DataRequestId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(objectID);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(objectId);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x2b);
     }
 
-    aIRemoveObject(objectID: number, dataRequestID: number) {
+    aIRemoveObject(objectId: ObjectId, dataRequestId: DataRequestId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(objectID);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(objectId);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x2c);
     }
 
     aISetAircraftFlightPlan(
-        objectID: number,
+        objectId: ObjectId,
         flightPlanPath: string,
-        dataRequestID: number
+        dataRequestId: DataRequestId
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(objectID);
+        this.writeBuffer.writeInt(objectId);
         this.writeBuffer.writeString(flightPlanPath, 260);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(dataRequestId);
         this.sendPacket(0x2d);
     }
 
@@ -852,61 +872,68 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x30);
     }
 
-    menuAddItem(menuItem: string, clientMenuEventID: number, data: number) {
+    menuAddItem(menuItem: string, menuEventId: ClientEventId, data: number) {
         this.resetBuffer();
         this.writeBuffer.writeString(menuItem, 256);
-        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeInt(menuEventId);
         this.writeBuffer.writeInt(data);
         this.sendPacket(0x31);
     }
 
-    menuDeleteItem(clientMenuEventID: number) {
+    menuDeleteItem(menuEventId: ClientEventId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeInt(menuEventId);
         this.sendPacket(0x32);
     }
 
     menuAddSubItem(
-        clientMenuEventID: number,
+        menuEventId: ClientEventId,
         menuItem: string,
-        clientSubMenuEventID: number,
+        subMenuEventId: ClientEventId,
         data: number
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientMenuEventID);
+        this.writeBuffer.writeInt(menuEventId);
         this.writeBuffer.writeString(menuItem, 256);
-        this.writeBuffer.writeInt(clientSubMenuEventID);
+        this.writeBuffer.writeInt(subMenuEventId);
         this.writeBuffer.writeInt(data);
         this.sendPacket(0x33);
     }
 
-    menuDeleteSubItem(clientMenuEventID: number, clientSubMenuEventID: number) {
+    menuDeleteSubItem(
+        menuEventId: ClientEventId,
+        subMenuEventId: ClientEventId
+    ) {
         // packet size 0x18
         // packet id 0x34
 
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientMenuEventID);
-        this.writeBuffer.writeInt(clientSubMenuEventID);
+        this.writeBuffer.writeInt(menuEventId);
+        this.writeBuffer.writeInt(subMenuEventId);
         this.sendPacket(0x34);
     }
 
-    mapClientDataNameToID(clientDataName: string, clientDataID: number) {
+    mapClientDataNameToID(clientDataName: string, clientDataId: ClientDataId) {
         this.resetBuffer();
         this.writeBuffer.writeString(clientDataName, 256);
-        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(clientDataId);
         this.sendPacket(0x37);
     }
 
-    createClientData(clientDataID: number, size: number, readOnly: boolean) {
+    createClientData(
+        clientDataId: ClientDataId,
+        size: number,
+        readOnly: boolean
+    ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(clientDataId);
         this.writeBuffer.writeInt(size);
         this.writeBuffer.writeInt(readOnly ? 1 : 0);
         this.sendPacket(0x38);
     }
 
     addToClientDataDefinition(
-        dataDefineID: number,
+        dataDefinitionId: DataDefinitionId,
         offset: number,
         sizeOrType: number,
         epsilon?: number,
@@ -916,7 +943,7 @@ class SimConnectConnection extends EventEmitter {
             throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataDefineID);
+        this.writeBuffer.writeInt(dataDefinitionId);
         this.writeBuffer.writeInt(offset);
         this.writeBuffer.writeInt(sizeOrType);
         this.writeBuffer.writeFloat(epsilon || 0);
@@ -924,28 +951,28 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x39);
     }
 
-    clearClientDataDefinition(dataDefineID: number) {
+    clearClientDataDefinition(dataDefinitionId: DataDefinitionId) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(dataDefineID);
+        this.writeBuffer.writeInt(dataDefinitionId);
         this.sendPacket(0x3a);
     }
 
-    requestClientData(
-        clientDataID: number,
-        dataRequestID: number,
-        clientDataDefineID: number,
+    requestClientData<O extends number, I extends number, L extends number>(
+        clientDataId: ClientDataId,
+        dataRequestId: DataRequestId,
+        clientDataDefineID: ClientDataDefinitionId,
         period: ClientDataPeriod,
-        flags: number,
-        origin?: number,
-        interval?: number,
-        limit?: number
+        flags: ClientDataRequestFlag,
+        origin?: O,
+        interval?: I,
+        limit?: L
     ) {
         if (this.ourProtocol < Protocol.FSX_SP1)
             throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientDataID);
-        this.writeBuffer.writeInt(dataRequestID);
+        this.writeBuffer.writeInt(clientDataId);
+        this.writeBuffer.writeInt(dataRequestId);
         this.writeBuffer.writeInt(clientDataDefineID);
         this.writeBuffer.writeInt(period);
         this.writeBuffer.writeInt(flags);
@@ -956,15 +983,15 @@ class SimConnectConnection extends EventEmitter {
     }
 
     setClientData(
-        clientDataID: number,
-        clientDataDefineID: number,
+        clientDataId: ClientDataId,
+        clientDataDefineID: ClientDataDefinitionId,
         reserved: number,
         arrayCount: number,
         unitSize: number,
         data: Buffer
     ) {
         this.resetBuffer();
-        this.writeBuffer.writeInt(clientDataID);
+        this.writeBuffer.writeInt(clientDataId);
         this.writeBuffer.writeInt(clientDataDefineID);
         this.writeBuffer.writeInt(0); // do not use arg
         this.writeBuffer.writeInt(1); // do not use arg
@@ -1018,7 +1045,7 @@ class SimConnectConnection extends EventEmitter {
     text(
         type: TextType,
         timeSeconds: number,
-        eventId: number,
+        clientEventId: ClientEventId,
         message: string
     ) {
         if (this.ourProtocol < Protocol.FSX_SP1)
@@ -1028,7 +1055,7 @@ class SimConnectConnection extends EventEmitter {
         this.resetBuffer();
         this.writeBuffer.writeInt(type);
         this.writeBuffer.writeFloat(timeSeconds);
-        this.writeBuffer.writeInt(eventId);
+        this.writeBuffer.writeInt(clientEventId);
         if (message !== null && message.length > 0) {
             this.writeBuffer.writeInt(message.length + 1);
             this.writeBuffer.writeString(message);
@@ -1041,7 +1068,7 @@ class SimConnectConnection extends EventEmitter {
 
     menu(
         timeSeconds: number,
-        eventId: number,
+        clientEventId: ClientEventId,
         title?: string,
         prompt?: string,
         ...items: string[]
@@ -1054,7 +1081,7 @@ class SimConnectConnection extends EventEmitter {
         this.resetBuffer();
         this.writeBuffer.writeInt(TextType.MENU);
         this.writeBuffer.writeFloat(timeSeconds);
-        this.writeBuffer.writeInt(eventId);
+        this.writeBuffer.writeInt(clientEventId);
         this.writeBuffer.writeInt(0); // size, will be set later
         if (!title && !prompt && items.length === 0) {
             this.writeBuffer.writeByte(0);
@@ -1074,24 +1101,30 @@ class SimConnectConnection extends EventEmitter {
         this.sendPacket(0x40);
     }
 
-    requestFacilitiesList(type: FacilityListType, eventId: number) {
+    requestFacilitiesList(
+        type: FacilityListType,
+        clientEventId: ClientEventId
+    ) {
         if (this.ourProtocol < Protocol.FSX_SP1)
             throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
         // ID 0x43
         this.resetBuffer();
         this.writeBuffer.writeInt(type);
-        this.writeBuffer.writeInt(eventId);
+        this.writeBuffer.writeInt(clientEventId);
         this.sendPacket(0x43);
     }
 
-    subscribeToFacilities(type: FacilityListType, eventId: number) {
+    subscribeToFacilities(
+        type: FacilityListType,
+        clientEventId: ClientEventId
+    ) {
         if (this.ourProtocol < Protocol.FSX_SP1)
             throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         // ID 0x41
         this.resetBuffer();
         this.writeBuffer.writeInt(type);
-        this.writeBuffer.writeInt(eventId);
+        this.writeBuffer.writeInt(clientEventId);
         this.sendPacket(0x41);
     }
 

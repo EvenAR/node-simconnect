@@ -85,7 +85,7 @@ open('My app', Protocol.FSX_SP2)
         });
 
         handle.on('event', (recvEvent) => {
-            if (recvEvent.eventID === EventID.PAUSE) {
+            if (recvEvent.clientEventId === EventID.PAUSE) {
                 console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
             }
         });

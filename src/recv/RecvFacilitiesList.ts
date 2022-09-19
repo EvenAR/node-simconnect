@@ -1,7 +1,8 @@
 import { RawBuffer } from '../RawBuffer';
+import { DataRequestId } from '../Types';
 
 export class RecvFacilitiesList {
-    requestID: number;
+    requestID: DataRequestId;
 
     arraySize: number;
 
@@ -10,7 +11,7 @@ export class RecvFacilitiesList {
     outOf: number;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt();
+        this.requestID = data.readInt() as DataRequestId;
         this.arraySize = data.readInt();
         this.entryNumber = data.readInt();
         this.outOf = data.readInt();

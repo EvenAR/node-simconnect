@@ -1,68 +1,10 @@
+import { ObjectId } from './Types';
+
 export const SimConnectConstants = {
-    /** The default, data will be sent strictly according to the defined period. */
-    DATA_REQUEST_FLAG_DEFAULT: 0x00000000,
-    /** Data will only be sent to the client when one or more values have changed. If
-     * this is the only flag set, then all the variables in a data definition will be returned
-     * if just one of the values changes. */
-    DATA_REQUEST_FLAG_CHANGED: 0x00000001, // send requested data when value(s) change
-    /** Requested data will be sent in tagged format (datum ID/value pairs). Tagged
-     * format requires that a datum reference ID is returned along with the data value,
-     * in order that the client code is able to identify the variable. This flag is
-     * usually set in conjunction with the previous flag, but it can be used on its own to
-     * return all the values in a data definition in datum ID/value pairs */
-    DATA_REQUEST_FLAG_TAGGED: 0x00000002, // send requested data in tagged format
-
-    /** The data to be set is not in tagged format */
-    DATA_SET_FLAG_DEFAULT: 0x00000000, // data is in tagged format
-    /** The data to be set is being sent in tagged format. Refer to {@link SimConnect#requestDataOnSimObject(int, int, int, SimConnectPeriod, int, int, int, int)} for more details on the tagged format. */
-    DATA_SET_FLAG_TAGGED: 0x00000001, // data is in tagged format
-
-    /** The default, data will be sent strictly according to the defined period.
-     * @since 0.5
-     */
-    CLIENT_DATA_REQUEST_FLAG_DEFAULT: 0x00000000,
-    /** Data will only be sent to the client when one or more values have changed. If
-     * this is the only flag set, then all the variables in a data definition will be returned
-     * if just one of the values changes.
-     * @since 0.5
-     */
-    CLIENT_DATA_REQUEST_FLAG_CHANGED: 0x00000001, // send requested data when value(s) change
-    /** Requested data will be sent in tagged format (datum ID/value pairs). Tagged
-     * format requires that a datum reference ID is returned along with the data value,
-     * in order that the client code is able to identify the variable. This flag is
-     * usually set in conjunction with the previous flag, but it can be used on its own to
-     * return all the values in a data definition in datum ID/value pairs.
-     * @since 0.5
-     */
-    CLIENT_DATA_REQUEST_FLAG_TAGGED: 0x00000002, // send requested data in tagged format
-
-    /** The data to be set is not in tagged format
-     * @since 0.5
-     */
-    CLIENT_DATA_SET_FLAG_DEFAULT: 0x00000000, // data is in tagged format
-    /** The data to be set is being sent in tagged format. Refer to {@link SimConnect#requestDataOnSimObject(int, int, int, SimConnectPeriod, int, int, int, int)} for more details on the tagged format. */
-    CLIENT_DATA_SET_FLAG_TAGGED: 0x00000001, // data is in tagged format
-
     /** Specify the user aircraft in {@link RecvSimObjectDataByType} and {@link SimConnect#requestDataOnSimObject(int, int, int, SimConnectPeriod)} */
-    OBJECT_ID_USER: 0,
+    OBJECT_ID_USER: 0 as ObjectId,
 
     UNUSED: 0xffffffff,
-
-    /** Do nothing. */
-    EVENT_FLAG_DEFAULT: 0x00000000,
-    /** The flag will effectively reset the repeat timer to simulate slow repeat. Use this flag to
-     * reset the repeat timer that works with various keyboard events and mouse clicks. */
-    EVENT_FLAG_FAST_REPEAT_TIMER: 0x00000001, // set event repeat timer to simulate fast repeat
-    /** The flag will effectively reset the repeat timer to simulate slow repeat. 
-	 Use this flag to reset the repeat timer that works with various keyboard events and mouse clicks. */
-    EVENT_FLAG_SLOW_REPEAT_TIMER: 0x00000002, // set event repeat timer to simulate slow repeat
-    /** Indicates to the SimConnect server to treat the GroupID as a priority value. 
-	 If this parameter is set to {@link NotificationPriority#HIGHEST} then all 
-	 client notification groups that have subscribed to the event will receive 
-	 the notification (unless one of them masks it). The event will be transmitted 
-	 to clients starting at the given priority, though this can result in the 
-	 client that transmitted the event, receiving it again. */
-    EVENT_FLAG_GROUPID_IS_PRIORITY: 0x00000010, // interpret GroupID parameter as priority value
 
     /** current (and max) protocol version supported by this implementation of jsimconnect */
     PROTO_VERSION: 4,

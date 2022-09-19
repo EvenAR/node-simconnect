@@ -1,14 +1,15 @@
 import { RawBuffer } from '../RawBuffer';
+import { DataRequestId } from '../Types';
 
 export class RecvCloudState {
-    requestID: number;
+    requestID: DataRequestId;
 
     arraySize: number;
 
     data: number[][];
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt();
+        this.requestID = data.readInt() as DataRequestId;
         this.arraySize = data.readInt();
         this.data = [];
         // Read 2D-array of 64x64 bytes

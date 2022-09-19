@@ -97,8 +97,8 @@ open('My app', Protocol.FSX_SP2)
             'Press Ctrl-F1 for Get Facilities, Ctrl-F2 for Subscribe to Facilities'
         );
 
-        handle.on('event', ({ eventID, data }: RecvEvent) => {
-            switch (eventID) {
+        handle.on('event', ({ clientEventId, data }: RecvEvent) => {
+            switch (clientEventId) {
                 case EventID.OPEN_MENU_1:
                     openMenu(GET_FACILITIES_MENU_OPTIONS);
                     break;

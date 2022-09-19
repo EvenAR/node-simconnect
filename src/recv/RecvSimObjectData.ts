@@ -1,13 +1,15 @@
 import { RawBuffer } from '../RawBuffer';
+import { DataRequestFlag } from '../flags/DataRequestFlag';
+import { DataDefinitionId, DataRequestId, ObjectId } from '../Types';
 
 export class RecvSimObjectData {
-    requestID: number;
+    requestID: DataRequestId;
 
-    objectID: number;
+    objectID: ObjectId;
 
-    defineID: number;
+    defineID: DataDefinitionId;
 
-    flags: number;
+    flags: DataRequestFlag;
 
     entryNumber: number;
 
@@ -19,10 +21,10 @@ export class RecvSimObjectData {
 
     constructor(data: RawBuffer) {
         // data.skip(8)
-        this.requestID = data.readInt();
-        this.objectID = data.readInt();
-        this.defineID = data.readInt();
-        this.flags = data.readInt();
+        this.requestID = data.readInt() as DataRequestId;
+        this.objectID = data.readInt() as ObjectId;
+        this.defineID = data.readInt() as DataDefinitionId;
+        this.flags = data.readInt() as DataRequestFlag;
         this.entryNumber = data.readInt();
         this.outOf = data.readInt();
         this.defineCount = data.readInt();

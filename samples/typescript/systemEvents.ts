@@ -1,14 +1,13 @@
 import { open, Protocol } from '../../dist';
-
 /**
  * Demonstrates a few system events
  */
 
 const enum EVENT_ID {
-    PAUSE,
-    AIRCRAFT_LOADED,
-    FRAME,
-    NEW_WEATHER_MODE,
+    PAUSE = 0,
+    AIRCRAFT_LOADED = 1,
+    FRAME = 2,
+    NEW_WEATHER_MODE = 3,
 }
 
 open('My app', Protocol.FSX_SP2)
@@ -27,7 +26,7 @@ open('My app', Protocol.FSX_SP2)
         );
 
         handle.on('event', (recvEvent) => {
-            switch (recvEvent.eventID) {
+            switch (recvEvent.clientEventId) {
                 case EVENT_ID.PAUSE:
                     console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
                     break;
