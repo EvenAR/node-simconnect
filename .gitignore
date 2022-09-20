@@ -1,5 +1,4 @@
-SimConnect/
-build
 node_modules
-yarn-error.log
 .idea
+dist
+.DS_Store

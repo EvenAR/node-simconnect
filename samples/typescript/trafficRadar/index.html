@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <h1>Clouds</h1>
+        <script>
+            var canvas = document.createElement('canvas');
+            canvas.id = 'CursorLayer';
+            canvas.width = 512;
+            canvas.height = 512;
+            canvas.style.border = '1px solid';
+            let size = 512 / 64;
+
+            document.getElementsByTagName('body')[0].appendChild(canvas);
+
+            var ctx = canvas.getContext('2d');
+
+            var myLat = 0;
+            var myLng = 0;
+            var zoom = 4000;
+            // Connect to server
+            var webSocket = new WebSocket('ws://localhost:8080');
+            webSocket.onmessage = function (message) {
+                var receivedData = JSON.parse(message.data);
+                switch (receivedData.type) {
+                    case 'myPosition':
+                        {
+                            myLat = receivedData.data.lat;
+                            myLng = receivedData.data.lng;
+                            console.log('My pos');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        }
+                        break;
+                    case 'traffic':
+                        {
+                            const latDiff = myLat - receivedData.data.lat;
+                            const lngDiff = myLng - receivedData.data.lng;
+                            const radarX = lngDiff * (512 / 180) * zoom + 256;
+                            const radarY = latDiff * (512 / 180) * zoom + 256;
+                            ctx.fillRect(radarX, radarY, 5, 5);
+                            ctx.fillText(
+                                receivedData.data.model,
+                                radarX,
+                                radarY
+                            );
+                        }
+                        break;
+                }
+            };
+        </script>
+    </body>
+</html>

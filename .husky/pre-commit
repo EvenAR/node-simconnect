@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+exit_with_warning_message(){
+  echo "\e[0;33m$1\e[m"
+  exit 1
+}
+
+echo "Formatting and linting staged files ✨"
+./node_modules/.bin/lint-staged || exit_with_warning_message "\nCode contains linting errors.\n"
+echo "Successfully formatted and linted staged files ✨"
