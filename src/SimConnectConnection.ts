@@ -323,9 +323,13 @@ class SimConnectConnection extends EventEmitter {
         this.writeBuffer.writeInt(dataDefinitionId);
         this.writeBuffer.writeString256(datumName);
         this.writeBuffer.writeString256(unitsName);
-        this.writeBuffer.writeInt(dataType || SimConnectDataType.FLOAT64);
+        this.writeBuffer.writeInt(
+            dataType === undefined ? SimConnectDataType.FLOAT64 : dataType
+        );
         this.writeBuffer.writeFloat(epsilon || 0);
-        this.writeBuffer.writeInt(datumId || SimConnectConstants.UNUSED);
+        this.writeBuffer.writeInt(
+            datumId === undefined ? SimConnectConstants.UNUSED : datumId
+        );
         this.sendPacket(0x0c);
     }
 
@@ -532,7 +536,9 @@ class SimConnectConnection extends EventEmitter {
         this.writeBuffer.writeInt(clientEventDownID);
         this.writeBuffer.writeInt(downValue || 0);
         this.writeBuffer.writeInt(
-            clientEventUpID || SimConnectConstants.UNUSED
+            clientEventUpID === undefined
+                ? SimConnectConstants.UNUSED
+                : clientEventUpID
         );
         this.writeBuffer.writeInt(upValue || 0);
         this.writeBuffer.writeInt(maskable ? 1 : 0);
