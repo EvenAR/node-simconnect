@@ -1,6 +1,13 @@
 language: node_js
+os:
+  - windows
+  - linux
+  - osx
 node_js:
   - "12"
+  - "14"
+  - "16"
+  - "18"
 script:
   - npm install
   - npm run build
