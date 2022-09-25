@@ -84,12 +84,19 @@ open('My SimConnect client', Protocol.FSX_SP2)
         .catch(/* try again? */);
     ```
 
-Refer to the
-[official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
-for a description of the available methods.
+### Functionality
+
+node-simconnect is supposed to behave more or less in the same way as the offical SDK. Please refer to the
+[official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
+for a description of the methods below and how to use them. Note that any features that are new to the new
+Microsoft Flight Simulator ("MSFS 2020"), or Lockheed Martin's Prepar3D, are not implemented (yet) due to
+the current lack of knowledge about the related API changes. These features will likely not be researched
+or implemented unless there are specific requests.
 
 | Method                                      | Implemented | Tested FSX | Tested P3D | Tested MSFS |
 | ------------------------------------------- | ----------- | ---------- | ---------- | ----------- |
+| Prepar3D specific methods                   | TODO ?      | n/a        |            | n/a         |
+| MSFS specific methods (if any?)             | TODO        | n/a        | n/a        |             |
 | `addToDataDefinition`                       | ✅          | ✅         |            |             |
 | `requestDataOnSimObject`                    | ✅          | ✅         |            |             |
 | `clearDataDefinition`                       | ✅          | ✅         |            |             |
