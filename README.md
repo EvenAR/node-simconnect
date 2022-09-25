@@ -93,7 +93,7 @@ for a description of the available methods.
 | `addToDataDefinition`                       | ✅          | ✅         |            | ✅         |
 | `requestDataOnSimObject`                    | ✅          | ✅         |            | ✅         |
 | `clearDataDefinition`                       | ✅          | ✅         |            |             |
-| `requestDataOnSimObjectType`                | ✅          | ✅         |            |             |
+| `requestDataOnSimObjectType`                | ✅          | ✅         |            | ✅         |
 | `subscribeToSystemEvent`                    | ✅          | ✅         |            | ✅         |
 | `unsubscribeFromSystemEvent`                | ✅          | ✅         |            |             |
 | `menu`                                      | ✅          | ✅         |            |             |
