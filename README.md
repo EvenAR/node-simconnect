@@ -90,11 +90,11 @@ for a description of the available methods.
 
 | Method                                      | Implemented | Tested FSX | Tested P3D | Tested MSFS |
 | ------------------------------------------- | ----------- | ---------- | ---------- | ----------- |
-| `addToDataDefinition`                       | ✅          | ✅         |            |             |
-| `requestDataOnSimObject`                    | ✅          | ✅         |            |             |
+| `addToDataDefinition`                       | ✅          | ✅         |            | ✅         |
+| `requestDataOnSimObject`                    | ✅          | ✅         |            | ✅         |
 | `clearDataDefinition`                       | ✅          | ✅         |            |             |
 | `requestDataOnSimObjectType`                | ✅          | ✅         |            |             |
-| `subscribeToSystemEvent`                    | ✅          | ✅         |            |             |
+| `subscribeToSystemEvent`                    | ✅          | ✅         |            | ✅         |
 | `unsubscribeFromSystemEvent`                | ✅          | ✅         |            |             |
 | `menu`                                      | ✅          | ✅         |            |             |
 | `requestSystemState`                        | ✅          | ✅         |            |             |
