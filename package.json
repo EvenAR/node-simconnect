@@ -64,19 +64,5 @@
     "hooks": {
       "pre-commit": "npm run precommit"
     }
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "singleQuote": true,
-    "tabWidth": 4,
-    "endOfLine": "lf",
-    "overrides": [
-      {
-        "files": "*.json",
-        "options": {
-          "tabWidth": 2
-        }
-      }
-    ]
   }
 }
