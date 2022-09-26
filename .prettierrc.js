@@ -1,16 +1,16 @@
 module.exports = {
     tabWidth: 4,
     printWidth: 100,
-    endOfLine: "lf",
-    arrowParens: "avoid",
-    trailingComma: "es5",
+    endOfLine: 'lf',
+    arrowParens: 'avoid',
+    trailingComma: 'es5',
     semi: true,
     useTabs: false,
-    singleQuote: false,
+    singleQuote: true,
     bracketSpacing: true,
     overrides: [
         {
-            files: "*.json",
+            files: '*.json',
             options: {
                 tabWidth: 2,
             },
