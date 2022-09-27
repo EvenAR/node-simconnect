@@ -33,16 +33,17 @@ open('My SimConnect client', Protocol.FSX_SP2)
         console.log('Connected to', recvOpen.applicationName);
         handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
         handle.on('event', function (recvEvent) {
-            switch (recvEvent.eventID) {
+            switch (recvEvent.clientEventId) {
                 case EVENT_ID_PAUSE:
-                    console.log(
-                        recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused'
-                    );
+                    console.log(recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused');
                     break;
             }
         });
         handle.on('quit', function () {
             console.log('Simulator quit');
+        });
+        handle.on('close', function () {
+            console.log('Connection closed unexpectedly (simulator CTD?)');
         });
     })
     .catch(function (error) {
@@ -79,10 +80,15 @@ open('My SimConnect client', Protocol.FSX_SP2)
     ```js
     const options = { remote: { host: 'localhost', port: 5111 } };
 
-    open('My SimConnect client', Protocol.FSX_SP2, options)
-        .then(/* ... */)
-        .catch(/* try again? */);
+    open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
     ```
+
+If no connection options are specified, node-simconnect will auto-discover connection details in the following order:
+
+1. Look for a [`SimConnect.cfg`](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_CFG_Definition.htm) in the folder where Node.js is located. If the script is running in Electron, this will be the folder where the Electron executable is installed.
+1. Look for a `SimConnect.cfg` in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
+1. Look for a named pipe in the Windows registry, automatically set by the simulator
+1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
 
 ### Functionality
 

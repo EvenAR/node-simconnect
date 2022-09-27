@@ -1,7 +1,4 @@
-import {
-    SimConnectConnection,
-    ConnectionOptions,
-} from './SimConnectConnection';
+import { SimConnectConnection, ConnectionOptions } from './SimConnectConnection';
 import { Protocol } from './enums/Protocol';
 import { RecvOpen } from './recv';
 
@@ -36,13 +33,13 @@ export function open(
     protocolVersion: Protocol,
     options?: ConnectionOptions
 ): Promise<OpenEvent> {
-    const simConnectConnection = new SimConnectConnection(
-        appName,
-        protocolVersion
-    );
-    return new Promise<OpenEvent>((resolve) => {
-        simConnectConnection.on('open', (data) => {
+    const simConnectConnection = new SimConnectConnection(appName, protocolVersion);
+    return new Promise<OpenEvent>((resolve, reject) => {
+        simConnectConnection.on('open', data => {
             resolve({ recvOpen: data, handle: simConnectConnection });
+        });
+        simConnectConnection.on('error', error => {
+            reject(error);
         });
         simConnectConnection.connect(options);
     });
