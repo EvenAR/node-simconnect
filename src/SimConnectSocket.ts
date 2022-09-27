@@ -68,9 +68,7 @@ class SimConnectSocket extends Duplex {
                 this._socket.connect(address.port, address.host);
                 break;
             default:
-                throw Error(
-                    'Unsupported address type. Must be "ipv4" or "pipe"'
-                );
+                throw Error('Unsupported address type. Must be "ipv4" or "pipe"');
         }
     }
 
@@ -79,11 +77,11 @@ class SimConnectSocket extends Duplex {
     }
 
     _wrapSocket() {
-        this._socket.on('close', (hadError) => this.emit('close', hadError));
+        this._socket.on('close', hadError => this.emit('close', hadError));
         this._socket.on('connect', () => this.emit('connect'));
         this._socket.on('drain', () => this.emit('drain'));
         this._socket.on('end', () => this.emit('end'));
-        this._socket.on('error', (err) => this.emit('error', err));
+        this._socket.on('error', err => this.emit('error', err));
         this._socket.on('lookup', (err, address, family, host) => this.emit('lookup', err, address, family, host)); // prettier-ignore
         this._socket.on('ready', () => this.emit('ready'));
         this._socket.on('timeout', () => this.emit('timeout'));
@@ -126,13 +124,9 @@ class SimConnectSocket extends Duplex {
         setImmediate(this._onReadable.bind(this));
     }
 
-    _write(
-        data: Buffer,
-        encoding: BufferEncoding,
-        cb: (error?: Error | null) => void
-    ) {
+    _write(data: Buffer, encoding: BufferEncoding, cb: (error?: Error | null) => void) {
         this._socket.write(data, encoding, cb);
     }
 }
 
-export { SimConnectSocket, RecvID, SimConnectMessage };
+export { SimConnectSocket, RecvID, SimConnectMessage, SimConnectServerAddress };

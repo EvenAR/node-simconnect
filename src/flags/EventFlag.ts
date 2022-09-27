@@ -8,7 +8,7 @@ export enum EventFlag {
      Use this flag to reset the repeat timer that works with various keyboard events and mouse clicks. */
     EVENT_FLAG_SLOW_REPEAT_TIMER = 0x00000002, // set event repeat timer to simulate slow repeat
     /** Indicates to the SimConnect server to treat the GroupID as a priority value.
-     If this parameter is set to {@link NotificationPriority#HIGHEST} then all
+     If this parameter is set to {@link NotificationPriority.HIGHEST} then all
      client notification groups that have subscribed to the event will receive
      the notification (unless one of them masks it). The event will be transmitted
      to clients starting at the given priority, though this can result in the

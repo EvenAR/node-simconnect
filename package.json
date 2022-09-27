@@ -12,10 +12,11 @@
     "link": "npm run build && cd dist && npm link",
     "precommit": "pretty-quick --staged",
     "prepublish": "npm run build",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "generate-api-reference": "npm run build && npx rimraf doc && api-extractor run && api-documenter markdown -i temp -o doc"
   },
   "author": "Even Arneberg Rognlien",
-  "license": "MIT",
+  "license": "GPLV3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/EvenAR/node-simconnect.git"
@@ -34,6 +35,8 @@
   },
   "homepage": "https://github.com/EvenAR/node-simconnect#readme",
   "devDependencies": {
+    "@microsoft/api-documenter": "^7.19.10",
+    "@microsoft/api-extractor": "^7.30.0",
     "@types/ini": "^1.3.30",
     "@types/jest": "^26.0.19",
     "@typescript-eslint/eslint-plugin": "^5.26.0",
@@ -45,6 +48,7 @@
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
+    "eslint-plugin-tsdoc": "^0.2.16",
     "husky": "^8.0.1",
     "jest": "^26.6.3",
     "lint-staged": "^12.4.2",

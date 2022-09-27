@@ -1,7 +1,7 @@
 import { ObjectId } from './Types';
 
 export const SimConnectConstants = {
-    /** Specify the user aircraft in {@link RecvSimObjectDataByType} and {@link SimConnect#requestDataOnSimObject(int, int, int, SimConnectPeriod)} */
+    /** Specify the user aircraft in {@link SimConnectRecvEvents#simObjectDataByType} and {@link SimConnectConnection.requestDataOnSimObject} */
     OBJECT_ID_USER: 0 as ObjectId,
 
     UNUSED: 0xffffffff,
@@ -23,9 +23,9 @@ export const SimConnectConstants = {
 
     //	 SIMCONNECT_DATA_INITPOSITION.Airspeed
     /** The aircraft's design cruising speed. */
-    INITPOSITION_AIRSPEED_CRUISE: -1, // aircraft's cruise airspeed
+    INITPOSITION_AIRSPEED_CRUISE: -1,
     /** Maintain the current airspeed.  */
-    INITPOSITION_AIRSPEED_KEEP: -2, // keep current airspeed
+    INITPOSITION_AIRSPEED_KEEP: -2,
 
     /** a MS Windows constant */
     MAX_PATH: 260,
@@ -52,12 +52,12 @@ export const SimConnectConstants = {
     /** When subscribed to event <code>MissionCompleted</code> */
     MISSION_SUCCEEDED: 2,
 
-    /** When subscribed to event <code>View</code> */
-    VIEW_SYSTEM_EVENT_DATA_COCKPIT_2D: 0x00000001, // 2D Panels in cockpit view
-    /** When subscribed to event <code>View</code> */
-    VIEW_SYSTEM_EVENT_DATA_COCKPIT_VIRTUAL: 0x00000002, // Virtual (3D) panels in cockpit view
-    /** When subscribed to event <code>View</code> */
-    VIEW_SYSTEM_EVENT_DATA_ORTHOGONAL: 0x00000004, // Orthogonal (Map) view
+    /** When subscribed to event <code>View</code>, 2D Panels in cockpit view */
+    VIEW_SYSTEM_EVENT_DATA_COCKPIT_2D: 0x00000001,
+    /** When subscribed to event <code>View</code>, Virtual (3D) panels in cockpit view */
+    VIEW_SYSTEM_EVENT_DATA_COCKPIT_VIRTUAL: 0x00000002,
+    /** When subscribed to event <code>View</code>, Orthogonal (Map) view */
+    VIEW_SYSTEM_EVENT_DATA_ORTHOGONAL: 0x00000004,
 
     /** When subsribed to event <code>Sound</event> */
     SOUND_SYSTEM_EVENT_DATA_MASTER: 1,

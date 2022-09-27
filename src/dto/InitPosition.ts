@@ -46,4 +46,4 @@ class InitPosition implements SimConnectData {
     }
 }
 
-export { InitPosition };
+export { InitPosition, Airspeed };
