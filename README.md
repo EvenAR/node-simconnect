@@ -33,16 +33,17 @@ open('My SimConnect client', Protocol.FSX_SP2)
         console.log('Connected to', recvOpen.applicationName);
         handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
         handle.on('event', function (recvEvent) {
-            switch (recvEvent.eventID) {
+            switch (recvEvent.clientEventId) {
                 case EVENT_ID_PAUSE:
-                    console.log(
-                        recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused'
-                    );
+                    console.log(recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused');
                     break;
             }
         });
         handle.on('quit', function () {
             console.log('Simulator quit');
+        });
+        handle.on('close', function () {
+            console.log('Connection closed unexpectedly (simulator CTD?)');
         });
     })
     .catch(function (error) {
@@ -79,9 +80,7 @@ open('My SimConnect client', Protocol.FSX_SP2)
     ```js
     const options = { remote: { host: 'localhost', port: 5111 } };
 
-    open('My SimConnect client', Protocol.FSX_SP2, options)
-        .then(/* ... */)
-        .catch(/* try again? */);
+    open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
     ```
 
 ### Functionality
