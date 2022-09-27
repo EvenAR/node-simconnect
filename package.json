@@ -11,7 +11,7 @@
     "test": "ts-jest",
     "link": "npm run build && cd dist && npm link",
     "precommit": "pretty-quick --staged",
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "prepare": "husky install",
     "generate-api-reference": "npm run build && npx rimraf doc && api-extractor run && api-documenter markdown -i temp -o doc"
   },
@@ -68,5 +68,13 @@
     "hooks": {
       "pre-commit": "npm run precommit"
     }
-  }
+  },
+  "files": [
+    "/dist",
+    "/samples",
+    "./package.json",
+    "./package-lock.json",
+    "./README.md",
+    "./LICENCE"
+  ]
 }
