@@ -136,19 +136,18 @@ class SimConnectConnection extends EventEmitter {
         this.clientSocket.on('error', (connectError: Error) => this.emit('error', connectError));
     }
 
-    private _untypedOn = this.on;
-
-    private _untypedEmit = this.emit;
-
-    on<U extends keyof SimConnectRecvEvents>(event: U, listener: SimConnectRecvEvents[U]): this {
-        return this._untypedOn(event, listener);
+    public on<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return super.on(event, listener);
     }
 
-    emit<U extends keyof SimConnectRecvEvents>(
+    public emit<U extends keyof SimConnectRecvEvents>(
         event: U,
         ...args: Parameters<SimConnectRecvEvents[U]>
     ): boolean {
-        return this._untypedEmit(event, ...args);
+        return super.emit(event, ...args);
     }
 
     connect(options?: ConnectionOptions) {
