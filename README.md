@@ -83,6 +83,13 @@ open('My SimConnect client', Protocol.FSX_SP2)
     open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
     ```
 
+If no connection options are specified, node-simconnect will auto-discover connection details in the following order:
+
+1. Look for a [`SimConnect.cfg`](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_CFG_Definition.htm) in the folder where Node.js is located. If the script is running in Electron, this will be the folder where the Electron executable is installed.
+1. Look for a `SimConnect.cfg` in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
+1. Look for a named pipe in the Windows registry, automatically set by the simulator
+1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
+
 ### Functionality
 
 node-simconnect is supposed to behave more or less in the same way as the offical SDK. Please refer to the
