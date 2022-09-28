@@ -109,6 +109,8 @@ class SimConnectConnection extends EventEmitter {
 
     writeBuffer: RawBuffer;
 
+    openTimeout: number;
+
     ourProtocol: number;
 
     packetsSent: number;
@@ -127,6 +129,8 @@ class SimConnectConnection extends EventEmitter {
         this.currentIndex = 0;
         this.ourProtocol = protocolVersion;
         this.writeBuffer = new RawBuffer(RECEIVE_SIZE);
+
+        this.openTimeout = -1;
 
         this.clientSocket = new SimConnectSocket();
 
@@ -168,6 +172,10 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('exception', new RecvException(data));
                 break;
             case RecvID.ID_OPEN:
+                if(this.openTimeout >= 0) {
+                    clearTimeout(this.openTimeout);
+                    this.openTimeout = -1;
+                }
                 this.emit('open', new RecvOpen(data));
                 break;
             case RecvID.ID_QUIT:
@@ -270,6 +278,11 @@ class SimConnectConnection extends EventEmitter {
     /// ///////////////////////////////////
 
     private _open() {
+        this.openTimeout = setTimeout(() => {
+            this.close();
+            this.emit('error', Error('Open timeout'));
+        }, 5000);
+
         this.resetBuffer();
         this.writeBuffer.writeString256(this.appName);
         this.writeBuffer.writeInt(0);

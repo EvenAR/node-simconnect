@@ -18,7 +18,8 @@ function readRegistryValue(subKey: string): Promise<string> {
         // eslint-disable-next-line
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
-                throw Error(`Failed to read registry value ${FS_KEY} (${err})`);
+                console.error(`Failed to read registry value ${FS_KEY} (${err})`);
+                resolve('2048');
             } else {
                 resolve(result[FS_KEY].values[subKey].value);
             }
