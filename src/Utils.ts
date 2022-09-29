@@ -7,19 +7,22 @@ import * as os from 'os';
 import regedit = require('regedit');
 
 async function findSimConnectPortIPv4(): Promise<number> {
-    const port = await readRegistryValue('SimConnect_Port_IPv4');
-    return parseInt(port, 10);
+    try {
+        const port = await readRegistryValue('SimConnect_Port_IPv4');
+        return parseInt(port, 10);
+    } catch {
+        return 2048;
+    }
 }
 
 function readRegistryValue(subKey: string): Promise<string> {
     const FS_KEY =
         'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
-    return new Promise<string>((resolve) => {
+    return new Promise<string>((resolve, reject) => {
         // eslint-disable-next-line
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
-                console.error(`Failed to read registry value ${FS_KEY} (${err})`);
-                resolve('2048');
+                reject(`Failed to read registry value ${FS_KEY} (${err})`);
             } else {
                 resolve(result[FS_KEY].values[subKey].value);
             }
