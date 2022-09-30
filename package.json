@@ -16,7 +16,7 @@
     "generate-api-reference": "npm run build && npx rimraf doc && api-extractor run && api-documenter markdown -i temp -o doc"
   },
   "author": "Even Arneberg Rognlien",
-  "license": "GPLV3",
+  "license": "LGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/EvenAR/node-simconnect.git"
