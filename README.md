@@ -2,7 +2,6 @@
 
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
-[![Build Status](https://app.travis-ci.com/EvenAR/node-simconnect.svg?branch=master)](https://app.travis-ci.com/EvenAR/node-simconnect)
 
 A SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
 
