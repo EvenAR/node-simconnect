@@ -963,6 +963,10 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('exception', new RecvException(data));
                 break;
             case RecvID.ID_OPEN:
+                if (this._openTimeout !== null) {
+                    clearTimeout(this._openTimeout);
+                    this._openTimeout = null;
+                }
                 this.emit('open', new RecvOpen(data));
                 break;
             case RecvID.ID_QUIT:
@@ -1063,6 +1067,11 @@ class SimConnectConnection extends EventEmitter {
     /// ///////////////////////////////////
 
     private _open() {
+        this._openTimeout = setTimeout(() => {
+            this.close();
+            this.emit('error', Error('Open timeout'));
+        }, 5000);
+
         this._resetBuffer();
         this._writeBuffer.writeString256(this._appName);
         this._writeBuffer.writeInt(0);
