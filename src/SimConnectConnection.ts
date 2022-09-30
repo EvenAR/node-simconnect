@@ -1096,6 +1096,10 @@ class SimConnectConnection extends EventEmitter {
     }
 
     close() {
+        if(this.openTimeout >= 0) {
+            clearTimeout(this.openTimeout);
+            this.openTimeout = -1;
+        }
         this.clientSocket.close();
     }
 
