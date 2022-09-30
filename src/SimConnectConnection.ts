@@ -49,6 +49,7 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import Timeout = NodeJS.Timeout;
 
 const RECEIVE_SIZE = 65536;
 
@@ -109,7 +110,7 @@ class SimConnectConnection extends EventEmitter {
 
     writeBuffer: RawBuffer;
 
-    openTimeout: number;
+    openTimeout: null | Timeout;
 
     ourProtocol: number;
 
@@ -130,7 +131,7 @@ class SimConnectConnection extends EventEmitter {
         this.ourProtocol = protocolVersion;
         this.writeBuffer = new RawBuffer(RECEIVE_SIZE);
 
-        this.openTimeout = -1;
+        this.openTimeout = null;
 
         this.clientSocket = new SimConnectSocket();
 
@@ -172,9 +173,9 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('exception', new RecvException(data));
                 break;
             case RecvID.ID_OPEN:
-                if(this.openTimeout >= 0) {
+                if (this.openTimeout !== null) {
                     clearTimeout(this.openTimeout);
-                    this.openTimeout = -1;
+                    this.openTimeout = null;
                 }
                 this.emit('open', new RecvOpen(data));
                 break;
@@ -1096,9 +1097,9 @@ class SimConnectConnection extends EventEmitter {
     }
 
     close() {
-        if(this.openTimeout >= 0) {
+        if (this.openTimeout !== null) {
             clearTimeout(this.openTimeout);
-            this.openTimeout = -1;
+            this.openTimeout = null;
         }
         this.clientSocket.close();
     }
