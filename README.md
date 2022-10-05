@@ -98,6 +98,8 @@ Microsoft Flight Simulator ("MSFS 2020"), or Lockheed Martin's Prepar3D, are not
 the current lack of knowledge about the related API changes. These features will likely not be researched
 or implemented unless there are specific requests.
 
+⚠️ = deprecated and will not work, according to the official documentation.
+
 | Method                                      | Implemented | Tested FSX | Tested P3D | Tested MSFS |
 | ------------------------------------------- | ----------- | ---------- | ---------- | ----------- |
 | Prepar3D specific methods                   | TODO ?      | n/a        |            | n/a         |
@@ -113,8 +115,8 @@ or implemented unless there are specific requests.
 | `setDataOnSimObject`                        | ✅          | ✅         |            |             |
 | `subscribeToFacilities`                     | ✅          | ✅         |            |             |
 | `unSubscribeToFacilities`                   | ✅          | ✅         |            |             |
-| `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            |             |
-| `weatherRequestCloudState`                  | ✅          | ✅         |            |             |
+| `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            | ⚠️            |
+| `weatherRequestCloudState`                  | ✅          | ✅         |            | ⚠️            |
 | `text`                                      | ✅          | ✅         |            |             |
 | `requestFacilitiesList`                     | ✅          | ✅         |            |             |
 | `setSystemState`                            | ✅          |            |            |             |
@@ -132,14 +134,14 @@ or implemented unless there are specific requests.
 | `setInputGroupState`                        | ✅          |            |            |             |
 | `requestReservedKey`                        | ✅          |            |            |             |
 | `weatherRequestInterpolatedObservation`     | ✅          |            |            |             |
-| `weatherRequestObservationAtStation`        | ✅          |            |            |             |
-| `weatherCreateStation`                      | ✅          |            |            |             |
-| `weatherSetObservation`                     | ✅          |            |            |             |
-| `weatherSetModeServer`                      | ✅          |            |            |             |
-| `weatherSetModeTheme`                       | ✅          |            |            |             |
-| `weatherSetModeGlobal`                      | ✅          |            |            |             |
-| `weatherSetModeCustom`                      | ✅          |            |            |             |
-| `weatherSetDynamicUpdateRate`               | ✅          |            |            |             |
+| `weatherRequestObservationAtStation`        | ✅          |            |            | ⚠️            |
+| `weatherCreateStation`                      | ✅          |            |            | ⚠️            |
+| `weatherSetObservation`                     | ✅          |            |            | ⚠️            |
+| `weatherSetModeServer`                      | ✅          |            |            | ⚠️            |
+| `weatherSetModeTheme`                       | ✅          |            |            | ⚠️            |
+| `weatherSetModeGlobal`                      | ✅          |            |            | ⚠️            |
+| `weatherSetModeCustom`                      | ✅          |            |            | ⚠️            |
+| `weatherSetDynamicUpdateRate`               | ✅          |            |            | ⚠️            |
 | `weatherCreateThermal`                      | ✅          |            |            |             |
 | `weatherRemoveThermal`                      | ✅          |            |            |             |
 | `aICreateParkedATCAircraft`                 | ✅          |            |            |             |
@@ -152,10 +154,10 @@ or implemented unless there are specific requests.
 | `executeMissionAction`                      | ✅          |            |            |             |
 | `completeCustomMissionAction`               | ✅          |            |            |             |
 | `cameraSetRelative6DOF`                     | ✅          |            |            |             |
-| `menuAddItem`                               | ✅          |            |            |             |
-| `menuDeleteItem`                            | ✅          |            |            |             |
-| `menuAddSubItem`                            | ✅          |            |            |             |
-| `menuDeleteSubItem`                         | ✅          |            |            |             |
+| `menuAddItem`                               | ✅          |            |            | ⚠️            |
+| `menuDeleteItem`                            | ✅          |            |            | ⚠️            |
+| `menuAddSubItem`                            | ✅          |            |            | ⚠️            |
+| `menuDeleteSubItem`                         | ✅          |            |            | ⚠️            |
 | `mapClientDataNameToID`                     | ✅          |            |            |             |
 | `createClientData`                          | ✅          |            |            |             |
 | `addToClientDataDefinition`                 | ✅          |            |            |             |
