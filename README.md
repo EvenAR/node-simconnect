@@ -133,7 +133,7 @@ or implemented unless there are specific requests.
 | `clearInputGroup`                           | ✅          |            |            |             |
 | `setInputGroupState`                        | ✅          |            |            |             |
 | `requestReservedKey`                        | ✅          |            |            |             |
-| `weatherRequestInterpolatedObservation`     | ✅          |            |            |             |
+| `weatherRequestInterpolatedObservation`     | ✅          |            |            | ⚠️           |
 | `weatherRequestObservationAtStation`        | ✅          |            |            | ⚠️           |
 | `weatherCreateStation`                      | ✅          |            |            | ⚠️           |
 | `weatherSetObservation`                     | ✅          |            |            | ⚠️           |
@@ -142,8 +142,8 @@ or implemented unless there are specific requests.
 | `weatherSetModeGlobal`                      | ✅          |            |            | ⚠️           |
 | `weatherSetModeCustom`                      | ✅          |            |            | ⚠️           |
 | `weatherSetDynamicUpdateRate`               | ✅          |            |            | ⚠️           |
-| `weatherCreateThermal`                      | ✅          |            |            |             |
-| `weatherRemoveThermal`                      | ✅          |            |            |             |
+| `weatherCreateThermal`                      | ✅          |            |            | ⚠️           |
+| `weatherRemoveThermal`                      | ✅          |            |            | ⚠️           |
 | `aICreateParkedATCAircraft`                 | ✅          |            |            |             |
 | `aICreateEnrouteATCAircraft`                | ✅          |            |            |             |
 | `aICreateNonATCAircraft`                    | ✅          |            |            |             |
