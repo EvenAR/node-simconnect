@@ -110,14 +110,14 @@ or implemented unless there are specific requests.
 | `requestDataOnSimObjectType`                | ✅          | ✅         |            |             |
 | `subscribeToSystemEvent`                    | ✅          | ✅         |            |             |
 | `unsubscribeFromSystemEvent`                | ✅          | ✅         |            |             |
-| `menu`                                      | ✅          | ✅         |            |             |
+| `menu`                                      | ✅          | ✅         |            | ⚠️          |
 | `requestSystemState`                        | ✅          | ✅         |            |             |
 | `setDataOnSimObject`                        | ✅          | ✅         |            |             |
 | `subscribeToFacilities`                     | ✅          | ✅         |            |             |
 | `unSubscribeToFacilities`                   | ✅          | ✅         |            |             |
-| `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            | ⚠️           |
-| `weatherRequestCloudState`                  | ✅          | ✅         |            | ⚠️           |
-| `text`                                      | ✅          | ✅         |            | ⚠️           |
+| `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            | ⚠️          |
+| `weatherRequestCloudState`                  | ✅          | ✅         |            | ⚠️          |
+| `text`                                      | ✅          | ✅         |            | ⚠️          |
 | `requestFacilitiesList`                     | ✅          | ✅         |            |             |
 | `setSystemState`                            | ✅          |            |            |             |
 | `addClientEventToNotificationGroup`         | ✅          |            |            |             |
@@ -133,17 +133,17 @@ or implemented unless there are specific requests.
 | `clearInputGroup`                           | ✅          |            |            |             |
 | `setInputGroupState`                        | ✅          |            |            |             |
 | `requestReservedKey`                        | ✅          |            |            |             |
-| `weatherRequestInterpolatedObservation`     | ✅          |            |            | ⚠️           |
-| `weatherRequestObservationAtStation`        | ✅          |            |            | ⚠️           |
-| `weatherCreateStation`                      | ✅          |            |            | ⚠️           |
-| `weatherSetObservation`                     | ✅          |            |            | ⚠️           |
-| `weatherSetModeServer`                      | ✅          |            |            | ⚠️           |
-| `weatherSetModeTheme`                       | ✅          |            |            | ⚠️           |
-| `weatherSetModeGlobal`                      | ✅          |            |            | ⚠️           |
-| `weatherSetModeCustom`                      | ✅          |            |            | ⚠️           |
-| `weatherSetDynamicUpdateRate`               | ✅          |            |            | ⚠️           |
-| `weatherCreateThermal`                      | ✅          |            |            | ⚠️           |
-| `weatherRemoveThermal`                      | ✅          |            |            | ⚠️           |
+| `weatherRequestInterpolatedObservation`     | ✅          |            |            | ⚠️          |
+| `weatherRequestObservationAtStation`        | ✅          |            |            | ⚠️          |
+| `weatherCreateStation`                      | ✅          |            |            | ⚠️          |
+| `weatherSetObservation`                     | ✅          |            |            | ⚠️          |
+| `weatherSetModeServer`                      | ✅          |            |            | ⚠️          |
+| `weatherSetModeTheme`                       | ✅          |            |            | ⚠️          |
+| `weatherSetModeGlobal`                      | ✅          |            |            | ⚠️          |
+| `weatherSetModeCustom`                      | ✅          |            |            | ⚠️          |
+| `weatherSetDynamicUpdateRate`               | ✅          |            |            | ⚠️          |
+| `weatherCreateThermal`                      | ✅          |            |            | ⚠️          |
+| `weatherRemoveThermal`                      | ✅          |            |            | ⚠️          |
 | `aICreateParkedATCAircraft`                 | ✅          |            |            |             |
 | `aICreateEnrouteATCAircraft`                | ✅          |            |            |             |
 | `aICreateNonATCAircraft`                    | ✅          |            |            |             |
@@ -154,10 +154,10 @@ or implemented unless there are specific requests.
 | `executeMissionAction`                      | ✅          |            |            |             |
 | `completeCustomMissionAction`               | ✅          |            |            |             |
 | `cameraSetRelative6DOF`                     | ✅          |            |            |             |
-| `menuAddItem`                               | ✅          |            |            | ⚠️           |
-| `menuDeleteItem`                            | ✅          |            |            | ⚠️           |
-| `menuAddSubItem`                            | ✅          |            |            | ⚠️           |
-| `menuDeleteSubItem`                         | ✅          |            |            | ⚠️           |
+| `menuAddItem`                               | ✅          |            |            | ⚠️          |
+| `menuDeleteItem`                            | ✅          |            |            | ⚠️          |
+| `menuAddSubItem`                            | ✅          |            |            | ⚠️          |
+| `menuDeleteSubItem`                         | ✅          |            |            | ⚠️          |
 | `mapClientDataNameToID`                     | ✅          |            |            |             |
 | `createClientData`                          | ✅          |            |            |             |
 | `addToClientDataDefinition`                 | ✅          |            |            |             |

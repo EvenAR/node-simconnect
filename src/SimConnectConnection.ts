@@ -418,6 +418,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x16);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRequestInterpolatedObservation(
         dataRequestId: DataRequestId,
         lat: number,
@@ -432,6 +435,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x19);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRequestObservationAtStation(dataRequestId: DataRequestId, ICAO: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt(dataRequestId);
@@ -439,6 +445,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1a);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRequestObservationAtNearestStation(
         dataRequestId: DataRequestId,
         lat: number,
@@ -451,6 +460,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1b);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherCreateStation(
         dataRequestId: DataRequestId,
         ICAO: string,
@@ -469,6 +481,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1c);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRemoveStation(dataRequestId: DataRequestId, ICAO: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt(dataRequestId);
@@ -476,6 +491,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1d);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetObservation(seconds: number, metar: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt(seconds);
@@ -484,6 +502,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1e);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetModeServer(port: number, seconds: number) {
         this._resetBuffer();
         this._writeBuffer.writeInt(port);
@@ -491,28 +512,43 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x1f);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetModeTheme(themeName: string) {
         this._resetBuffer();
         this._writeBuffer.writeString(themeName, 256);
         this._sendPacket(0x20);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetModeGlobal() {
         this._resetBuffer();
         this._sendPacket(0x21);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetModeCustom() {
         this._resetBuffer();
         this._sendPacket(0x22);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherSetDynamicUpdateRate(rate: number) {
         this._resetBuffer();
         this._writeBuffer.writeInt(rate);
         this._sendPacket(0x23);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRequestCloudState(
         dataRequestId: DataRequestId,
         minLat: number,
@@ -535,6 +571,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x24);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherCreateThermal(
         dataRequestId: DataRequestId,
         lat: number,
@@ -569,6 +608,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x25);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     weatherRemoveThermal(objectId: ObjectId) {
         this._resetBuffer();
         this._writeBuffer.writeInt(objectId);
@@ -702,6 +744,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x30);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     menuAddItem(menuItem: string, menuEventId: ClientEventId, data: number) {
         this._resetBuffer();
         this._writeBuffer.writeString(menuItem, 256);
@@ -710,12 +755,18 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x31);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     menuDeleteItem(menuEventId: ClientEventId) {
         this._resetBuffer();
         this._writeBuffer.writeInt(menuEventId);
         this._sendPacket(0x32);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     menuAddSubItem(
         menuEventId: ClientEventId,
         menuItem: string,
@@ -730,6 +781,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x33);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     menuDeleteSubItem(menuEventId: ClientEventId, subMenuEventId: ClientEventId) {
         // packet size 0x18
         // packet id 0x34
@@ -863,6 +917,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x3f);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     text(type: TextType, timeSeconds: number, clientEventId: ClientEventId, message: string) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -881,6 +938,9 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x40);
     }
 
+    /**
+     * @deprecated since MSFS (KittyHawk)
+     */
     menu(
         timeSeconds: number,
         clientEventId: ClientEventId,
