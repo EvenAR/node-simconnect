@@ -16,13 +16,12 @@ async function findSimConnectPortIPv4(): Promise<number> {
 }
 
 function readRegistryValue(subKey: string): Promise<string> {
-    const FS_KEY =
-        'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
+    const FS_KEY = 'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator';
     return new Promise<string>((resolve, reject) => {
         // eslint-disable-next-line
         regedit.list(FS_KEY, (err: any, result: any) => {
             if (err) {
-                reject(`Failed to read registry value ${FS_KEY} (${err})`);
+                reject(new Error(`Failed to read registry value ${FS_KEY} (${err})`));
             } else {
                 resolve(result[FS_KEY].values[subKey].value);
             }
@@ -46,15 +45,13 @@ function readIniFile(path: string): Promise<IniFile> {
 }
 
 async function readSimConnectCfg(folder: string) {
-    const simconnectCfg = await readIniFile(
-        Path.join(folder, 'SimConnect.cfg')
-    );
+    const simconnectCfg = await readIniFile(Path.join(folder, 'SimConnect.cfg'));
     return simconnectCfg.SimConnect;
 }
 
 async function checkIfNamedPipeExist(pipeName: string): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-        fs.access(pipeName, fs.constants.F_OK, (err) => {
+    return new Promise<boolean>(resolve => {
+        fs.access(pipeName, fs.constants.F_OK, err => {
             if (err) resolve(false);
             else resolve(true);
         });
@@ -69,7 +66,7 @@ async function discoverServer(): Promise<SimConnectServerAddress> {
     // Check for SimConnect.cfg in current dir
     try {
         const localConfig = await readSimConnectCfg(process.cwd());
-        const { Address, Port } = localConfig[1];
+        const { Address, Port } = localConfig;
         if (Address && Port) {
             return {
                 type: 'ipv4',
@@ -82,7 +79,7 @@ async function discoverServer(): Promise<SimConnectServerAddress> {
     // Check for SimConnect.cfg in home directory
     try {
         const homeConfig = await readSimConnectCfg(os.homedir());
-        const { Address, Port } = homeConfig[1];
+        const { Address, Port } = homeConfig;
         if (Address && Port) {
             return {
                 type: 'ipv4',
