@@ -59,8 +59,10 @@
   },
   "dependencies": {
     "@types/bytebuffer": "^5.0.42",
+    "@types/debug": "^4.1.7",
     "@types/node": "^14.14.14",
     "bytebuffer": "^5.0.1",
+    "debug": "^4.3.4",
     "ini": "^2.0.0",
     "regedit": "^3.0.3"
   },

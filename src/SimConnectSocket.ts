@@ -1,7 +1,7 @@
 import { Socket } from 'net';
 import { Duplex } from 'stream';
 import { RawBuffer } from './RawBuffer';
-import { SimConnectServerAddress } from './Utils';
+import { ConnectionParameters } from './connectionParameters';
 
 const HEADER_LENGTH = 4;
 
@@ -59,7 +59,7 @@ class SimConnectSocket extends Duplex {
         this._wrapSocket();
     }
 
-    connect(address: SimConnectServerAddress) {
+    connect(address: ConnectionParameters) {
         switch (address.type) {
             case 'pipe':
                 this._socket.connect(address.address);
@@ -129,4 +129,4 @@ class SimConnectSocket extends Duplex {
     }
 }
 
-export { SimConnectSocket, RecvID, SimConnectMessage, SimConnectServerAddress };
+export { SimConnectSocket, RecvID, SimConnectMessage, ConnectionParameters };
