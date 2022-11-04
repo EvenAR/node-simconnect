@@ -3,7 +3,7 @@ import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
-import { discoverServer, SimConnectServerAddress } from './Utils';
+import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
 import { InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
@@ -90,9 +90,10 @@ interface SimConnectRecvEvents {
     eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
 }
 
-interface ConnectionOptions {
-    remote: { host: string; port: number };
-}
+type ConnectionOptions =
+    | { host: string; port: number }
+    | { simConnectCfgIndex: number }
+    | { remote: { host: string; port: number } };
 
 enum SimConnectError {
     UnknownHost = 'Unknown host',
@@ -150,12 +151,17 @@ class SimConnectConnection extends EventEmitter {
     }
 
     connect(options?: ConnectionOptions) {
-        if (options?.remote) {
+        if (options && 'host' in options && 'port' in options) {
+            this._clientSocket.connect({ type: 'ipv4', ...options });
+        } else if (options && 'remote' in options) {
+            // For backwards-compatibility
             this._clientSocket.connect({ type: 'ipv4', ...options.remote });
         } else {
-            discoverServer().then((address: SimConnectServerAddress) => {
-                this._clientSocket.connect(address);
-            });
+            autodetectServerAddress(options?.simConnectCfgIndex).then(
+                (address: ConnectionParameters) => {
+                    this._clientSocket.connect(address);
+                }
+            );
         }
     }
 
