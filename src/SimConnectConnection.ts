@@ -50,6 +50,9 @@ import {
     ObjectId,
 } from './Types';
 import Timeout = NodeJS.Timeout;
+import { RecvFacilityData } from './recv/RecvFacilityData';
+import { RecvFacilityDataEnd } from './recv/RecvFacilityDataEnd';
+import { RecvFacilityMinimalList } from './recv/RecvFacilityMinimalList';
 
 const RECEIVE_SIZE = 65536;
 
@@ -57,6 +60,7 @@ enum SimConnectBuild {
     SP0 = 60905,
     SP1 = 61355,
     SP2_XPACK = 61259,
+    ASOBO = 62651,
 }
 
 interface SimConnectRecvEvents {
@@ -88,6 +92,9 @@ interface SimConnectRecvEvents {
     eventMultiplayerSessionEnded: () => void;
     eventRaceEnd: (recvEventRaceEnd: RecvEventRaceEnd) => void;
     eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
+    facilityData: (recvFacilityData: RecvFacilityData) => void;
+    facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
+    facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
 }
 
 type ConnectionOptions =
@@ -981,15 +988,6 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x40);
     }
 
-    requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
-        // ID 0x43
-        this._resetBuffer();
-        this._writeBuffer.writeInt(type);
-        this._writeBuffer.writeInt(clientEventId);
-        this._sendPacket(0x43);
-    }
-
     subscribeToFacilities(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1008,6 +1006,41 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt(type);
         this._sendPacket(0x42);
     }
+
+    requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
+        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(clientEventId);
+        this._sendPacket(0x43);
+    }
+
+    // TODO: requestFacilitiesList_EX1: 0x44?
+
+    addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string) {
+        if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
+        this._resetBuffer();
+        this._writeBuffer.writeInt(dataDefinitionId);
+        this._writeBuffer.writeString256(fieldName);
+        this._sendPacket(0x45);
+    }
+
+    requestFacilityData(
+        dataDefinitionId: DataDefinitionId,
+        dataRequestId: DataRequestId,
+        icao: string,
+        region = ''
+    ) {
+        if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
+        this._resetBuffer();
+        this._writeBuffer.writeInt(dataDefinitionId);
+        this._writeBuffer.writeInt(dataRequestId);
+        this._writeBuffer.writeString(icao, 16);
+        this._writeBuffer.writeString(region, 4);
+        this._sendPacket(0x46);
+    }
+
+    // TODO: requestFacilityData_EX1: 0x47?
 
     close() {
         if (this._openTimeout !== null) {
@@ -1107,8 +1140,17 @@ class SimConnectConnection extends EventEmitter {
             case RecvID.ID_EVENT_RACE_LAP:
                 this.emit('eventRaceLap', new RecvEventRaceLap(data));
                 break;
+            case RecvID.ID_FACILITY_DATA:
+                this.emit('facilityData', new RecvFacilityData(data));
+                break;
+            case RecvID.ID_FACILITY_DATA_END:
+                this.emit('facilityDataEnd', new RecvFacilityDataEnd(data));
+                break;
+            case RecvID.ID_FACILITY_MINIMAL_LIST:
+                this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
+                break;
             default:
-                console.log('UNK', data);
+                console.log('Unknown packet type id', packetTypeId, data);
                 break;
         }
     }
@@ -1160,6 +1202,11 @@ class SimConnectConnection extends EventEmitter {
             this._writeBuffer.writeInt(0); // minor version
             this._writeBuffer.writeInt(SimConnectBuild.SP2_XPACK); // major build
             this._writeBuffer.writeInt(0); // minor build
+        } else if (this._ourProtocol === 5) {
+            this._writeBuffer.writeInt(11); // major version
+            this._writeBuffer.writeInt(0); // minor version
+            this._writeBuffer.writeInt(SimConnectBuild.ASOBO); // major build
+            this._writeBuffer.writeInt(3); // minor build
         } else {
             throw Error(SimConnectError.InvalidProtocol); // $NON-NLS-1$
         }
