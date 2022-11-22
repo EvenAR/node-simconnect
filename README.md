@@ -89,50 +89,98 @@ If no connection options are specified, node-simconnect will auto-discover conne
 1. Look for a named pipe in the Windows registry, automatically set by the simulator
 1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
 
-### Functionality
+## Functionality
 
 node-simconnect is supposed to behave more or less in the same way as the offical SDK. Please refer to the
 [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
-for a description of the methods below and how to use them. Note that any features that are new to the new
-Microsoft Flight Simulator ("MSFS 2020"), or Lockheed Martin's Prepar3D, are not implemented (yet) due to
-the current lack of knowledge about the related API changes. These features will likely not be researched
-or implemented unless there are specific requests.
+for a description of the methods below and how to use them.
+
+The new Microsoft Flight Simulator has introduced some new features to the SimConnect API, and even more
+features are likely to come. If there are specific features you are missing, feel free to
+[open a new issue]{https://github.com/EvenAR/node-simconnect/issues} or create a pull request.
+
+Note that any features that are specific to Lockheed Martin's Prepar3D are not implemented. These features
+will likely not be researched or implemented unless there are specific requests.
 
 ⚠️ = deprecated and will not work, according to the official documentation.
 
+### Events and data
+
+| Method                              | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ----------------------------------- | ----------- | ---------- | ---------- | ----------- |
+| `addClientEventToNotificationGroup` | ✅          |            |            |             |
+| `addToClientDataDefinition`         | ✅          |            |            |             |
+| `addToDataDefinition`               | ✅          | ✅         |            |             |
+| `clearClientDataDefinition`         | ✅          |            |            |             |
+| `clearDataDefinition`               | ✅          | ✅         |            |             |
+| `clearInputGroup`                   | ✅          |            |            |             |
+| `clearNotificationGroup`            | ✅          |            |            |             |
+| `createClientData`                  | ✅          |            |            |             |
+| `mapClientDataNameToID`             | ✅          |            |            |             |
+| `mapClientEventToSimEvent`          | ✅          |            |            |             |
+| `mapInputEventToClientEvent`        | ✅          |            |            |             |
+| `removeClientEvent`                 | ✅          |            |            |             |
+| `removeInputEvent`                  | ✅          |            |            |             |
+| `requestClientData`                 | ✅          |            |            |             |
+| `requestDataOnSimObject`            | ✅          | ✅         |            |             |
+| `requestDataOnSimObjectType`        | ✅          | ✅         |            |             |
+| `requestNotificationGroup`          | ✅          |            |            |             |
+| `requestReservedKey`                | ✅          |            |            |             |
+| `subscribeToSystemEvent`            | ✅          | ✅         |            |             |
+| `setClientData`                     | ✅          |            |            |             |
+| `setDataOnSimObject`                | ✅          | ✅         |            |             |
+| `setInputGroupPriority`             | ✅          |            |            |             |
+| `setInputGroupState`                | ✅          |            |            |             |
+| `setSystemEventState`               | ✅          |            |            |             |
+| `setSystemState`                    | ✅          |            |            |             |
+| `unsubscribeFromSystemEvent`        | ✅          | ✅         |            |             |
+
+### AI Objects
+
+| Method                       | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ---------------------------- | ----------- | ---------- | ---------- | ----------- |
+| `aICreateParkedATCAircraft`  | ✅          |            |            |             |
+| `aICreateEnrouteATCAircraft` | ✅          |            |            |             |
+| `aICreateNonATCAircraft`     | ✅          |            |            |             |
+| `aICreateSimulatedObject`    | ✅          |            |            |             |
+| `aIReleaseControl`           | ✅          |            |            |             |
+| `aIRemoveObject`             | ✅          |            |            |             |
+| `aISetAircraftFlightPlan`    | ✅          |            |            |             |
+
+### Flights
+
+| Method           | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ---------------- | ----------- | ---------- | ---------- | ----------- |
+| `flightLoad`     | ✅          |            |            |             |
+| `flightPlanLoad` | ✅          |            |            |             |
+| `flightSave`     | ✅          |            |            |             |
+
+### Facility
+
+| Method                                    | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ----------------------------------------- | ----------- | ---------- | ---------- | ----------- |
+| `addToFacilityDefinition`                 | ✅          | n/a        | n/a        | ✅          |
+| `requestFacilitiesList` (including `Ex1`) | ✅          |            |            |             |
+| `requestFacilityData` (including `Ex1`)   | ✅          | n/a        | n/a        | ✅          |
+| `subscribeToFacilities`                   | ✅          | ✅         |            |             |
+| `unSubscribeToFacilities`                 | ✅          | ✅         |            |             |
+
+### Menu
+
+| Method              | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ------------------- | ----------- | ---------- | ---------- | ----------- |
+| `menu`              | ✅          | ✅         |            | ⚠️          |
+| `menuAddItem`       | ✅          |            |            | ⚠️          |
+| `menuAddSubItem`    | ✅          |            |            | ⚠️          |
+| `menuDeleteItem`    | ✅          |            |            | ⚠️          |
+| `menuDeleteSubItem` | ✅          |            |            | ⚠️          |
+
+### Weather
+
 | Method                                      | Implemented | Tested FSX | Tested P3D | Tested MSFS |
 | ------------------------------------------- | ----------- | ---------- | ---------- | ----------- |
-| Prepar3D specific methods                   | TODO ?      | n/a        |            | n/a         |
-| MSFS specific methods (if any?)             | TODO        | n/a        | n/a        |             |
-| `addToDataDefinition`                       | ✅          | ✅         |            |             |
-| `requestDataOnSimObject`                    | ✅          | ✅         |            |             |
-| `clearDataDefinition`                       | ✅          | ✅         |            |             |
-| `requestDataOnSimObjectType`                | ✅          | ✅         |            |             |
-| `subscribeToSystemEvent`                    | ✅          | ✅         |            |             |
-| `unsubscribeFromSystemEvent`                | ✅          | ✅         |            |             |
-| `menu`                                      | ✅          | ✅         |            | ⚠️          |
-| `requestSystemState`                        | ✅          | ✅         |            |             |
-| `setDataOnSimObject`                        | ✅          | ✅         |            |             |
-| `subscribeToFacilities`                     | ✅          | ✅         |            |             |
-| `unSubscribeToFacilities`                   | ✅          | ✅         |            |             |
 | `weatherRequestObservationAtNearestStation` | ✅          | ✅         |            | ⚠️          |
 | `weatherRequestCloudState`                  | ✅          | ✅         |            | ⚠️          |
-| `text`                                      | ✅          | ✅         |            | ⚠️          |
-| `requestFacilitiesList`                     | ✅          | ✅         |            |             |
-| `setSystemState`                            | ✅          |            |            |             |
-| `addClientEventToNotificationGroup`         | ✅          |            |            |             |
-| `mapClientEventToSimEvent`                  | ✅          |            |            |             |
-| `setSystemEventState`                       | ✅          |            |            |             |
-| `removeClientEvent`                         | ✅          |            |            |             |
-| `setNotificationGroupPriority`              | ✅          |            |            |             |
-| `clearNotificationGroup`                    | ✅          |            |            |             |
-| `requestNotificationGroup`                  | ✅          |            |            |             |
-| `mapInputEventToClientEvent`                | ✅          |            |            |             |
-| `setInputGroupPriority`                     | ✅          |            |            |             |
-| `removeInputEvent`                          | ✅          |            |            |             |
-| `clearInputGroup`                           | ✅          |            |            |             |
-| `setInputGroupState`                        | ✅          |            |            |             |
-| `requestReservedKey`                        | ✅          |            |            |             |
 | `weatherRequestInterpolatedObservation`     | ✅          |            |            | ⚠️          |
 | `weatherRequestObservationAtStation`        | ✅          |            |            | ⚠️          |
 | `weatherCreateStation`                      | ✅          |            |            | ⚠️          |
@@ -144,26 +192,14 @@ or implemented unless there are specific requests.
 | `weatherSetDynamicUpdateRate`               | ✅          |            |            | ⚠️          |
 | `weatherCreateThermal`                      | ✅          |            |            | ⚠️          |
 | `weatherRemoveThermal`                      | ✅          |            |            | ⚠️          |
-| `aICreateParkedATCAircraft`                 | ✅          |            |            |             |
-| `aICreateEnrouteATCAircraft`                | ✅          |            |            |             |
-| `aICreateNonATCAircraft`                    | ✅          |            |            |             |
-| `aICreateSimulatedObject`                   | ✅          |            |            |             |
-| `aIReleaseControl`                          | ✅          |            |            |             |
-| `aIRemoveObject`                            | ✅          |            |            |             |
-| `aISetAircraftFlightPlan`                   | ✅          |            |            |             |
-| `executeMissionAction`                      | ✅          |            |            |             |
-| `completeCustomMissionAction`               | ✅          |            |            |             |
-| `cameraSetRelative6DOF`                     | ✅          |            |            |             |
-| `menuAddItem`                               | ✅          |            |            | ⚠️          |
-| `menuDeleteItem`                            | ✅          |            |            | ⚠️          |
-| `menuAddSubItem`                            | ✅          |            |            | ⚠️          |
-| `menuDeleteSubItem`                         | ✅          |            |            | ⚠️          |
-| `mapClientDataNameToID`                     | ✅          |            |            |             |
-| `createClientData`                          | ✅          |            |            |             |
-| `addToClientDataDefinition`                 | ✅          |            |            |             |
-| `clearClientDataDefinition`                 | ✅          |            |            |             |
-| `requestClientData`                         | ✅          |            |            |             |
-| `setClientData`                             | ✅          |            |            |             |
-| `flightLoad`                                | ✅          |            |            |             |
-| `flightSave`                                | ✅          |            |            |             |
-| `flightPlanLoad`                            | ✅          |            |            |             |
+
+### Misc
+
+| Method                         | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ------------------------------ | ----------- | ---------- | ---------- | ----------- |
+| `cameraSetRelative6DOF`        | ✅          |            |            |             |
+| `completeCustomMissionAction`  | ✅          |            |            |             |
+| `executeMissionAction`         | ✅          |            |            |             |
+| `requestSystemState`           | ✅          | ✅         |            |             |
+| `setNotificationGroupPriority` | ✅          |            |            |             |
+| `text`                         | ✅          | ✅         |            | ⚠️          |
