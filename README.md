@@ -96,8 +96,8 @@ node-simconnect is supposed to behave more or less in the same way as the offica
 for a description of the methods below and how to use them.
 
 The new Microsoft Flight Simulator has introduced some new features to the SimConnect API, and even more
-features are likely to come. If there are specific features you are missing, feel free to
-[open a new issue]{https://github.com/EvenAR/node-simconnect/issues} or create a pull request.
+features are likely to come. Most of these will only be implemented on demand if there are specific feature requests.
+Feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
 
 Note that any features that are specific to Lockheed Martin's Prepar3D are not implemented. These features
 will likely not be researched or implemented unless there are specific requests.
