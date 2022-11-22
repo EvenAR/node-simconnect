@@ -94,13 +94,15 @@ open('SimConnect sample client', Protocol.ASOBO)
                         DefinitionID.FACILITY_VOR,
                         requestId++,
                         ilsIcao1,
-                        ilsRegion1
+                        ilsRegion1,
+                        'V'
                     );
                     handle.requestFacilityData(
                         DefinitionID.FACILITY_VOR,
                         requestId++,
                         ilsIcao2,
-                        ilsRegion2
+                        ilsRegion2,
+                        'V'
                     );
                     break;
                 case FacilityDataType.VOR:

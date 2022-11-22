@@ -3,6 +3,7 @@ export * from './RecvAssignedObjectID';
 export * from './RecvCloudState';
 export * from './RecvCustomAction';
 export * from './RecvEvent';
+export * from './RecvEventEx1';
 export * from './RecvEventAddRemove';
 export * from './RecvEventFilename';
 export * from './RecvEventFrame';

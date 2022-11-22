@@ -5,7 +5,7 @@ import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
 import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { InitPosition, SimConnectData } from './dto';
+import { IcaoType, InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
@@ -53,6 +53,7 @@ import Timeout = NodeJS.Timeout;
 import { RecvFacilityData } from './recv/RecvFacilityData';
 import { RecvFacilityDataEnd } from './recv/RecvFacilityDataEnd';
 import { RecvFacilityMinimalList } from './recv/RecvFacilityMinimalList';
+import { RecvEventEx1 } from './recv/RecvEventEx1';
 
 const RECEIVE_SIZE = 65536;
 
@@ -102,6 +103,7 @@ interface SimConnectRecvEvents {
     quit: () => void;
     exception: (recvException: RecvException) => void;
     event: (recvEvent: RecvEvent) => void;
+    eventEx1: (recvEvent: RecvEventEx1) => void;
     airportList: (recvAirportList: RecvAirportList) => void;
     vorList: (recvVORList: RecvVORList) => void;
     ndbList: (recvNDBList: RecvNDBList) => void;
@@ -1047,7 +1049,29 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x43);
     }
 
-    // TODO: requestFacilitiesList_EX1: 0x44?
+    transmitClientEventEx(
+        objectId: ObjectId,
+        clientEventId: ClientEventId,
+        notificationGroupId: NotificationGroupId,
+        flags: EventFlag,
+        data0 = 0,
+        data1 = 0,
+        data2 = 0,
+        data3 = 0,
+        data4 = 0
+    ) {
+        this._resetBuffer();
+        this._writeBuffer.writeInt(objectId);
+        this._writeBuffer.writeInt(clientEventId);
+        this._writeBuffer.writeInt(notificationGroupId);
+        this._writeBuffer.writeInt(flags);
+        this._writeBuffer.writeInt(data0);
+        this._writeBuffer.writeInt(data1);
+        this._writeBuffer.writeInt(data2);
+        this._writeBuffer.writeInt(data3);
+        this._writeBuffer.writeInt(data4);
+        this._sendPacket(0x44);
+    }
 
     addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string) {
         if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
@@ -1061,18 +1085,24 @@ class SimConnectConnection extends EventEmitter {
         dataDefinitionId: DataDefinitionId,
         dataRequestId: DataRequestId,
         icao: string,
-        region = ''
+        region?: string,
+        type?: IcaoType
     ) {
         if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
         this._resetBuffer();
         this._writeBuffer.writeInt(dataDefinitionId);
         this._writeBuffer.writeInt(dataRequestId);
         this._writeBuffer.writeString(icao, 16);
-        this._writeBuffer.writeString(region, 4);
-        this._sendPacket(0x46);
+        this._writeBuffer.writeString(region || '', 4);
+        if (type === undefined) {
+            // SimConnect_RequestFacilityData
+            this._sendPacket(0x46);
+        } else {
+            // SimConnect_RequestFacilityData_EX1
+            this._writeBuffer.writeString(type, 1);
+            this._sendPacket(0x4a);
+        }
     }
-
-    // TODO: requestFacilityData_EX1: 0x47?
 
     close() {
         if (this._openTimeout !== null) {
@@ -1087,6 +1117,10 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _handleMessage({ packetTypeId, data }: SimConnectMessage) {
+        if (!(packetTypeId in RecvID)) {
+            console.log('Unknown packet type id', packetTypeId, data);
+        }
+
         switch (packetTypeId) {
             case RecvID.ID_NULL:
                 break;
@@ -1172,6 +1206,9 @@ class SimConnectConnection extends EventEmitter {
             case RecvID.ID_EVENT_RACE_LAP:
                 this.emit('eventRaceLap', new RecvEventRaceLap(data));
                 break;
+            case RecvID.ID_EVENT_EX1:
+                this.emit('eventEx1', new RecvEventEx1(data));
+                break;
             case RecvID.ID_FACILITY_DATA:
                 this.emit('facilityData', new RecvFacilityData(data));
                 break;
@@ -1180,9 +1217,6 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_FACILITY_MINIMAL_LIST:
                 this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
-                break;
-            default:
-                console.log('Unknown packet type id', packetTypeId, data);
                 break;
         }
     }
@@ -1203,8 +1237,6 @@ class SimConnectConnection extends EventEmitter {
         this._clientSocket.write(data);
         // console.log("Sent " + ok + ": " + this.writeBuffer.buffer)
     }
-
-    /// ///////////////////////////////////
 
     private _open() {
         this._openTimeout = setTimeout(() => {
