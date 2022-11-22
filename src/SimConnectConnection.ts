@@ -87,7 +87,7 @@ const openPacketData: { [key in Protocol]: OpenPacketData } = {
         buildMinor: 0,
         alias: 'XSF',
     },
-    [Protocol.ASOBO]: {
+    [Protocol.KittyHawk]: {
         major: 11,
         minor: 0,
         buildMajor: 62651,
@@ -1074,7 +1074,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string) {
-        if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
         this._resetBuffer();
         this._writeBuffer.writeInt(dataDefinitionId);
         this._writeBuffer.writeString256(fieldName);
@@ -1088,7 +1088,7 @@ class SimConnectConnection extends EventEmitter {
         region?: string,
         type?: IcaoType
     ) {
-        if (this._ourProtocol < Protocol.ASOBO) throw Error(SimConnectError.BadVersion);
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
         this._resetBuffer();
         this._writeBuffer.writeInt(dataDefinitionId);
         this._writeBuffer.writeInt(dataRequestId);

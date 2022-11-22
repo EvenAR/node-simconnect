@@ -2,7 +2,7 @@ import { Protocol, open } from '../../dist';
 import { FacilityDataType } from '../../dist/enums/FacilityDataType';
 
 /**
- * Reading navigational data from an airport (ASOBO only)
+ * Reading navigational data from an airport (KittyHawk only)
  */
 
 const AIRPORT_ICAO = 'ENGM';
@@ -16,7 +16,7 @@ let requestId = 100;
 
 const DESIGNATOR_VALUE = ['', 'L', 'R', 'C', 'WATER', 'A', 'B', 'LAST'];
 
-open('SimConnect sample client', Protocol.ASOBO)
+open('SimConnect sample client', Protocol.KittyHawk)
     .then(({ recvOpen, handle }) => {
         console.log('Connected to sim!');
 

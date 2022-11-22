@@ -12,9 +12,9 @@ export enum Protocol {
      */
     FSX_SP2 = 0x4,
     /**
-     * MSFS
+     * MSFS / Asobo
      */
-    ASOBO = 0x5,
+    KittyHawk = 0x5,
 }
 
 module.exports = {
