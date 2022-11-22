@@ -56,12 +56,44 @@ import { RecvFacilityMinimalList } from './recv/RecvFacilityMinimalList';
 
 const RECEIVE_SIZE = 65536;
 
-enum SimConnectBuild {
-    SP0 = 60905,
-    SP1 = 61355,
-    SP2_XPACK = 61259,
-    ASOBO = 62651,
-}
+type OpenPacketData = {
+    major: number;
+    minor: number;
+    buildMajor: number;
+    buildMinor: number;
+    alias: string;
+};
+
+const openPacketData: { [key in Protocol]: OpenPacketData } = {
+    [Protocol.FSX_RTM]: {
+        major: 0,
+        minor: 0,
+        buildMajor: 60905,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.FSX_SP1]: {
+        major: 10,
+        minor: 0,
+        buildMajor: 61355,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.FSX_SP2]: {
+        major: 10,
+        minor: 0,
+        buildMajor: 61259,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.ASOBO]: {
+        major: 11,
+        minor: 0,
+        buildMajor: 62651,
+        buildMinor: 3,
+        alias: 'HK', // "Hawk" + "Kitty"?
+    },
+};
 
 interface SimConnectRecvEvents {
     open: (recvOpen: RecvOpen) => void;
@@ -118,7 +150,7 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _writeBuffer: RawBuffer;
 
-    private readonly _ourProtocol: number;
+    private readonly _ourProtocol: Protocol;
 
     private readonly _clientSocket: SimConnectSocket;
 
@@ -1180,36 +1212,21 @@ class SimConnectConnection extends EventEmitter {
             this.emit('error', Error('Open timeout'));
         }, 5000);
 
+        const version = openPacketData[this._ourProtocol];
+        if (!version) {
+            throw Error(SimConnectError.InvalidProtocol); // $NON-NLS-1$
+        }
+
         this._resetBuffer();
         this._writeBuffer.writeString256(this._appName);
         this._writeBuffer.writeInt(0);
         this._writeBuffer.writeByte(0x00);
-        this._writeBuffer.writeByte(0x58); // X
-        this._writeBuffer.writeByte(0x53); // S
-        this._writeBuffer.writeByte(0x46); // F
-        if (this._ourProtocol === 2) {
-            this._writeBuffer.writeInt(0); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP0); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else if (this._ourProtocol === 3) {
-            this._writeBuffer.writeInt(10); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP1); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else if (this._ourProtocol === 4) {
-            this._writeBuffer.writeInt(10); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP2_XPACK); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else if (this._ourProtocol === 5) {
-            this._writeBuffer.writeInt(11); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.ASOBO); // major build
-            this._writeBuffer.writeInt(3); // minor build
-        } else {
-            throw Error(SimConnectError.InvalidProtocol); // $NON-NLS-1$
-        }
+        this._writeBuffer.writeString(version.alias, 3);
+        this._writeBuffer.writeInt(version.major);
+        this._writeBuffer.writeInt(version.minor);
+        this._writeBuffer.writeInt(version.buildMajor);
+        this._writeBuffer.writeInt(version.buildMinor);
+
         this._sendPacket(0x01);
     }
 }
