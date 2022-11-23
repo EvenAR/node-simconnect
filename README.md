@@ -155,13 +155,17 @@ Prepar3D support and Prepar3D-only-features will not be prioritized.
 
 ### Facility
 
-| Method                                    | Implemented | Tested FSX | Tested P3D | Tested MSFS |
-| ----------------------------------------- | ----------- | ---------- | ---------- | ----------- |
-| `addToFacilityDefinition`                 | ✅          | n/a        | n/a        | ✅          |
-| `requestFacilitiesList` (including `Ex1`) | ✅          |            |            |             |
-| `requestFacilityData` (including `Ex1`)   | ✅          | n/a        | n/a        | ✅          |
-| `subscribeToFacilities`                   | ✅          | ✅         |            |             |
-| `unSubscribeToFacilities`                 | ✅          | ✅         |            |             |
+| Method                       | Implemented | Tested FSX | Tested P3D | Tested MSFS |
+| ---------------------------- | ----------- | ---------- | ---------- | ----------- |
+| `addToFacilityDefinition`    | ✅          | n/a        | n/a        | ✅          |
+| `requestFacilitiesList`      | ✅          |            |            |             |
+| `requestFacilitiesListEx1`   | ✅          | n/a        | n/a        | ✅          |
+| `requestFacilityData`        | ✅          | n/a        | n/a        | ✅          |
+| `requestFacilityDataEx1`     | ✅          | n/a        | n/a        | ✅          |
+| `subscribeToFacilities`      | ✅          | ✅         |            |             |
+| `subscribeToFacilitiesEx1`   | ✅          | n/a        | n/a        | ✅          |
+| `unSubscribeToFacilities`    | ✅          | ✅         |            |             |
+| `unSubscribeToFacilitiesEx1` | ✅          | n/a        | n/a        | ✅          |
 
 ### Menu
 
