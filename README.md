@@ -91,12 +91,9 @@ If no connection options are specified, node-simconnect will auto-discover conne
 
 ## Functionality
 
-node-simconnect is supposed to behave more or less in the same way as the offical SDK. Please refer to the
-[official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
-for a description of the methods below and how to use them.
+Most of the APIs described in the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) are implemented in `node-simconnect`. For information on how each feature works, please refer to the official documentation.
 
-The new Microsoft Flight Simulator has introduced some new features to the SimConnect ("KittyHawk") API and more features are likely to come. Most of these will only be implemented on demand if there are specific requests.
-Feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
+Several new features have been added to the SimConnect API after the new Microsoft Flight Simulator was released, and more features are likely to come. Most of these will only be implemented on request. If you are missing any features in `node-simconnect` feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
 
 Prepar3D support and Prepar3D-only-features will not be prioritized.
 
