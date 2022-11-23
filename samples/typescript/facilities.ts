@@ -1,4 +1,4 @@
-import { Protocol, open } from '../../dist';
+import { Protocol, open, FacilityListType } from '../../dist';
 import { FacilityDataType } from '../../dist/enums/FacilityDataType';
 
 /**
@@ -10,6 +10,11 @@ const AIRPORT_ICAO = 'ENGM';
 const enum DefinitionID {
     FACILITY_AIRPORT = 1000,
     FACILITY_VOR = 2000,
+}
+
+const enum REQUEST_ID {
+    NEW_AIRPORTS = 42,
+    OLD_AIRPORTS = 43,
 }
 
 let requestId = 100;
@@ -49,7 +54,13 @@ open('SimConnect sample client', Protocol.KittyHawk)
 
         handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'CLOSE AIRPORT'); // Close
 
+        // Request data
         handle.requestFacilityData(DefinitionID.FACILITY_AIRPORT, requestId++, AIRPORT_ICAO);
+        handle.subscribeToFacilitiesEx1(
+            FacilityListType.AIRPORT,
+            REQUEST_ID.NEW_AIRPORTS,
+            REQUEST_ID.OLD_AIRPORTS
+        );
 
         handle.on('facilityData', recvFacilityData => {
             switch (recvFacilityData.type) {
@@ -126,6 +137,17 @@ open('SimConnect sample client', Protocol.KittyHawk)
             console.log(
                 `Finished reading data for request ID: ` + recvFacilityDataEnd.userRequestId
             );
+        });
+
+        handle.on('airportList', recvWaypointList => {
+            switch (recvWaypointList.requestID) {
+                case REQUEST_ID.NEW_AIRPORTS:
+                    console.log('These airports appeared', recvWaypointList.aiports);
+                    break;
+                case REQUEST_ID.OLD_AIRPORTS:
+                    console.log('These airports disappeared', recvWaypointList.aiports);
+                    break;
+            }
         });
 
         handle.on('exception', exception => {

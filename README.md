@@ -95,8 +95,7 @@ node-simconnect is supposed to behave more or less in the same way as the offica
 [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm)
 for a description of the methods below and how to use them.
 
-The new Microsoft Flight Simulator has introduced some new features to the SimConnect ("KittyHawk") API, and even
-more features are likely to come. Most of these will only be implemented on demand if there are specific requests.
+The new Microsoft Flight Simulator has introduced some new features to the SimConnect ("KittyHawk") API and more features are likely to come. Most of these will only be implemented on demand if there are specific requests.
 Feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
 
 Prepar3D support and Prepar3D-only-features will not be prioritized.

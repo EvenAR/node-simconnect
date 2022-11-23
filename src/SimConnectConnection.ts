@@ -1032,6 +1032,20 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x41);
     }
 
+    subscribeToFacilitiesEx1(
+        type: FacilityListType,
+        newElemInRangeRequestID: DataRequestId,
+        oldElemOutRangeRequestID: DataRequestId
+    ) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(newElemInRangeRequestID);
+        this._writeBuffer.writeInt(oldElemOutRangeRequestID);
+        this._sendPacket(0x47);
+    }
+
     unSubscribeToFacilities(type: FacilityListType) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1041,12 +1055,34 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x42);
     }
 
+    unSubscribeToFacilitiesEx1(
+        type: FacilityListType,
+        unsubscribeNewInRange: boolean,
+        unsubscribeOldOutRange: boolean
+    ) {
+        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeString(unsubscribeNewInRange ? '1' : '0', 1);
+        this._writeBuffer.writeString(unsubscribeOldOutRange ? '1' : '0', 1);
+        this._sendPacket(0x48);
+    }
+
     requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
         this._resetBuffer();
         this._writeBuffer.writeInt(type);
         this._writeBuffer.writeInt(clientEventId);
         this._sendPacket(0x43);
+    }
+
+    requestFacilitiesListEx1(type: FacilityListType, clientEventId: ClientEventId) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(clientEventId);
+        this._sendPacket(0x49);
     }
 
     transmitClientEventEx(
@@ -1223,19 +1259,20 @@ class SimConnectConnection extends EventEmitter {
 
     private _resetBuffer() {
         this._writeBuffer.clear();
-        this._writeBuffer.setOffset(16);
+        this._writeBuffer.setOffset(16); // Bytes 0-16 are for the packet header
     }
 
     private _sendPacket(type: number) {
-        // finalize packet
         const packetSize = this._writeBuffer.getOffset();
-        this._writeBuffer.writeInt(packetSize, 0); // size
+
+        // Replace byte 0-16 with package header
+        this._writeBuffer.writeInt(packetSize, 0);
         this._writeBuffer.writeInt(this._ourProtocol, 4);
         this._writeBuffer.writeInt(0xf0000000 | type, 8);
         this._writeBuffer.writeInt(this._packetsSent++, 12);
+
         const data = this._writeBuffer.getBuffer();
         this._clientSocket.write(data);
-        // console.log("Sent " + ok + ": " + this.writeBuffer.buffer)
     }
 
     private _open() {
