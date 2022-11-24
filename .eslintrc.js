@@ -26,6 +26,7 @@ module.exports = {
         'plugin:prettier/recommended',
     ],
     rules: {
+        '@typescript-eslint/switch-exhaustiveness-check': 'error',
         '@typescript-eslint/no-unused-vars': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         'import/extensions': [
@@ -44,5 +45,6 @@ module.exports = {
         'no-underscore-dangle': 'off',
         '@typescript-eslint/ban-ts-comment': 'off',
         'no-inline-comments': 'off',
+        'default-case': 'warn',
     },
 };

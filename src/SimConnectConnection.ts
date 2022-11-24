@@ -5,7 +5,7 @@ import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
 import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { InitPosition, SimConnectData } from './dto';
+import { IcaoType, InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
@@ -50,14 +50,51 @@ import {
     ObjectId,
 } from './Types';
 import Timeout = NodeJS.Timeout;
+import { RecvFacilityData } from './recv/RecvFacilityData';
+import { RecvFacilityDataEnd } from './recv/RecvFacilityDataEnd';
+import { RecvFacilityMinimalList } from './recv/RecvFacilityMinimalList';
+import { RecvEventEx1 } from './recv/RecvEventEx1';
 
 const RECEIVE_SIZE = 65536;
 
-enum SimConnectBuild {
-    SP0 = 60905,
-    SP1 = 61355,
-    SP2_XPACK = 61259,
-}
+type OpenPacketData = {
+    major: number;
+    minor: number;
+    buildMajor: number;
+    buildMinor: number;
+    alias: string;
+};
+
+const openPacketData: { [key in Protocol]: OpenPacketData } = {
+    [Protocol.FSX_RTM]: {
+        major: 0,
+        minor: 0,
+        buildMajor: 60905,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.FSX_SP1]: {
+        major: 10,
+        minor: 0,
+        buildMajor: 61355,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.FSX_SP2]: {
+        major: 10,
+        minor: 0,
+        buildMajor: 61259,
+        buildMinor: 0,
+        alias: 'XSF',
+    },
+    [Protocol.KittyHawk]: {
+        major: 11,
+        minor: 0,
+        buildMajor: 62651,
+        buildMinor: 3,
+        alias: 'HK', // "Hawk" + "Kitty"?
+    },
+};
 
 interface SimConnectRecvEvents {
     open: (recvOpen: RecvOpen) => void;
@@ -66,6 +103,7 @@ interface SimConnectRecvEvents {
     quit: () => void;
     exception: (recvException: RecvException) => void;
     event: (recvEvent: RecvEvent) => void;
+    eventEx1: (recvEvent: RecvEventEx1) => void;
     airportList: (recvAirportList: RecvAirportList) => void;
     vorList: (recvVORList: RecvVORList) => void;
     ndbList: (recvNDBList: RecvNDBList) => void;
@@ -88,6 +126,9 @@ interface SimConnectRecvEvents {
     eventMultiplayerSessionEnded: () => void;
     eventRaceEnd: (recvEventRaceEnd: RecvEventRaceEnd) => void;
     eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
+    facilityData: (recvFacilityData: RecvFacilityData) => void;
+    facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
+    facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
 }
 
 type ConnectionOptions =
@@ -111,7 +152,7 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _writeBuffer: RawBuffer;
 
-    private readonly _ourProtocol: number;
+    private readonly _ourProtocol: Protocol;
 
     private readonly _clientSocket: SimConnectSocket;
 
@@ -981,15 +1022,6 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x40);
     }
 
-    requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
-        // ID 0x43
-        this._resetBuffer();
-        this._writeBuffer.writeInt(type);
-        this._writeBuffer.writeInt(clientEventId);
-        this._sendPacket(0x43);
-    }
-
     subscribeToFacilities(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1000,6 +1032,20 @@ class SimConnectConnection extends EventEmitter {
         this._sendPacket(0x41);
     }
 
+    subscribeToFacilitiesEx1(
+        type: FacilityListType,
+        newElemInRangeRequestID: DataRequestId,
+        oldElemOutRangeRequestID: DataRequestId
+    ) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(newElemInRangeRequestID);
+        this._writeBuffer.writeInt(oldElemOutRangeRequestID);
+        this._sendPacket(0x47);
+    }
+
     unSubscribeToFacilities(type: FacilityListType) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1007,6 +1053,91 @@ class SimConnectConnection extends EventEmitter {
         this._resetBuffer();
         this._writeBuffer.writeInt(type);
         this._sendPacket(0x42);
+    }
+
+    unSubscribeToFacilitiesEx1(
+        type: FacilityListType,
+        unsubscribeNewInRange: boolean,
+        unsubscribeOldOutRange: boolean
+    ) {
+        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeString(unsubscribeNewInRange ? '1' : '0', 1);
+        this._writeBuffer.writeString(unsubscribeOldOutRange ? '1' : '0', 1);
+        this._sendPacket(0x48);
+    }
+
+    requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
+        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(clientEventId);
+        this._sendPacket(0x43);
+    }
+
+    requestFacilitiesListEx1(type: FacilityListType, clientEventId: ClientEventId) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._resetBuffer();
+        this._writeBuffer.writeInt(type);
+        this._writeBuffer.writeInt(clientEventId);
+        this._sendPacket(0x49);
+    }
+
+    transmitClientEventEx(
+        objectId: ObjectId,
+        clientEventId: ClientEventId,
+        notificationGroupId: NotificationGroupId,
+        flags: EventFlag,
+        data0 = 0,
+        data1 = 0,
+        data2 = 0,
+        data3 = 0,
+        data4 = 0
+    ) {
+        this._resetBuffer();
+        this._writeBuffer.writeInt(objectId);
+        this._writeBuffer.writeInt(clientEventId);
+        this._writeBuffer.writeInt(notificationGroupId);
+        this._writeBuffer.writeInt(flags);
+        this._writeBuffer.writeInt(data0);
+        this._writeBuffer.writeInt(data1);
+        this._writeBuffer.writeInt(data2);
+        this._writeBuffer.writeInt(data3);
+        this._writeBuffer.writeInt(data4);
+        this._sendPacket(0x44);
+    }
+
+    addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._resetBuffer();
+        this._writeBuffer.writeInt(dataDefinitionId);
+        this._writeBuffer.writeString256(fieldName);
+        this._sendPacket(0x45);
+    }
+
+    requestFacilityData(
+        dataDefinitionId: DataDefinitionId,
+        dataRequestId: DataRequestId,
+        icao: string,
+        region?: string,
+        type?: IcaoType
+    ) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._resetBuffer();
+        this._writeBuffer.writeInt(dataDefinitionId);
+        this._writeBuffer.writeInt(dataRequestId);
+        this._writeBuffer.writeString(icao, 16);
+        this._writeBuffer.writeString(region || '', 4);
+        if (type === undefined) {
+            // SimConnect_RequestFacilityData
+            this._sendPacket(0x46);
+        } else {
+            // SimConnect_RequestFacilityData_EX1
+            this._writeBuffer.writeString(type, 1);
+            this._sendPacket(0x4a);
+        }
     }
 
     close() {
@@ -1022,6 +1153,10 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _handleMessage({ packetTypeId, data }: SimConnectMessage) {
+        if (!(packetTypeId in RecvID)) {
+            console.log('Unknown packet type id', packetTypeId, data);
+        }
+
         switch (packetTypeId) {
             case RecvID.ID_NULL:
                 break;
@@ -1107,30 +1242,38 @@ class SimConnectConnection extends EventEmitter {
             case RecvID.ID_EVENT_RACE_LAP:
                 this.emit('eventRaceLap', new RecvEventRaceLap(data));
                 break;
-            default:
-                console.log('UNK', data);
+            case RecvID.ID_EVENT_EX1:
+                this.emit('eventEx1', new RecvEventEx1(data));
+                break;
+            case RecvID.ID_FACILITY_DATA:
+                this.emit('facilityData', new RecvFacilityData(data));
+                break;
+            case RecvID.ID_FACILITY_DATA_END:
+                this.emit('facilityDataEnd', new RecvFacilityDataEnd(data));
+                break;
+            case RecvID.ID_FACILITY_MINIMAL_LIST:
+                this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
                 break;
         }
     }
 
     private _resetBuffer() {
         this._writeBuffer.clear();
-        this._writeBuffer.setOffset(16);
+        this._writeBuffer.setOffset(16); // Bytes 0-16 are for the packet header
     }
 
     private _sendPacket(type: number) {
-        // finalize packet
         const packetSize = this._writeBuffer.getOffset();
-        this._writeBuffer.writeInt(packetSize, 0); // size
+
+        // Replace byte 0-16 with package header
+        this._writeBuffer.writeInt(packetSize, 0);
         this._writeBuffer.writeInt(this._ourProtocol, 4);
         this._writeBuffer.writeInt(0xf0000000 | type, 8);
         this._writeBuffer.writeInt(this._packetsSent++, 12);
+
         const data = this._writeBuffer.getBuffer();
         this._clientSocket.write(data);
-        // console.log("Sent " + ok + ": " + this.writeBuffer.buffer)
     }
-
-    /// ///////////////////////////////////
 
     private _open() {
         this._openTimeout = setTimeout(() => {
@@ -1138,31 +1281,21 @@ class SimConnectConnection extends EventEmitter {
             this.emit('error', Error('Open timeout'));
         }, 5000);
 
+        const version = openPacketData[this._ourProtocol];
+        if (!version) {
+            throw Error(SimConnectError.InvalidProtocol); // $NON-NLS-1$
+        }
+
         this._resetBuffer();
         this._writeBuffer.writeString256(this._appName);
         this._writeBuffer.writeInt(0);
         this._writeBuffer.writeByte(0x00);
-        this._writeBuffer.writeByte(0x58); // X
-        this._writeBuffer.writeByte(0x53); // S
-        this._writeBuffer.writeByte(0x46); // F
-        if (this._ourProtocol === 2) {
-            this._writeBuffer.writeInt(0); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP0); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else if (this._ourProtocol === 3) {
-            this._writeBuffer.writeInt(10); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP1); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else if (this._ourProtocol === 4) {
-            this._writeBuffer.writeInt(10); // major version
-            this._writeBuffer.writeInt(0); // minor version
-            this._writeBuffer.writeInt(SimConnectBuild.SP2_XPACK); // major build
-            this._writeBuffer.writeInt(0); // minor build
-        } else {
-            throw Error(SimConnectError.InvalidProtocol); // $NON-NLS-1$
-        }
+        this._writeBuffer.writeString(version.alias, 3);
+        this._writeBuffer.writeInt(version.major);
+        this._writeBuffer.writeInt(version.minor);
+        this._writeBuffer.writeInt(version.buildMajor);
+        this._writeBuffer.writeInt(version.buildMinor);
+
         this._sendPacket(0x01);
     }
 }

@@ -33,6 +33,11 @@ enum RecvID {
     ID_EVENT_MULTIPLAYER_SESSION_ENDED,
     ID_EVENT_RACE_END,
     ID_EVENT_RACE_LAP,
+    // KittyHawk:
+    ID_EVENT_EX1,
+    ID_FACILITY_DATA,
+    ID_FACILITY_DATA_END,
+    ID_FACILITY_MINIMAL_LIST,
 }
 
 interface SimConnectMessage {
