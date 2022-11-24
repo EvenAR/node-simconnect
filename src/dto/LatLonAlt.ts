@@ -14,8 +14,11 @@ class LatLonAlt implements SimConnectData {
         this.altitude = buffer.readDouble();
     }
 
-    // eslint-disable-next-line
-    write(buffer: RawBuffer) {}
+    write(buffer: RawBuffer) {
+        buffer.writeDouble(this.latitude);
+        buffer.writeDouble(this.longitude);
+        buffer.writeDouble(this.altitude);
+    }
 }
 
 export { LatLonAlt };

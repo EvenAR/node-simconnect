@@ -385,10 +385,12 @@ class SimConnectConnection extends EventEmitter {
         if (data instanceof Array) {
             this._writeBuffer.writeInt(DataSetFlag.DEFAULT);
             this._writeBuffer.writeInt(data.length);
-            this._writeBuffer.writeInt(0); // size
+            // Create placeholder for total array size:
+            this._writeBuffer.writeInt(0);
             data.forEach(simConnectData => {
                 simConnectData.write(this._writeBuffer);
             });
+            // Replace placeholder with actual size:
             this._writeBuffer.writeInt(this._writeBuffer.getOffset() - 36, 32);
         } else {
             const { tagged, arrayCount, buffer } = data;
