@@ -385,13 +385,14 @@ class SimConnectConnection extends EventEmitter {
         if (data instanceof Array) {
             this._writeBuffer.writeInt(DataSetFlag.DEFAULT);
             this._writeBuffer.writeInt(data.length);
-            this._writeBuffer.writeInt(0); // Just a placeholder for array size
+            this._writeBuffer.writeInt(0); // Just a placeholder for array unit size
             const arrayStartPos = this._writeBuffer.getOffset();
             data.forEach(simConnectData => {
                 simConnectData.write(this._writeBuffer);
             });
             const arrayTotalSize = this._writeBuffer.getOffset() - arrayStartPos;
-            this._writeBuffer.writeInt(arrayTotalSize, arrayStartPos - 4); // Replace placeholder
+            const unitSize = arrayTotalSize / data.length;
+            this._writeBuffer.writeInt(unitSize, arrayStartPos - 4); // Replace placeholder
         } else {
             const { tagged, arrayCount, buffer } = data;
             this._writeBuffer.writeInt(tagged ? DataSetFlag.TAGGED : DataSetFlag.DEFAULT);
