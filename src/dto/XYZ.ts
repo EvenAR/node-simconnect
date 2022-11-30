@@ -14,8 +14,11 @@ class XYZ implements SimConnectData {
         this.z = buffer.readDouble();
     }
 
-    // eslint-disable-next-line
-    write(buffer: RawBuffer) {}
+    write(buffer: RawBuffer) {
+        buffer.writeDouble(this.x);
+        buffer.writeDouble(this.y);
+        buffer.writeDouble(this.z);
+    }
 }
 
 export { XYZ };

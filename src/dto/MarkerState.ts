@@ -11,8 +11,10 @@ class MarkerState implements SimConnectData {
         this.markerState = buffer.readInt() !== 0;
     }
 
-    // eslint-disable-next-line
-    write(buffer: RawBuffer) {}
+    write(buffer: RawBuffer) {
+        buffer.writeString64(this.markerName);
+        buffer.writeInt(this.markerState === true ? 1 : 0);
+    }
 }
 
 export { MarkerState };
