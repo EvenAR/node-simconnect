@@ -13,6 +13,9 @@ async function findSimConnectPortIPv4(): Promise<number> {
             'HKCU\\Software\\Microsoft\\Microsoft Games\\Flight Simulator',
             'SimConnect_Port_IPv4'
         );
+        if (!port) {
+            throw new Error('Could not find SimConnect_Port_IPv4 in the Windows registry');
+        }
         return parseInt(port, 10);
     } catch {
         return 2048;
