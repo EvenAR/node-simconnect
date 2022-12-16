@@ -169,9 +169,10 @@ function makeString(bf: ByteBuffer, expectedLength: number) {
 
 function putString(bf: ByteBuffer, s: string | null, fixed: number) {
     const value = s === null ? '' : s;
-    bf.writeString(value);
-    if (value.length < fixed) {
-        for (let i = 0; i < fixed - value.length; i++) {
+    const bytes = Buffer.from(value, 'binary');
+    bf.append(bytes);
+    if (bytes.length < fixed) {
+        for (let i = 0; i < fixed - bytes.length; i++) {
             bf.writeByte(0x00);
         }
     }

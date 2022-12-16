@@ -154,7 +154,7 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _ourProtocol: Protocol;
 
-    private readonly _clientSocket: SimConnectSocket;
+    _clientSocket: SimConnectSocket;
 
     private _openTimeout: null | Timeout;
 
