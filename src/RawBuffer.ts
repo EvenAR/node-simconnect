@@ -53,8 +53,8 @@ class RawBuffer {
         this.buffer.writeInt32(value, offset);
     }
 
-    readLong(): Long {
-        return this.buffer.readInt64();
+    readLong(): number {
+        return this.buffer.readInt64().toNumber();
     }
 
     writeLong(value: number) {
