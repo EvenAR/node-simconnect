@@ -169,7 +169,7 @@ function makeString(bf: ByteBuffer, expectedLength: number) {
 
 function putString(bf: ByteBuffer, s: string | null, fixed: number) {
     const value = s === null ? '' : s;
-    const bytes = Buffer.from(value, 'binary');
+    const bytes = Buffer.from(value, 'utf-8');
     bf.append(bytes);
     if (bytes.length < fixed) {
         for (let i = 0; i < fixed - bytes.length; i++) {
