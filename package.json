@@ -1,6 +1,6 @@
 {
   "name": "node-simconnect",
-  "version": "3.2.1-beta.2",
+  "version": "3.2.1-beta.5",
   "description": "A SimConnect client library for Node.JS.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -37,6 +37,8 @@
   "devDependencies": {
     "@microsoft/api-documenter": "^7.19.10",
     "@microsoft/api-extractor": "^7.30.0",
+    "@types/bytebuffer": "^5.0.44",
+    "@types/debug": "^4.1.7",
     "@types/ini": "^1.3.30",
     "@types/jest": "^29.2.4",
     "@typescript-eslint/eslint-plugin": "^5.26.0",
@@ -58,9 +60,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "@types/bytebuffer": "^5.0.42",
-    "@types/debug": "^4.1.7",
-    "@types/node": "^14.14.14",
+    "@types/node": "*",
     "bytebuffer": "^5.0.1",
     "debug": "^4.3.4",
     "ini": "^2.0.0",
