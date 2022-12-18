@@ -53,8 +53,8 @@ class RawBuffer {
         this.buffer.writeInt32(value, offset);
     }
 
-    readLong(): Long {
-        return this.buffer.readInt64();
+    readLong(): number {
+        return this.buffer.readInt64().toNumber();
     }
 
     writeLong(value: number) {
@@ -169,9 +169,10 @@ function makeString(bf: ByteBuffer, expectedLength: number) {
 
 function putString(bf: ByteBuffer, s: string | null, fixed: number) {
     const value = s === null ? '' : s;
-    bf.writeString(value);
-    if (value.length < fixed) {
-        for (let i = 0; i < fixed - value.length; i++) {
+    const bytes = Buffer.from(value, 'utf-8');
+    bf.append(bytes);
+    if (bytes.length < fixed) {
+        for (let i = 0; i < fixed - bytes.length; i++) {
             bf.writeByte(0x00);
         }
     }
