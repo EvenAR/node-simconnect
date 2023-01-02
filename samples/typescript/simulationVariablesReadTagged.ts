@@ -6,7 +6,7 @@ import {
     SimConnectDataType,
     SimConnectPeriod,
 } from '../../dist';
-import { DataRequestFlag } from '../../dist/flags/DataRequestFlag';
+import { DataRequestFlag } from '../../dist';
 
 const enum DefinitionID {
     LIVE_DATA,
@@ -78,11 +78,10 @@ open('My app', Protocol.FSX_SP2)
             DefinitionID.LIVE_DATA,
             SimConnectConstants.OBJECT_ID_USER,
             SimConnectPeriod.SIM_FRAME,
-            DataRequestFlag.DATA_REQUEST_FLAG_CHANGED |
-                DataRequestFlag.DATA_REQUEST_FLAG_TAGGED
+            DataRequestFlag.DATA_REQUEST_FLAG_CHANGED | DataRequestFlag.DATA_REQUEST_FLAG_TAGGED
         );
 
-        handle.on('simObjectData', (recvSimObjectData) => {
+        handle.on('simObjectData', recvSimObjectData => {
             if (recvSimObjectData.requestID === RequestID.LIVE_DATA) {
                 let counter = 0;
 
@@ -96,9 +95,7 @@ open('My app', Protocol.FSX_SP2)
                     switch (datumId) {
                         case Tag.LAT_LON_ALT:
                             {
-                                const value = readLatLonAlt(
-                                    recvSimObjectData.data
-                                );
+                                const value = readLatLonAlt(recvSimObjectData.data);
                                 console.log('Position', value);
                             }
                             break;
@@ -135,6 +132,6 @@ open('My app', Protocol.FSX_SP2)
             }
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });

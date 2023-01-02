@@ -71,7 +71,7 @@ open('My app', Protocol.FSX_SP2)
             SimConnectPeriod.SIM_FRAME
         );
 
-        handle.on('simObjectData', (recvSimObjectData) => {
+        handle.on('simObjectData', recvSimObjectData => {
             if (recvSimObjectData.requestID === RequestID.LIVE_DATA) {
                 console.log({
                     // Read order is important
@@ -84,12 +84,12 @@ open('My app', Protocol.FSX_SP2)
             }
         });
 
-        handle.on('event', (recvEvent) => {
+        handle.on('event', recvEvent => {
             if (recvEvent.clientEventId === EventID.PAUSE) {
                 console.log(recvEvent.data === 1 ? 'Paused' : 'Unpaused');
             }
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });

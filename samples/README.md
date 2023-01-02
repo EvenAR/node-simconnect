@@ -3,5 +3,5 @@
 Running a sample:
 
 ```
-npx ts-node .\samples\typescript\simulationVariables.ts
+npx ts-node .\samples\typescript\simulationVariablesRead.ts
 ```
