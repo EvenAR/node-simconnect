@@ -9,7 +9,7 @@ import {
 const AIRCRAFT_DATA_REQUEST = 0;
 const AIRCRAFT_DATA_DEFINITION = 0;
 
-open('My app', Protocol.FSX_SP2).then((recv) => {
+open('My app', Protocol.FSX_SP2).then(recv => {
     console.log('Connected to', recv.recvOpen.applicationName);
 
     recv.handle.addToDataDefinition(
@@ -64,9 +64,9 @@ open('My app', Protocol.FSX_SP2).then((recv) => {
         0
     );
 
-    recv.handle.on('simObjectData', (recvSimObjectData) => {
-        console.log(`Lat: "${recvSimObjectData.data.readDouble()}"`);
-        console.log(`Lng: "${recvSimObjectData.data.readDouble()}"`);
+    recv.handle.on('simObjectData', recvSimObjectData => {
+        console.log(`Lat: "${recvSimObjectData.data.readFloat64()}"`);
+        console.log(`Lng: "${recvSimObjectData.data.readFloat64()}"`);
         console.log(`Type: "${recvSimObjectData.data.readStringV()}"`);
         console.log(`Title: "${recvSimObjectData.data.readStringV()}"`);
         console.log(`ATC ID: "${recvSimObjectData.data.readString32()}"`);

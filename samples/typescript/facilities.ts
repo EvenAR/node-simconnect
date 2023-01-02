@@ -66,26 +66,26 @@ open('SimConnect sample client', Protocol.KittyHawk)
             switch (recvFacilityData.type) {
                 case FacilityDataType.AIRPORT:
                     // Reading order is important!
-                    const lat = recvFacilityData.data.readDouble();
-                    const lng = recvFacilityData.data.readDouble();
-                    const alt = recvFacilityData.data.readDouble();
-                    const magvar = recvFacilityData.data.readFloat();
+                    const lat = recvFacilityData.data.readFloat64();
+                    const lng = recvFacilityData.data.readFloat64();
+                    const alt = recvFacilityData.data.readFloat64();
+                    const magvar = recvFacilityData.data.readFloat32();
                     const name = recvFacilityData.data.readString32();
-                    const nRunways = recvFacilityData.data.readInt();
+                    const nRunways = recvFacilityData.data.readInt32();
                     console.log({ lat, lng, alt, magvar, name, nRunways });
                     break;
                 case FacilityDataType.RUNWAY:
                     // Reading order is important!
-                    const number1 = recvFacilityData.data.readInt();
-                    const designator1 = recvFacilityData.data.readInt();
+                    const number1 = recvFacilityData.data.readInt32();
+                    const designator1 = recvFacilityData.data.readInt32();
                     const ilsIcao1 = recvFacilityData.data.readString8();
                     const ilsRegion1 = recvFacilityData.data.readString8();
-                    const number2 = recvFacilityData.data.readInt();
-                    const designator2 = recvFacilityData.data.readInt();
+                    const number2 = recvFacilityData.data.readInt32();
+                    const designator2 = recvFacilityData.data.readInt32();
                     const ilsIcao2 = recvFacilityData.data.readString8();
                     const ilsRegion2 = recvFacilityData.data.readString8();
 
-                    const heading = recvFacilityData.data.readFloat();
+                    const heading = recvFacilityData.data.readFloat32();
 
                     console.log({
                         runway:
@@ -118,8 +118,8 @@ open('SimConnect sample client', Protocol.KittyHawk)
                     break;
                 case FacilityDataType.VOR:
                     const vorName = recvFacilityData.data.readString64();
-                    const frequency = recvFacilityData.data.readInt() / 1_000_000;
-                    const localizer = recvFacilityData.data.readFloat();
+                    const frequency = recvFacilityData.data.readInt32() / 1_000_000;
+                    const localizer = recvFacilityData.data.readFloat32();
                     console.log({
                         vorName,
                         frequency,

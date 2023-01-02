@@ -21,13 +21,13 @@ export class RecvSimObjectData {
 
     constructor(data: RawBuffer) {
         // data.skip(8)
-        this.requestID = data.readInt() as DataRequestId;
-        this.objectID = data.readInt() as ObjectId;
-        this.defineID = data.readInt() as DataDefinitionId;
-        this.flags = data.readInt() as DataRequestFlag;
-        this.entryNumber = data.readInt();
-        this.outOf = data.readInt();
-        this.defineCount = data.readInt();
+        this.requestID = data.readInt32() as DataRequestId;
+        this.objectID = data.readInt32() as ObjectId;
+        this.defineID = data.readInt32() as DataDefinitionId;
+        this.flags = data.readInt32() as DataRequestFlag;
+        this.entryNumber = data.readInt32();
+        this.outOf = data.readInt32();
+        this.defineCount = data.readInt32();
         this.data = data;
     }
 }

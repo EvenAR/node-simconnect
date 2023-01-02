@@ -6,6 +6,6 @@ export class FacilityWaypoint extends FacilityAirport {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.magVar = data.readFloat();
+        this.magVar = data.readFloat32();
     }
 }

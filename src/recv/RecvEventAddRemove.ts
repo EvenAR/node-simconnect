@@ -7,6 +7,6 @@ export class RecvEventAddRemove extends RecvEvent {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.type = data.readInt();
+        this.type = data.readInt32();
     }
 }

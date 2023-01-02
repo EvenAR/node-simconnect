@@ -7,7 +7,7 @@ export class RecvAssignedObjectID {
     objectID: ObjectId;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt() as DataRequestId;
-        this.objectID = data.readInt() as ObjectId;
+        this.requestID = data.readInt32() as DataRequestId;
+        this.objectID = data.readInt32() as ObjectId;
     }
 }

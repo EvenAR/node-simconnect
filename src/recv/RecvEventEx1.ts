@@ -10,14 +10,14 @@ export class RecvEventEx1 {
     data: [number, number, number, number, number];
 
     constructor(data: RawBuffer) {
-        this.groupID = data.readInt() as NotificationGroupId;
-        this.clientEventId = data.readInt() as ClientEventId;
+        this.groupID = data.readInt32() as NotificationGroupId;
+        this.clientEventId = data.readInt32() as ClientEventId;
         this.data = [
-            data.readInt(),
-            data.readInt(),
-            data.readInt(),
-            data.readInt(),
-            data.readInt(),
+            data.readInt32(),
+            data.readInt32(),
+            data.readInt32(),
+            data.readInt32(),
+            data.readInt32(),
         ];
     }
 }

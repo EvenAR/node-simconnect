@@ -45,37 +45,61 @@ class RawBuffer {
         return bytes.toBuffer();
     }
 
-    readInt(): number {
+    readInt32(): number {
         return this.buffer.readInt32();
     }
 
-    writeInt(value: number, offset?: number) {
+    /** @deprecated use readInt32() instead */
+    readInt = this.readInt32;
+
+    writeInt32(value: number, offset?: number) {
         this.buffer.writeInt32(value, offset);
     }
 
-    readLong(): number {
+    /** @deprecated use writeInt32() instead */
+    writeInt = this.writeInt32;
+
+    readInt64(): number {
         return this.buffer.readInt64().toNumber();
     }
 
-    writeLong(value: number) {
+    /** @deprecated use readInt64() instead */
+    readLong = this.readInt64;
+
+    writeInt64(value: number) {
         this.buffer.writeInt64(value);
     }
 
-    readFloat(): number {
+    /** @deprecated use writeInt64() instead */
+    writeLong = this.writeInt64;
+
+    readFloat32(): number {
         return this.buffer.readFloat32();
     }
 
-    writeFloat(value: number) {
+    /** @deprecated use readFloat32() instead */
+    readFloat = this.readFloat32;
+
+    writeFloat32(value: number) {
         this.buffer.writeFloat32(value);
     }
 
-    readDouble() {
+    /** @deprecated use writeFloat32() instead */
+    writeFloat = this.writeFloat32;
+
+    readFloat64() {
         return this.buffer.readFloat64();
     }
 
-    writeDouble(value: number) {
+    /** @deprecated use readFloat64() instead */
+    readDouble = this.readFloat64;
+
+    writeFloat64(value: number) {
         this.buffer.writeFloat64(value);
     }
+
+    /** @deprecated use writeFloat64() instead */
+    writeDouble = this.writeFloat64;
 
     writeString(value: string, fixedLength?: number) {
         putString(this.buffer, value, fixedLength || value.length);

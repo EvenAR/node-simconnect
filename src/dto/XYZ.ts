@@ -9,15 +9,15 @@ class XYZ implements SimConnectData {
     z = 0;
 
     read(buffer: RawBuffer) {
-        this.x = buffer.readDouble();
-        this.y = buffer.readDouble();
-        this.z = buffer.readDouble();
+        this.x = buffer.readFloat64();
+        this.y = buffer.readFloat64();
+        this.z = buffer.readFloat64();
     }
 
     write(buffer: RawBuffer) {
-        buffer.writeDouble(this.x);
-        buffer.writeDouble(this.y);
-        buffer.writeDouble(this.z);
+        buffer.writeFloat64(this.x);
+        buffer.writeFloat64(this.y);
+        buffer.writeFloat64(this.z);
     }
 }
 

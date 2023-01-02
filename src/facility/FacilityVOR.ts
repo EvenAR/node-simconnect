@@ -24,12 +24,12 @@ export class FacilityVOR extends FacilityNDB {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.flags = data.readInt();
-        this.localizer = data.readFloat();
-        this.glideLat = data.readDouble();
-        this.glideLon = data.readDouble();
-        this.glideAlt = data.readDouble();
-        this.glideSlipeAngle = data.readFloat();
+        this.flags = data.readInt32();
+        this.localizer = data.readFloat32();
+        this.glideLat = data.readFloat64();
+        this.glideLon = data.readFloat64();
+        this.glideAlt = data.readFloat64();
+        this.glideSlipeAngle = data.readFloat32();
     }
 
     hasFlag(flag: number): boolean {

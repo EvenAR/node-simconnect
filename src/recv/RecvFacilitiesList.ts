@@ -11,9 +11,9 @@ export class RecvFacilitiesList {
     outOf: number;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt() as DataRequestId;
-        this.arraySize = data.readInt();
-        this.entryNumber = data.readInt();
-        this.outOf = data.readInt();
+        this.requestID = data.readInt32() as DataRequestId;
+        this.arraySize = data.readInt32();
+        this.entryNumber = data.readInt32();
+        this.outOf = data.readInt32();
     }
 }

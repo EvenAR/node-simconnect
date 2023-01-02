@@ -9,8 +9,8 @@ export class RecvCloudState {
     data: number[][];
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt() as DataRequestId;
-        this.arraySize = data.readInt();
+        this.requestID = data.readInt32() as DataRequestId;
+        this.arraySize = data.readInt32();
         this.data = [];
         // Read 2D-array of 64x64 bytes
         for (let i = 0; i < 64; i++) {

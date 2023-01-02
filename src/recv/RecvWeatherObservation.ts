@@ -7,7 +7,7 @@ export class RecvWeatherObservation {
     metar: string;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt() as DataRequestId;
+        this.requestID = data.readInt32() as DataRequestId;
         this.metar = data.readStringV();
     }
 }

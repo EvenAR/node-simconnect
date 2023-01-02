@@ -35,11 +35,9 @@ open('My app', Protocol.FSX_SP2)
             SimConnectPeriod.SECOND
         );
 
-        handle.on('simObjectData', (recvSimObjectData) => {
+        handle.on('simObjectData', recvSimObjectData => {
             if (recvSimObjectData.requestID === RequestID.MY_POSITION) {
-                const aircraftDetails = readAircraftPosition(
-                    recvSimObjectData.data
-                );
+                const aircraftDetails = readAircraftPosition(recvSimObjectData.data);
                 client?.send(
                     JSON.stringify({
                         type: 'myPosition',
@@ -57,11 +55,9 @@ open('My app', Protocol.FSX_SP2)
             }
         });
 
-        handle.on('simObjectDataByType', (recvSimObjectData) => {
+        handle.on('simObjectDataByType', recvSimObjectData => {
             if (recvSimObjectData.requestID === RequestID.NEARBY_AIRCRAFT) {
-                const aircraftDetails = readAircraftPosition(
-                    recvSimObjectData.data
-                );
+                const aircraftDetails = readAircraftPosition(recvSimObjectData.data);
                 client?.send(
                     JSON.stringify({
                         type: 'traffic',
@@ -71,7 +67,7 @@ open('My app', Protocol.FSX_SP2)
             }
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });
 
@@ -123,9 +119,9 @@ function registerAircraftDetailsDefinition(handle: ConnectionHandle) {
 function readAircraftPosition(rawBuffer: RawBuffer) {
     return {
         // Read order is important
-        lat: rawBuffer.readDouble(),
-        lng: rawBuffer.readDouble(),
-        altitude: rawBuffer.readInt(),
+        lat: rawBuffer.readFloat64(),
+        lng: rawBuffer.readFloat64(),
+        altitude: rawBuffer.readInt32(),
         model: rawBuffer.readString(32),
         id: rawBuffer.readString(32),
         airline: rawBuffer.readString(64),

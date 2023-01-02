@@ -44,31 +44,21 @@ open('My app', Protocol.FSX_SP2)
             const lon = recvSimObjectData.data.readFloat();
             const lat = recvSimObjectData.data.readFloat();
             console.log(`Requesting METAR at ${lat}, ${lon}`);
-            handle.weatherRequestObservationAtNearestStation(
-                REQ_ID_METAR,
-                lat,
-                lon
-            );
+            handle.weatherRequestObservationAtNearestStation(REQ_ID_METAR, lat, lon);
         });
 
-        handle.on(
-            'weatherObservation',
-            (recvWeatherObservation: RecvWeatherObservation) => {
-                console.log(recvWeatherObservation.metar);
-            }
-        );
+        handle.on('weatherObservation', (recvWeatherObservation: RecvWeatherObservation) => {
+            console.log(recvWeatherObservation.metar);
+        });
 
         handle.on('exception', (recvException: RecvException) => {
-            if (
-                recvException.exception ===
-                SimConnectException.WEATHER_UNABLE_TO_GET_OBSERVATION
-            ) {
+            if (recvException.exception === SimConnectException.WEATHER_UNABLE_TO_GET_OBSERVATION) {
                 console.log('Unable to get weather observation');
             } else {
                 console.log(`Unexpected exception: ${recvException.exception}`);
             }
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });

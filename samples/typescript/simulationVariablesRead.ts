@@ -76,10 +76,10 @@ open('My app', Protocol.FSX_SP2)
                 console.log({
                     // Read order is important
                     position: readLatLonAlt(recvSimObjectData.data),
-                    airspeed: recvSimObjectData.data.readInt(),
-                    verticalSpeed: recvSimObjectData.data.readInt(),
-                    heading: recvSimObjectData.data.readInt(),
-                    landingLight: recvSimObjectData.data.readInt() === 1,
+                    airspeed: recvSimObjectData.data.readInt32(),
+                    verticalSpeed: recvSimObjectData.data.readInt32(),
+                    heading: recvSimObjectData.data.readInt32(),
+                    landingLight: recvSimObjectData.data.readInt32() === 1,
                 });
             }
         });

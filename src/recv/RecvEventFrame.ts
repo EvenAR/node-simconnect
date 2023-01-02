@@ -8,7 +8,7 @@ export class RecvEventFrame extends RecvEvent {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.frameRate = data.readFloat();
-        this.simSpeed = data.readFloat();
+        this.frameRate = data.readFloat32();
+        this.simSpeed = data.readFloat32();
     }
 }

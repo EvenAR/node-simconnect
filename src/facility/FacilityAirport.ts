@@ -11,8 +11,8 @@ export class FacilityAirport {
 
     constructor(data: RawBuffer) {
         this.icao = data.readString(9);
-        this.latitude = data.readDouble();
-        this.longitude = data.readDouble();
-        this.altitude = data.readDouble();
+        this.latitude = data.readFloat64();
+        this.longitude = data.readFloat64();
+        this.altitude = data.readFloat64();
     }
 }

@@ -29,21 +29,21 @@ class Waypoint implements SimConnectData {
     throttle = 0;
 
     read(buffer: RawBuffer) {
-        this.latitude = buffer.readDouble();
-        this.longitude = buffer.readDouble();
-        this.altitude = buffer.readDouble();
-        this.flags = buffer.readInt();
-        this.speed = buffer.readDouble();
-        this.throttle = buffer.readDouble();
+        this.latitude = buffer.readFloat64();
+        this.longitude = buffer.readFloat64();
+        this.altitude = buffer.readFloat64();
+        this.flags = buffer.readInt32();
+        this.speed = buffer.readFloat64();
+        this.throttle = buffer.readFloat64();
     }
 
     write(buffer: RawBuffer) {
-        buffer.writeDouble(this.latitude);
-        buffer.writeDouble(this.longitude);
-        buffer.writeDouble(this.altitude);
-        buffer.writeInt(this.flags);
-        buffer.writeDouble(this.speed);
-        buffer.writeDouble(this.throttle);
+        buffer.writeFloat64(this.latitude);
+        buffer.writeFloat64(this.longitude);
+        buffer.writeFloat64(this.altitude);
+        buffer.writeInt32(this.flags);
+        buffer.writeFloat64(this.speed);
+        buffer.writeFloat64(this.throttle);
     }
 }
 

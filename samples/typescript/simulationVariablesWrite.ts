@@ -35,7 +35,7 @@ open('Flick lights', Protocol.FSX_SP2)
 
             dataToSet.clear();
             lights.forEach(() => {
-                dataToSet.writeInt(lightsOn ? 1 : 0);
+                dataToSet.writeInt32(lightsOn ? 1 : 0);
             });
 
             handle.setDataOnSimObject(DefinitionID.LIGHTS, SimConnectConstants.OBJECT_ID_USER, {

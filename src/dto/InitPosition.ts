@@ -24,25 +24,25 @@ class InitPosition implements SimConnectData {
     airspeed: Airspeed | number = 0;
 
     read(buffer: RawBuffer) {
-        this.latitude = buffer.readDouble();
-        this.longitude = buffer.readDouble();
-        this.altitude = buffer.readDouble();
-        this.pitch = buffer.readDouble();
-        this.bank = buffer.readDouble();
-        this.heading = buffer.readDouble();
-        this.onGround = buffer.readInt() !== 0;
-        this.airspeed = buffer.readInt();
+        this.latitude = buffer.readFloat64();
+        this.longitude = buffer.readFloat64();
+        this.altitude = buffer.readFloat64();
+        this.pitch = buffer.readFloat64();
+        this.bank = buffer.readFloat64();
+        this.heading = buffer.readFloat64();
+        this.onGround = buffer.readInt32() !== 0;
+        this.airspeed = buffer.readInt32();
     }
 
     write(buffer: RawBuffer) {
-        buffer.writeDouble(this.latitude);
-        buffer.writeDouble(this.longitude);
-        buffer.writeDouble(this.altitude);
-        buffer.writeDouble(this.pitch);
-        buffer.writeDouble(this.bank);
-        buffer.writeDouble(this.heading);
-        buffer.writeInt(this.onGround ? 1 : 0);
-        buffer.writeInt(this.airspeed);
+        buffer.writeFloat64(this.latitude);
+        buffer.writeFloat64(this.longitude);
+        buffer.writeFloat64(this.altitude);
+        buffer.writeFloat64(this.pitch);
+        buffer.writeFloat64(this.bank);
+        buffer.writeFloat64(this.heading);
+        buffer.writeInt32(this.onGround ? 1 : 0);
+        buffer.writeInt32(this.airspeed);
     }
 }
 

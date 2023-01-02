@@ -8,12 +8,12 @@ class MarkerState implements SimConnectData {
 
     read(buffer: RawBuffer) {
         this.markerName = buffer.readString64();
-        this.markerState = buffer.readInt() !== 0;
+        this.markerState = buffer.readInt32() !== 0;
     }
 
     write(buffer: RawBuffer) {
         buffer.writeString64(this.markerName);
-        buffer.writeInt(this.markerState === true ? 1 : 0);
+        buffer.writeInt32(this.markerState === true ? 1 : 0);
     }
 }
 

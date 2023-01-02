@@ -20,13 +20,13 @@ export class RecvFacilityData {
     data: RawBuffer;
 
     constructor(data: RawBuffer) {
-        this.userRequestId = data.readInt();
-        this.uniqueRequestId = data.readInt();
-        this.parentUniqueRequestId = data.readInt();
-        this.type = data.readInt();
-        this.isListItem = data.readInt() === 1;
-        this.itemIndex = data.readInt();
-        this.listSize = data.readInt();
+        this.userRequestId = data.readInt32();
+        this.uniqueRequestId = data.readInt32();
+        this.parentUniqueRequestId = data.readInt32();
+        this.type = data.readInt32();
+        this.isListItem = data.readInt32() === 1;
+        this.itemIndex = data.readInt32();
+        this.listSize = data.readInt32();
         this.data = data;
     }
 }

@@ -56,8 +56,8 @@ open('My app', Protocol.FSX_SP2)
             switch (recvSimObjectData.requestID) {
                 case POSITION_DATA:
                     console.log({
-                        latitude: recvSimObjectData.data.readDouble(),
-                        longitude: recvSimObjectData.data.readDouble(),
+                        latitude: recvSimObjectData.data.readFloat64(),
+                        longitude: recvSimObjectData.data.readFloat64(),
                     });
                     break;
             }

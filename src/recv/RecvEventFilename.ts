@@ -10,6 +10,6 @@ export class RecvEventFilename extends RecvEvent {
     constructor(data: RawBuffer) {
         super(data);
         this.fileName = data.readString(SimConnectConstants.MAX_PATH);
-        this.flags = data.readInt();
+        this.flags = data.readInt32();
     }
 }

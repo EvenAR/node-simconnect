@@ -34,15 +34,15 @@ export class RecvEventRaceLap extends RecvEvent {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.lapIndex = data.readInt();
-        this.numberRacers = data.readInt();
+        this.lapIndex = data.readInt32();
+        this.numberRacers = data.readInt32();
         this.missionGUID = data.readBytes(16);
         this.playerName = data.readString(260);
         this.sessionType = data.readString(260);
         this.aircraft = data.readString(260);
         this.playerRole = data.readString(260);
-        this.totalTime = data.readDouble();
-        this.penaltyTime = data.readDouble();
-        this.disqualified = data.readInt() === 1;
+        this.totalTime = data.readFloat64();
+        this.penaltyTime = data.readFloat64();
+        this.disqualified = data.readInt32() === 1;
     }
 }

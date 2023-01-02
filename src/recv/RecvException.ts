@@ -8,9 +8,9 @@ export class RecvException {
     index: number;
 
     constructor(data: RawBuffer) {
-        this.exception = data.readInt();
-        this.sendId = data.readInt();
-        this.index = data.readInt();
+        this.exception = data.readInt32();
+        this.sendId = data.readInt32();
+        this.index = data.readInt32();
     }
 }
 

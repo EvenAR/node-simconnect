@@ -90,7 +90,7 @@ open('My app', Protocol.FSX_SP2)
                      * Read all datums in the message. The values are separated by their tag number.
                      * Important: if not all data are read you might end up with corrupt data.
                      */
-                    const datumId = recvSimObjectData.data.readInt();
+                    const datumId = recvSimObjectData.data.readInt32();
 
                     switch (datumId) {
                         case Tag.LAT_LON_ALT:
@@ -101,25 +101,25 @@ open('My app', Protocol.FSX_SP2)
                             break;
                         case Tag.AIRSPEED:
                             {
-                                const value = recvSimObjectData.data.readInt();
+                                const value = recvSimObjectData.data.readInt32();
                                 console.log('Airspeed', value);
                             }
                             break;
                         case Tag.HEADING:
                             {
-                                const value = recvSimObjectData.data.readInt();
+                                const value = recvSimObjectData.data.readInt32();
                                 console.log('Heading', value);
                             }
                             break;
                         case Tag.VERTICAL_SPEED:
                             {
-                                const value = recvSimObjectData.data.readInt();
+                                const value = recvSimObjectData.data.readInt32();
                                 console.log('Vertical speed', value);
                             }
                             break;
                         case Tag.LANDING_LIGHT:
                             {
-                                const value = recvSimObjectData.data.readInt();
+                                const value = recvSimObjectData.data.readInt32();
                                 console.log('Landing light on', value);
                             }
                             break;
