@@ -206,6 +206,10 @@ class SimConnectConnection extends EventEmitter {
         }
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     addToDataDefinition(
         dataDefinitionId: DataDefinitionId,
         datumName: string,
@@ -223,9 +227,13 @@ class SimConnectConnection extends EventEmitter {
         );
         this._writeBuffer.writeFloat32(epsilon || 0);
         this._writeBuffer.writeInt32(datumId === undefined ? SimConnectConstants.UNUSED : datumId);
-        this._sendPacket(0x0c);
+        return this._sendPacket(0x0c);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestDataOnSimObject(
         dataRequestId: DataRequestId,
         dataDefinitionId: DataDefinitionId,
@@ -245,15 +253,23 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(origin || 0);
         this._writeBuffer.writeInt32(interval || 0);
         this._writeBuffer.writeInt32(limit || 0);
-        this._sendPacket(0x0e);
+        return this._sendPacket(0x0e);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     clearDataDefinition(dataDefinitionId: DataDefinitionId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataDefinitionId);
-        this._sendPacket(0x0d);
+        return this._sendPacket(0x0d);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestDataOnSimObjectType(
         dataRequestId: DataRequestId,
         dataDefinitionId: DataDefinitionId,
@@ -265,29 +281,45 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(dataDefinitionId);
         this._writeBuffer.writeInt32(radiusMeters);
         this._writeBuffer.writeInt32(type);
-        this._sendPacket(0x0f);
+        return this._sendPacket(0x0f);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     subscribeToSystemEvent(clientEventId: ClientEventId, eventName: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(clientEventId);
         this._writeBuffer.writeString256(eventName);
-        this._sendPacket(0x17);
+        return this._sendPacket(0x17);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     unsubscribeFromSystemEvent(clientEventId: ClientEventId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(clientEventId);
-        this._sendPacket(0x18);
+        return this._sendPacket(0x18);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestSystemState(dataRequestId: DataRequestId, state: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataRequestId);
         this._writeBuffer.writeString256(state);
-        this._sendPacket(0x35);
+        return this._sendPacket(0x35);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setSystemState(state: string, paramInt: number, paramFloat: number, paramString: string) {
         this._resetBuffer();
         this._writeBuffer.writeString256(state);
@@ -295,9 +327,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(paramFloat);
         this._writeBuffer.writeString256(paramString);
         this._writeBuffer.writeInt32(0);
-        this._sendPacket(0x36);
+        return this._sendPacket(0x36);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     addClientEventToNotificationGroup(
         notificationGroupId: NotificationGroupId,
         clientEventId: ClientEventId,
@@ -307,16 +343,24 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(notificationGroupId);
         this._writeBuffer.writeInt32(clientEventId);
         this._writeBuffer.writeInt32(maskable ? 1 : 0);
-        this._sendPacket(0x07);
+        return this._sendPacket(0x07);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     mapClientEventToSimEvent(clientEventId: ClientEventId, eventName?: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(clientEventId);
         this._writeBuffer.writeString256(eventName || '');
-        this._sendPacket(0x04);
+        return this._sendPacket(0x04);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     transmitClientEvent(
         objectId: ObjectId,
         clientEventId: ClientEventId,
@@ -330,23 +374,35 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(data);
         this._writeBuffer.writeInt32(notificationGroupId);
         this._writeBuffer.writeInt32(flags);
-        this._sendPacket(0x05);
+        return this._sendPacket(0x05);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setSystemEventState(clientEventId: ClientEventId, state: boolean) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(clientEventId);
         this._writeBuffer.writeInt32(state ? 1 : 0);
-        this._sendPacket(0x06);
+        return this._sendPacket(0x06);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     removeClientEvent(notificationGroupId: NotificationGroupId, clientEventId: ClientEventId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(notificationGroupId);
         this._writeBuffer.writeInt32(clientEventId);
-        this._sendPacket(0x08);
+        return this._sendPacket(0x08);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setNotificationGroupPriority(
         notificationGroupId: NotificationGroupId,
         priority: NotificationPriority
@@ -354,15 +410,23 @@ class SimConnectConnection extends EventEmitter {
         this._resetBuffer();
         this._writeBuffer.writeInt32(notificationGroupId);
         this._writeBuffer.writeInt32(priority);
-        this._sendPacket(0x09);
+        return this._sendPacket(0x09);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     clearNotificationGroup(notificationGroupId: NotificationGroupId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(notificationGroupId);
-        this._sendPacket(0x0a);
+        return this._sendPacket(0x0a);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestNotificationGroup(
         notificationGroupId: NotificationGroupId,
         reserved: number,
@@ -372,9 +436,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(notificationGroupId);
         this._writeBuffer.writeInt32(reserved);
         this._writeBuffer.writeInt32(flags);
-        this._sendPacket(0x0b);
+        return this._sendPacket(0x0b);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setDataOnSimObject(
         dataDefinitionId: DataDefinitionId,
         objectId: ObjectId,
@@ -404,9 +472,13 @@ class SimConnectConnection extends EventEmitter {
             this._writeBuffer.write(bytes);
         }
 
-        this._sendPacket(0x10);
+        return this._sendPacket(0x10);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     mapInputEventToClientEvent(
         inputGroupId: InputGroupId,
         inputDefinition: string,
@@ -426,36 +498,56 @@ class SimConnectConnection extends EventEmitter {
         );
         this._writeBuffer.writeInt32(upValue || 0);
         this._writeBuffer.writeInt32(maskable ? 1 : 0);
-        this._sendPacket(0x11);
+        return this._sendPacket(0x11);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setInputGroupPriority(inputGroupId: InputGroupId, priority: NotificationPriority) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(inputGroupId);
         this._writeBuffer.writeInt32(priority);
-        this._sendPacket(0x12);
+        return this._sendPacket(0x12);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     removeInputEvent(inputGroupId: InputGroupId, inputDefinition: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(inputGroupId);
         this._writeBuffer.writeString256(inputDefinition);
-        this._sendPacket(0x13);
+        return this._sendPacket(0x13);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     clearInputGroup(inputGroupId: InputGroupId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(inputGroupId);
-        this._sendPacket(0x14);
+        return this._sendPacket(0x14);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setInputGroupState(inputGroupId: InputGroupId, state: boolean) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(inputGroupId);
         this._writeBuffer.writeInt32(state ? 1 : 0);
-        this._sendPacket(0x15);
+        return this._sendPacket(0x15);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestReservedKey(
         clientEventId: ClientEventId,
         keyChoice1?: string,
@@ -467,11 +559,12 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString30(keyChoice1 || '');
         this._writeBuffer.writeString30(keyChoice2 || '');
         this._writeBuffer.writeString30(keyChoice3 || '');
-        this._sendPacket(0x16);
+        return this._sendPacket(0x16);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRequestInterpolatedObservation(
         dataRequestId: DataRequestId,
@@ -484,21 +577,23 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(lat);
         this._writeBuffer.writeFloat32(lon);
         this._writeBuffer.writeFloat32(alt);
-        this._sendPacket(0x19);
+        return this._sendPacket(0x19);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRequestObservationAtStation(dataRequestId: DataRequestId, ICAO: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataRequestId);
         this._writeBuffer.writeString(ICAO, 5); // ICAO is 4 chars, null terminated
-        this._sendPacket(0x1a);
+        return this._sendPacket(0x1a);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRequestObservationAtNearestStation(
         dataRequestId: DataRequestId,
@@ -509,11 +604,12 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(dataRequestId);
         this._writeBuffer.writeFloat32(lat);
         this._writeBuffer.writeFloat32(lon);
-        this._sendPacket(0x1b);
+        return this._sendPacket(0x1b);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherCreateStation(
         dataRequestId: DataRequestId,
@@ -530,76 +626,84 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(lat);
         this._writeBuffer.writeFloat32(lon);
         this._writeBuffer.writeFloat32(alt);
-        this._sendPacket(0x1c);
+        return this._sendPacket(0x1c);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRemoveStation(dataRequestId: DataRequestId, ICAO: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataRequestId);
         this._writeBuffer.writeString(ICAO, 5);
-        this._sendPacket(0x1d);
+        return this._sendPacket(0x1d);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetObservation(seconds: number, metar: string) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(seconds);
         this._writeBuffer.writeString(metar);
         this._writeBuffer.writeByte(0); // null terminated
-        this._sendPacket(0x1e);
+        return this._sendPacket(0x1e);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeServer(port: number, seconds: number) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(port);
         this._writeBuffer.writeInt32(seconds);
-        this._sendPacket(0x1f);
+        return this._sendPacket(0x1f);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeTheme(themeName: string) {
         this._resetBuffer();
         this._writeBuffer.writeString(themeName, 256);
-        this._sendPacket(0x20);
+        return this._sendPacket(0x20);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeGlobal() {
         this._resetBuffer();
-        this._sendPacket(0x21);
+        return this._sendPacket(0x21);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeCustom() {
         this._resetBuffer();
-        this._sendPacket(0x22);
+        return this._sendPacket(0x22);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetDynamicUpdateRate(rate: number) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(rate);
-        this._sendPacket(0x23);
+        return this._sendPacket(0x23);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRequestCloudState(
         dataRequestId: DataRequestId,
@@ -620,11 +724,12 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(maxLon);
         this._writeBuffer.writeFloat32(maxAlt);
         this._writeBuffer.writeInt32(flags || 0);
-        this._sendPacket(0x24);
+        return this._sendPacket(0x24);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherCreateThermal(
         dataRequestId: DataRequestId,
@@ -657,18 +762,23 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(coreTransitionSize);
         this._writeBuffer.writeFloat32(sinkLayerSize);
         this._writeBuffer.writeFloat32(sinkTransitionSize);
-        this._sendPacket(0x25);
+        return this._sendPacket(0x25);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRemoveThermal(objectId: ObjectId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(objectId);
-        this._sendPacket(0x26);
+        return this._sendPacket(0x26);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aICreateParkedATCAircraft(
         containerTitle: string,
         tailNumber: string,
@@ -680,9 +790,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString(tailNumber, 12);
         this._writeBuffer.writeString(airportID, 5);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x27);
+        return this._sendPacket(0x27);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aICreateEnrouteATCAircraft(
         containerTitle: string,
         tailNumber: string,
@@ -700,9 +814,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat64(flightPlanPosition);
         this._writeBuffer.writeInt32(touchAndGo ? 1 : 0);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x28);
+        return this._sendPacket(0x28);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aICreateNonATCAircraft(
         containerTitle: string,
         tailNumber: string,
@@ -714,9 +832,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString(tailNumber, 12);
         initPos.write(this._writeBuffer);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x29);
+        return this._sendPacket(0x29);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aICreateSimulatedObject(
         containerTitle: string,
         initPos: InitPosition,
@@ -726,23 +848,35 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString(containerTitle, 256);
         initPos.write(this._writeBuffer);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x2a);
+        return this._sendPacket(0x2a);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aIReleaseControl(objectId: ObjectId, dataRequestId: DataRequestId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(objectId);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x2b);
+        return this._sendPacket(0x2b);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aIRemoveObject(objectId: ObjectId, dataRequestId: DataRequestId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(objectId);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x2c);
+        return this._sendPacket(0x2c);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     aISetAircraftFlightPlan(
         objectId: ObjectId,
         flightPlanPath: string,
@@ -752,21 +886,29 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(objectId);
         this._writeBuffer.writeString(flightPlanPath, 260);
         this._writeBuffer.writeInt32(dataRequestId);
-        this._sendPacket(0x2d);
+        return this._sendPacket(0x2d);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     executeMissionAction(guidInstanceId: Buffer) {
         if (guidInstanceId.length !== 16) throw Error(SimConnectError.GuidInvalidSize);
         this._resetBuffer();
         this._writeBuffer.write(guidInstanceId);
-        this._sendPacket(0x2e);
+        return this._sendPacket(0x2e);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     completeCustomMissionAction(guidInstanceId: Buffer) {
         if (guidInstanceId.length !== 16) throw Error(SimConnectError.GuidInvalidSize); // $NON-NLS-1$
         this._resetBuffer();
         this._writeBuffer.write(guidInstanceId);
-        this._sendPacket(0x2f);
+        return this._sendPacket(0x2f);
     }
 
     // eslint-disable-next-line
@@ -778,6 +920,10 @@ class SimConnectConnection extends EventEmitter {
         throw Error(SimConnectError.Unimplemented);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     cameraSetRelative6DOF(
         deltaX: number,
         deltaY: number,
@@ -793,31 +939,34 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeFloat32(pitchDeg);
         this._writeBuffer.writeFloat32(bankDeg);
         this._writeBuffer.writeFloat32(headingDeg);
-        this._sendPacket(0x30);
+        return this._sendPacket(0x30);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuAddItem(menuItem: string, menuEventId: ClientEventId, data: number) {
         this._resetBuffer();
         this._writeBuffer.writeString(menuItem, 256);
         this._writeBuffer.writeInt32(menuEventId);
         this._writeBuffer.writeInt32(data);
-        this._sendPacket(0x31);
+        return this._sendPacket(0x31);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuDeleteItem(menuEventId: ClientEventId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(menuEventId);
-        this._sendPacket(0x32);
+        return this._sendPacket(0x32);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuAddSubItem(
         menuEventId: ClientEventId,
@@ -830,11 +979,12 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString(menuItem, 256);
         this._writeBuffer.writeInt32(subMenuEventId);
         this._writeBuffer.writeInt32(data);
-        this._sendPacket(0x33);
+        return this._sendPacket(0x33);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuDeleteSubItem(menuEventId: ClientEventId, subMenuEventId: ClientEventId) {
         // packet size 0x18
@@ -843,24 +993,36 @@ class SimConnectConnection extends EventEmitter {
         this._resetBuffer();
         this._writeBuffer.writeInt32(menuEventId);
         this._writeBuffer.writeInt32(subMenuEventId);
-        this._sendPacket(0x34);
+        return this._sendPacket(0x34);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     mapClientDataNameToID(clientDataName: string, clientDataId: ClientDataId) {
         this._resetBuffer();
         this._writeBuffer.writeString(clientDataName, 256);
         this._writeBuffer.writeInt32(clientDataId);
-        this._sendPacket(0x37);
+        return this._sendPacket(0x37);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     createClientData(clientDataId: ClientDataId, size: number, readOnly: boolean) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(clientDataId);
         this._writeBuffer.writeInt32(size);
         this._writeBuffer.writeInt32(readOnly ? 1 : 0);
-        this._sendPacket(0x38);
+        return this._sendPacket(0x38);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     addToClientDataDefinition(
         dataDefinitionId: DataDefinitionId,
         offset: number,
@@ -876,15 +1038,23 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(sizeOrType);
         this._writeBuffer.writeFloat32(epsilon || 0);
         this._writeBuffer.writeInt32(datumId || 0);
-        this._sendPacket(0x39);
+        return this._sendPacket(0x39);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     clearClientDataDefinition(dataDefinitionId: DataDefinitionId) {
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataDefinitionId);
-        this._sendPacket(0x3a);
+        return this._sendPacket(0x3a);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestClientData<O extends number, I extends number, L extends number>(
         clientDataId: ClientDataId,
         dataRequestId: DataRequestId,
@@ -906,9 +1076,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(origin || 0);
         this._writeBuffer.writeInt32(interval || 0);
         this._writeBuffer.writeInt32(limit || 0);
-        this._sendPacket(0x3b);
+        return this._sendPacket(0x3b);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     setClientData(
         clientDataId: ClientDataId,
         clientDataDefineID: ClientDataDefinitionId,
@@ -925,18 +1099,26 @@ class SimConnectConnection extends EventEmitter {
         // TODO: add support for arrays https://github.com/mharj/jsimconnect/blob/master/src/flightsim/simconnect/SimConnect.java#L3803
         this._writeBuffer.writeInt32(unitSize);
         this._writeBuffer.write(data);
-        this._sendPacket(0x3c);
+        return this._sendPacket(0x3c);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     flightLoad(fileName: string) {
         // packet size 0x114
         // packet id 0x3D
 
         this._resetBuffer();
         this._writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
-        this._sendPacket(0x3d);
+        return this._sendPacket(0x3d);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     flightSave(
         fileName: string,
         title: string | null,
@@ -957,20 +1139,25 @@ class SimConnectConnection extends EventEmitter {
 
         this._writeBuffer.writeString(description, 2048);
         this._writeBuffer.writeInt32(SimConnectConstants.UNUSED);
-        this._sendPacket(0x3e);
+        return this._sendPacket(0x3e);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     flightPlanLoad(fileName: string) {
         // packet size 0x114
         // packet id 0x3F
 
         this._resetBuffer();
         this._writeBuffer.writeString(fileName, SimConnectConstants.MAX_PATH);
-        this._sendPacket(0x3f);
+        return this._sendPacket(0x3f);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     text(type: TextType, timeSeconds: number, clientEventId: ClientEventId, message: string) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
@@ -987,11 +1174,12 @@ class SimConnectConnection extends EventEmitter {
             this._writeBuffer.writeInt32(1);
         }
         this._writeBuffer.writeByte(0);
-        this._sendPacket(0x40);
+        return this._sendPacket(0x40);
     }
 
     /**
      * @deprecated since MSFS (KittyHawk)
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menu(
         timeSeconds: number,
@@ -1024,9 +1212,13 @@ class SimConnectConnection extends EventEmitter {
         // set size
         this._writeBuffer.writeInt32(this._writeBuffer.getOffset() - 32, 28);
 
-        this._sendPacket(0x40);
+        return this._sendPacket(0x40);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     subscribeToFacilities(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1034,9 +1226,13 @@ class SimConnectConnection extends EventEmitter {
         this._resetBuffer();
         this._writeBuffer.writeInt32(type);
         this._writeBuffer.writeInt32(clientEventId);
-        this._sendPacket(0x41);
+        return this._sendPacket(0x41);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     subscribeToFacilitiesEx1(
         type: FacilityListType,
         newElemInRangeRequestID: DataRequestId,
@@ -1048,18 +1244,26 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(type);
         this._writeBuffer.writeInt32(newElemInRangeRequestID);
         this._writeBuffer.writeInt32(oldElemOutRangeRequestID);
-        this._sendPacket(0x47);
+        return this._sendPacket(0x47);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     unSubscribeToFacilities(type: FacilityListType) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         // ID 0x42
         this._resetBuffer();
         this._writeBuffer.writeInt32(type);
-        this._sendPacket(0x42);
+        return this._sendPacket(0x42);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     unSubscribeToFacilitiesEx1(
         type: FacilityListType,
         unsubscribeNewInRange: boolean,
@@ -1071,25 +1275,37 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(type);
         this._writeBuffer.writeString(unsubscribeNewInRange ? '1' : '0', 1);
         this._writeBuffer.writeString(unsubscribeOldOutRange ? '1' : '0', 1);
-        this._sendPacket(0x48);
+        return this._sendPacket(0x48);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
         this._resetBuffer();
         this._writeBuffer.writeInt32(type);
         this._writeBuffer.writeInt32(clientEventId);
-        this._sendPacket(0x43);
+        return this._sendPacket(0x43);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestFacilitiesListEx1(type: FacilityListType, clientEventId: ClientEventId) {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
         this._resetBuffer();
         this._writeBuffer.writeInt32(type);
         this._writeBuffer.writeInt32(clientEventId);
-        this._sendPacket(0x49);
+        return this._sendPacket(0x49);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     transmitClientEventEx(
         objectId: ObjectId,
         clientEventId: ClientEventId,
@@ -1111,17 +1327,25 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(data2);
         this._writeBuffer.writeInt32(data3);
         this._writeBuffer.writeInt32(data4);
-        this._sendPacket(0x44);
+        return this._sendPacket(0x44);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string) {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
         this._resetBuffer();
         this._writeBuffer.writeInt32(dataDefinitionId);
         this._writeBuffer.writeString256(fieldName);
-        this._sendPacket(0x45);
+        return this._sendPacket(0x45);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestFacilityData(
         dataDefinitionId: DataDefinitionId,
         dataRequestId: DataRequestId,
@@ -1137,12 +1361,12 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeString(region || '', 4);
         if (type === undefined) {
             // SimConnect_RequestFacilityData
-            this._sendPacket(0x46);
-        } else {
-            // SimConnect_RequestFacilityData_EX1
-            this._writeBuffer.writeString(type, 1);
-            this._sendPacket(0x4a);
+            return this._sendPacket(0x46);
         }
+
+        // SimConnect_RequestFacilityData_EX1
+        this._writeBuffer.writeString(type, 1);
+        return this._sendPacket(0x4a);
     }
 
     close() {
@@ -1267,6 +1491,10 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.setOffset(16); // Bytes 0-16 are for the packet header
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     private _sendPacket(type: number) {
         const packetSize = this._writeBuffer.getOffset();
 
@@ -1274,10 +1502,13 @@ class SimConnectConnection extends EventEmitter {
         this._writeBuffer.writeInt32(packetSize, 0);
         this._writeBuffer.writeInt32(this._ourProtocol, 4);
         this._writeBuffer.writeInt32(0xf0000000 | type, 8);
-        this._writeBuffer.writeInt32(this._packetsSent++, 12);
+        const sendId = this._packetsSent++;
+        this._writeBuffer.writeInt32(sendId, 12);
 
         const data = this._writeBuffer.getBuffer();
         this._clientSocket.write(data);
+
+        return sendId;
     }
 
     private _open() {
