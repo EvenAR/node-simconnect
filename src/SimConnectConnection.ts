@@ -184,6 +184,28 @@ class SimConnectConnection extends EventEmitter {
         return super.on(event, listener);
     }
 
+    public once<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return super.once(event, listener);
+    }
+
+    public removeListener<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return super.removeListener(event, listener);
+    }
+
+    public removeAllListeners<U extends keyof SimConnectRecvEvents>(event: U): this {
+        return super.removeAllListeners(event);
+    }
+
+    public off = this.removeListener;
+
+    public addListener = this.on;
+
     public emit<U extends keyof SimConnectRecvEvents>(
         event: U,
         ...args: Parameters<SimConnectRecvEvents[U]>
