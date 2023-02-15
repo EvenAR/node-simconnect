@@ -1,7 +1,13 @@
 # node-simconnect samples
 
-Running a sample:
+In order to run the samples you first need to build this project:
 
 ```
-npx ts-node .\samples\typescript\simulationVariablesRead.ts
+npm install
+npm run build
 ```
+
+Then, from the root of this project:
+
+-   TypeScript: `npx ts-node .\\samples\\typescript\\<filename>.ts`
+-   JavaScript: `node .\\samples\\js\\<filename>.mjs`
