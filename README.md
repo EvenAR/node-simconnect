@@ -14,7 +14,7 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 
 ## Instructions
 
-Please refer to the `/samples` folder for help.
+Please refer to the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for help.
 
 The API works similar to the SimConnect API described in the [official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm).
 
@@ -37,6 +37,9 @@ open('My SimConnect client', Protocol.FSX_SP2)
                     console.log(recvEvent.data === 1 ? 'Sim paused' : 'Sim unpaused');
                     break;
             }
+        });
+        handle.on('exception', function (recvException) {
+            console.log(recvException);
         });
         handle.on('quit', function () {
             console.log('Simulator quit');
