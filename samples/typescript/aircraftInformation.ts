@@ -32,7 +32,7 @@ open('My app', Protocol.FSX_SP2).then(recv => {
         AIRCRAFT_DATA_DEFINITION,
         'CATEGORY',
         null,
-        SimConnectDataType.STRINGV,
+        SimConnectDataType.STRING32,
         0,
         SimConnectConstants.UNUSED
     );
@@ -40,7 +40,7 @@ open('My app', Protocol.FSX_SP2).then(recv => {
         AIRCRAFT_DATA_DEFINITION,
         'TITLE',
         null,
-        SimConnectDataType.STRINGV,
+        SimConnectDataType.STRING128,
         0,
         SimConnectConstants.UNUSED
     );
@@ -65,10 +65,10 @@ open('My app', Protocol.FSX_SP2).then(recv => {
     );
 
     recv.handle.on('simObjectData', recvSimObjectData => {
-        console.log(`Lat: "${recvSimObjectData.data.readFloat64()}"`);
-        console.log(`Lng: "${recvSimObjectData.data.readFloat64()}"`);
-        console.log(`Type: "${recvSimObjectData.data.readStringV()}"`);
-        console.log(`Title: "${recvSimObjectData.data.readStringV()}"`);
+        console.log(`Lat: ${recvSimObjectData.data.readFloat64()}`);
+        console.log(`Lng: ${recvSimObjectData.data.readFloat64()}`);
+        console.log(`Type: "${recvSimObjectData.data.readString32()}"`);
+        console.log(`Title: "${recvSimObjectData.data.readString128()}"`);
         console.log(`ATC ID: "${recvSimObjectData.data.readString32()}"`);
     });
 });
