@@ -1,19 +1,20 @@
-// @ts-ignore // eslint-disable-line
-import regedit = require('regedit');
+import regedit from 'regedit';
 
 /**
  * Returns `undefined` if the key does not exist.
  */
-export function readRegistryValue(FS_KEY: string, subKey: string): Promise<string | undefined> {
+export function readRegistryValue(key: string, subKey: string): Promise<string | undefined> {
     return new Promise<string | undefined>((resolve, reject) => {
-        // eslint-disable-next-line
-        regedit.list(FS_KEY, (err: any, result: any) => {
+        regedit.list([key], (err, result) => {
             if (err) {
-                reject(new Error(`Failed to read registry value ${FS_KEY} (${err})`));
+                reject(new Error(`Failed to read registry value ${key} (${err})`));
             } else {
-                // eslint-disable-next-line
-                const values: { [key: string]: any } = result[FS_KEY]?.values;
-                resolve(values ? values[subKey].value : undefined);
+                const values = result[key]?.values;
+                if (subKey in values) {
+                    resolve(values[subKey].value as string);
+                } else {
+                    resolve(undefined);
+                }
             }
         });
     });

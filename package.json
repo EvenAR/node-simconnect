@@ -64,7 +64,7 @@
     "bytebuffer": "^5.0.1",
     "debug": "^4.3.4",
     "ini": "^2.0.0",
-    "regedit": "^3.0.3"
+    "regedit": "^5.1.1"
   },
   "husky": {
     "hooks": {
