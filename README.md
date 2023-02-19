@@ -14,6 +14,8 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 
 ## Instructions
 
+> :bulb: Tip: check out the [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper) for a simplified API.
+
 Please refer to the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for help.
 
 The API works similar to the SimConnect API described in the [official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm).
