@@ -27,14 +27,8 @@ function readXYZ(dataWrapper: RawBuffer): XYZ {
 }
 
 function readData<T extends SimConnectData>(dataWrapper: RawBuffer, obj: T): T {
-    obj.read(dataWrapper);
+    obj.readFrom(dataWrapper);
     return obj;
 }
 
-export {
-    readInitPosition,
-    readMarkerState,
-    readWaypoint,
-    readLatLonAlt,
-    readXYZ,
-};
+export { readInitPosition, readMarkerState, readWaypoint, readLatLonAlt, readXYZ };
