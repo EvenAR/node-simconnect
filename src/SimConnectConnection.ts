@@ -1441,8 +1441,8 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x48) //
                 .putInt32(type)
-                .putString(unsubscribeNewInRange ? '1' : '0', 1)
-                .putString(unsubscribeOldOutRange ? '1' : '0', 1)
+                .putByte(unsubscribeNewInRange ? 1 : 0)
+                .putByte(unsubscribeOldOutRange ? 1 : 0)
         );
     }
 

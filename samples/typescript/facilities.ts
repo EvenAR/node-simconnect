@@ -142,10 +142,10 @@ open('SimConnect sample client', Protocol.KittyHawk)
         handle.on('airportList', recvWaypointList => {
             switch (recvWaypointList.requestID) {
                 case REQUEST_ID.NEW_AIRPORTS:
-                    console.log('These airports appeared', recvWaypointList.aiports);
+                    console.log('These airports appeared', recvWaypointList.airports);
                     break;
                 case REQUEST_ID.OLD_AIRPORTS:
-                    console.log('These airports disappeared', recvWaypointList.aiports);
+                    console.log('These airports disappeared', recvWaypointList.airports);
                     break;
             }
         });
