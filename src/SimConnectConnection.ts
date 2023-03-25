@@ -403,7 +403,6 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x0e)
                 .putInt32(dataRequestId)
-                .putInt32(dataRequestId)
                 .putInt32(dataDefinitionId)
                 .putInt32(objectId)
                 .putInt32(period)
@@ -615,7 +614,9 @@ class SimConnectConnection extends EventEmitter {
      */
     weatherRequestObservationAtStation(dataRequestId: DataRequestId, ICAO: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x1a).putInt32(dataRequestId).putString(ICAO, 5)
+            this._beginPacket(0x1a) //
+                .putInt32(dataRequestId)
+                .putString(ICAO, 5)
         );
     }
 
@@ -629,7 +630,10 @@ class SimConnectConnection extends EventEmitter {
         lon: number
     ): number {
         return this._buildAndSend(
-            this._beginPacket(0x1b).putInt32(dataRequestId).putFloat32(lat).putFloat32(lon)
+            this._beginPacket(0x1b) //
+                .putInt32(dataRequestId)
+                .putFloat32(lat)
+                .putFloat32(lon)
         );
     }
 
@@ -725,7 +729,10 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetDynamicUpdateRate(rate: number): number {
-        return this._buildAndSend(this._beginPacket(0x23).putInt32(rate));
+        return this._buildAndSend(
+            this._beginPacket(0x23) //
+                .putInt32(rate)
+        );
     }
 
     /**
@@ -799,7 +806,10 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRemoveThermal(objectId: ObjectId): number {
-        return this._buildAndSend(this._beginPacket(0x26).putInt32(objectId));
+        return this._buildAndSend(
+            this._beginPacket(0x26) //
+                .putInt32(objectId)
+        );
     }
 
     /**
@@ -982,7 +992,7 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x31) //
                 .putString256(menuItem)
-                .putFloat32(menuEventId)
+                .putInt32(menuEventId)
                 .putInt32(data)
         );
     }
@@ -1316,25 +1326,6 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    unSubscribeToFacilitiesEx1(
-        type: FacilityListType,
-        unsubscribeNewInRange: boolean,
-        unsubscribeOldOutRange: boolean
-    ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
-
-        return this._buildAndSend(
-            this._beginPacket(0x48) //
-                .putInt32(type)
-                .putByte(unsubscribeNewInRange ? 1 : 0)
-                .putByte(unsubscribeOldOutRange ? 1 : 0)
-        );
-    }
-
-    /**
-     *
-     * @returns sendId of packet (can be used to identify packet when exception event occurs)
-     */
     requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId): number {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
@@ -1448,8 +1439,8 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x48) //
                 .putInt32(type)
-                .putString(unsubscribeNewInRange ? '1' : '0', 1)
-                .putString(unsubscribeOldOutRange ? '1' : '0', 1)
+                .putByte(unsubscribeNewInRange ? 1 : 0)
+                .putByte(unsubscribeOldOutRange ? 1 : 0)
         );
     }
 
@@ -1607,7 +1598,7 @@ class SimConnectConnection extends EventEmitter {
 
         this._buildAndSend(
             this._beginPacket(0x01)
-                .putString(this._appName)
+                .putString256(this._appName)
                 .putInt32(0)
                 .putByte(0x00)
                 .putString(version.alias, 3)
