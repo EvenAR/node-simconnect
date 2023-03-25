@@ -7,9 +7,9 @@ export class RecvAirportList extends RecvFacilitiesList {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.aiports = [];
+        this.airports = [];
         for (let i = 0; i < this.arraySize; i++) {
-            this.aiports.push(new FacilityAirport(data));
+            this.airports.push(new FacilityAirport(data));
         }
     }
 }
