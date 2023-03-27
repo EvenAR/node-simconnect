@@ -1295,8 +1295,8 @@ class SimConnectConnection extends EventEmitter {
 
         this._resetBuffer();
         this._writeBuffer.writeInt32(type);
-        this._writeBuffer.writeString(unsubscribeNewInRange ? '1' : '0', 1);
-        this._writeBuffer.writeString(unsubscribeOldOutRange ? '1' : '0', 1);
+        this._writeBuffer.writeByte(unsubscribeNewInRange ? 1 : 0);
+        this._writeBuffer.writeByte(unsubscribeOldOutRange ? 1 : 0);
         return this._sendPacket(0x48);
     }
 
