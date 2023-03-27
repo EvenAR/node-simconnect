@@ -146,7 +146,7 @@ open('My app', Protocol.FSX_SP2)
         }
 
         handle.on('airportList', (recvAirportList) => {
-            console.log(recvAirportList.aiports.map((ap) => ap.icao).join(','));
+            console.log(recvAirportList.airports.map((ap) => ap.icao).join(','));
         });
 
         handle.on('ndbList', (recvNDBList) => {
