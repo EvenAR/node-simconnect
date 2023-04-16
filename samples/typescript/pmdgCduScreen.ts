@@ -1,20 +1,48 @@
 /**
- * Prints the text that is currently displayed on the CDU of the PMDG 737 (captain side)
+ * Prints the text that is currently displayed on the CDU of the PMDG 737
+ * (captain side), and types "ABC" into the scratchpad using direct event
+ * triggering.
+ *
  * Assumes that CDU data broadcast is enabled in the PMDG 737 config.
  */
 
-import { ClientDataPeriod, ClientDataRequestFlag, open, Protocol, RawBuffer } from '../../dist';
+import {
+    ClientDataPeriod,
+    ClientDataRequestFlag,
+    EventFlag,
+    open,
+    Protocol,
+    RawBuffer,
+    SimConnectConstants,
+} from '../../dist';
 
 // These consts were found in PMDG_NG3_SDK.h
-const CDU_DATA_REQUEST = 0;
 const PMDG_NG3_CDU_0_NAME = 'PMDG_NG3_CDU_0';
 const PMDG_NG3_CDU_0_ID = 0x4e473335;
 const PMDG_NG3_CDU_0_DEFINITION = 0x4e473338;
 const CDU_COLUMNS = 24;
 const CDU_ROWS = 14;
+const THIRD_PARTY_EVENT_ID_MIN = 0x00011000;
 
-// Based on the PMDG_NG3_CDU_Screen struct found in PMDG_NG3_SDK.h
+// Based on the PMDG_NG3_CDU_Screen struct found in PMDG_NG3_SDK.h. There are 3 bytes per character + 1 byte which tells if the CDU is powered.
 const SCREEN_STATE_SIZE = CDU_COLUMNS * CDU_ROWS * (1 + 1 + 1) + 1;
+
+// These event IDs are found in PMDG_NG3_SDK.h
+enum PmdgEventID {
+    CDU_A = THIRD_PARTY_EVENT_ID_MIN + 573,
+    CDU_B = THIRD_PARTY_EVENT_ID_MIN + 574,
+    CDU_C = THIRD_PARTY_EVENT_ID_MIN + 575,
+}
+
+enum MyEventID {
+    CDU_A,
+    CDU_B,
+    CDU_C,
+}
+
+const enum RequestID {
+    CDU_SCREEN_DATA_REQUEST,
+}
 
 (async function readCduScreen() {
     const { handle } = await open('My app', Protocol.KittyHawk);
@@ -24,7 +52,7 @@ const SCREEN_STATE_SIZE = CDU_COLUMNS * CDU_ROWS * (1 + 1 + 1) + 1;
     handle.addToClientDataDefinition(PMDG_NG3_CDU_0_DEFINITION, 0, SCREEN_STATE_SIZE);
     handle.requestClientData(
         PMDG_NG3_CDU_0_ID,
-        CDU_DATA_REQUEST,
+        RequestID.CDU_SCREEN_DATA_REQUEST,
         PMDG_NG3_CDU_0_DEFINITION,
         ClientDataPeriod.ON_SET,
         ClientDataRequestFlag.CLIENT_DATA_REQUEST_FLAG_CHANGED
@@ -33,7 +61,7 @@ const SCREEN_STATE_SIZE = CDU_COLUMNS * CDU_ROWS * (1 + 1 + 1) + 1;
     handle.on('exception', ex => console.log(ex));
 
     handle.on('clientData', recvSimObjectData => {
-        if (recvSimObjectData.requestID === CDU_DATA_REQUEST) {
+        if (recvSimObjectData.requestID === RequestID.CDU_SCREEN_DATA_REQUEST) {
             const { powered, lines } = extractCduScreenState(recvSimObjectData.data);
             if (powered) {
                 console.log(lines.join('\r\n'));
@@ -42,6 +70,32 @@ const SCREEN_STATE_SIZE = CDU_COLUMNS * CDU_ROWS * (1 + 1 + 1) + 1;
             }
         }
     });
+
+    // Write "ABC" to the scratchpad
+    handle.mapClientEventToSimEvent(MyEventID.CDU_A, '#' + PmdgEventID.CDU_A);
+    handle.mapClientEventToSimEvent(MyEventID.CDU_B, '#' + PmdgEventID.CDU_B);
+    handle.mapClientEventToSimEvent(MyEventID.CDU_C, '#' + PmdgEventID.CDU_C);
+    handle.transmitClientEvent(
+        SimConnectConstants.OBJECT_ID_USER,
+        MyEventID.CDU_A,
+        1,
+        0,
+        EventFlag.EVENT_FLAG_GROUPID_IS_PRIORITY
+    );
+    handle.transmitClientEvent(
+        SimConnectConstants.OBJECT_ID_USER,
+        MyEventID.CDU_B,
+        1,
+        0,
+        EventFlag.EVENT_FLAG_GROUPID_IS_PRIORITY
+    );
+    handle.transmitClientEvent(
+        SimConnectConstants.OBJECT_ID_USER,
+        MyEventID.CDU_C,
+        1,
+        0,
+        EventFlag.EVENT_FLAG_GROUPID_IS_PRIORITY
+    );
 })();
 
 function extractCduScreenState(rawBuffer: RawBuffer): { lines: string[]; powered: boolean } {
