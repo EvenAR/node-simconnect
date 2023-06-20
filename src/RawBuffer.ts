@@ -19,10 +19,6 @@ class RawBuffer {
         this.buffer.offset = offset;
     }
 
-    flip() {
-        this.buffer.flip();
-    }
-
     getOffset(): number {
         return this.buffer.offset;
     }

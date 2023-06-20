@@ -1,5 +1,6 @@
 import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
+import { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
 
 class Waypoint implements SimConnectData {
     /** Latitude of waypoint, in degrees */
@@ -28,7 +29,7 @@ class Waypoint implements SimConnectData {
     /** Throttle, in percent {@link flightsim.simconnect.SimConnectConstants#WAYPOINT_THROTTLE_REQUESTED} must be on */
     throttle = 0;
 
-    read(buffer: RawBuffer) {
+    readFrom(buffer: RawBuffer) {
         this.latitude = buffer.readFloat64();
         this.longitude = buffer.readFloat64();
         this.altitude = buffer.readFloat64();
@@ -37,13 +38,14 @@ class Waypoint implements SimConnectData {
         this.throttle = buffer.readFloat64();
     }
 
-    write(buffer: RawBuffer) {
-        buffer.writeFloat64(this.latitude);
-        buffer.writeFloat64(this.longitude);
-        buffer.writeFloat64(this.altitude);
-        buffer.writeInt32(this.flags);
-        buffer.writeFloat64(this.speed);
-        buffer.writeFloat64(this.throttle);
+    writeTo(packetBuilder: SimConnectPacketBuilder) {
+        packetBuilder
+            .putFloat64(this.latitude)
+            .putFloat64(this.longitude)
+            .putFloat64(this.altitude)
+            .putInt32(this.flags)
+            .putFloat64(this.speed)
+            .putFloat64(this.throttle);
     }
 }
 

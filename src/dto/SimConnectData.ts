@@ -1,8 +1,9 @@
 import { RawBuffer } from '../RawBuffer';
+import { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
 
 interface SimConnectData {
-    readonly read: (buffer: RawBuffer) => void;
-    readonly write: (buffer: RawBuffer) => void;
+    readonly readFrom: (buffer: RawBuffer) => void;
+    readonly writeTo: (packetBuilder: SimConnectPacketBuilder) => void;
 }
 
 export { SimConnectData };

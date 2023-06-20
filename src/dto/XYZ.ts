@@ -1,5 +1,6 @@
 import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
+import { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
 
 class XYZ implements SimConnectData {
     x = 0;
@@ -8,16 +9,17 @@ class XYZ implements SimConnectData {
 
     z = 0;
 
-    read(buffer: RawBuffer) {
+    readFrom(buffer: RawBuffer) {
         this.x = buffer.readFloat64();
         this.y = buffer.readFloat64();
         this.z = buffer.readFloat64();
     }
 
-    write(buffer: RawBuffer) {
-        buffer.writeFloat64(this.x);
-        buffer.writeFloat64(this.y);
-        buffer.writeFloat64(this.z);
+    writeTo(packetBuilder: SimConnectPacketBuilder) {
+        packetBuilder //
+            .putFloat64(this.x)
+            .putFloat64(this.y)
+            .putFloat64(this.z);
     }
 }
 

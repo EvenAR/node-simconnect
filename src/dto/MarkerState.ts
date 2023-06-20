@@ -1,19 +1,21 @@
 import { SimConnectData } from './SimConnectData';
 import { RawBuffer } from '../RawBuffer';
+import { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
 
 class MarkerState implements SimConnectData {
     markerName = '';
 
     markerState = false;
 
-    read(buffer: RawBuffer) {
+    readFrom(buffer: RawBuffer) {
         this.markerName = buffer.readString64();
         this.markerState = buffer.readInt32() !== 0;
     }
 
-    write(buffer: RawBuffer) {
-        buffer.writeString64(this.markerName);
-        buffer.writeInt32(this.markerState === true ? 1 : 0);
+    writeTo(packetBuilder: SimConnectPacketBuilder) {
+        packetBuilder //
+            .putString(this.markerName, 64)
+            .putInt32(this.markerState ? 1 : 0);
     }
 }
 
