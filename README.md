@@ -164,6 +164,7 @@ Prepar3D support and Prepar3D-only-features will not be prioritized.
 | `requestFacilitiesListEx1`   | n/a        | n/a        | ✅          |
 | `requestFacilityData`        | n/a        | n/a        | ✅          |
 | `requestFacilityDataEx1`     | n/a        | n/a        | ✅          |
+| `requestJetwayData`          | n/a        | n/a        | ✅          |
 | `subscribeToFacilities`      | ✅         |            |             |
 | `subscribeToFacilitiesEx1`   | n/a        | n/a        | ✅          |
 | `unSubscribeToFacilities`    | ✅         |            |             |

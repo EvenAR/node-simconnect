@@ -45,6 +45,10 @@ class RawBuffer {
         return this.buffer.readInt32();
     }
 
+    readUint32(): number {
+        return this.buffer.readUint32();
+    }
+
     /** @deprecated use readInt32() instead */
     readInt = this.readInt32;
 

@@ -37,6 +37,7 @@ export enum SimConnectException {
     OBJECT_AI,
     OBJECT_ATC,
     OBJECT_SCHEDULE,
+    JETWAY_DATA,
 }
 
 module.exports = {
