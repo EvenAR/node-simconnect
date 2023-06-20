@@ -4,7 +4,8 @@ import { Protocol } from './enums/Protocol';
 export class SimConnectPacketBuilder {
     private readonly packetContent: RawBuffer;
 
-    constructor(packetTypeId: number, protocol: Protocol) {
+    constructor(packetTypeId: number, protocol: Protocol, packetDataBuffer?: RawBuffer) {
+        packetDataBuffer?.clear(); // Prepare for new message
         /**
          * Packet header content (16 bytes):
          *    0-3    packet size (set later)
@@ -12,7 +13,7 @@ export class SimConnectPacketBuilder {
          *    8-11   packet type / SimConnect function
          *    12-15  packet id (set later)
          */
-        this.packetContent = new RawBuffer(256);
+        this.packetContent = packetDataBuffer || new RawBuffer(256);
         this.packetContent.writeInt32(protocol, 4);
         this.packetContent.writeInt32(0xf0000000 | packetTypeId, 8);
         this.packetContent.setOffset(16);

@@ -156,6 +156,8 @@ class SimConnectConnection extends EventEmitter {
 
     private _packetsSent: number;
 
+    private packetDataBuffer = new RawBuffer(256);
+
     constructor(appName: string, protocolVersion: Protocol) {
         super();
         this._appName = appName;
@@ -1471,7 +1473,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _beginPacket(packetId: number): SimConnectPacketBuilder {
-        return new SimConnectPacketBuilder(packetId, this._ourProtocol);
+        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this.packetDataBuffer);
     }
 
     private _buildAndSend(builder: SimConnectPacketBuilder): number {
