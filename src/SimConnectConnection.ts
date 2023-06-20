@@ -54,6 +54,7 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import { RecvJetwayData } from './recv/RecvJetwayData';
 
 type OpenPacketData = {
     major: number;
@@ -127,6 +128,7 @@ interface SimConnectRecvEvents {
     facilityData: (recvFacilityData: RecvFacilityData) => void;
     facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
     facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
+    jetwayData: (recvJetwayData: RecvJetwayData) => void;
 }
 
 type ConnectionOptions =
@@ -1460,6 +1462,24 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    requestJetwayData(airportIcao: string, parkingIndices?: number[]): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x4b)
+            .putString(airportIcao, 16)
+            .putInt32(parkingIndices?.length || 0);
+
+        if (parkingIndices === undefined || parkingIndices.length === 0) {
+            packet.putInt32(0);
+        } else {
+            parkingIndices.forEach(parkingIndex => {
+                packet.putInt32(parkingIndex);
+            });
+        }
+
+        return this._buildAndSend(packet);
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
@@ -1584,6 +1604,9 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_FACILITY_MINIMAL_LIST:
                 this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
+                break;
+            case RecvID.ID_JETWAY_DATA:
+                this.emit('jetwayData', new RecvJetwayData(data));
                 break;
         }
     }
