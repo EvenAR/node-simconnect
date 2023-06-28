@@ -43,6 +43,7 @@ import {
     RecvFacilityDataEnd,
     RecvFacilityMinimalList,
     RecvEventEx1,
+    RecvJetwayData,
 } from './recv';
 import {
     ClientDataDefinitionId,
@@ -54,7 +55,6 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
-import { RecvJetwayData } from './recv/RecvJetwayData';
 
 type OpenPacketData = {
     major: number;

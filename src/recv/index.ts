@@ -23,3 +23,4 @@ export * from './RecvSystemState';
 export * from './RecvVORList';
 export * from './RecvWaypointList';
 export * from './RecvWeatherObservation';
+export * from './RecvJetwayData';
