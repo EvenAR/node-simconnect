@@ -1,36 +1,33 @@
 import { ApiHelper } from '../../dist/helper/ApiHelper';
-import { open, Protocol, SimConnectDataType } from '../../dist';
+import { open, Protocol, SimConnectDataType, SimObjectType } from '../../dist';
 
 open('Testing', Protocol.KittyHawk, { host: '192.168.0.21', port: 1337 })
     .then(async ({ recvOpen, handle }) => {
         console.log('Yay, connected', recvOpen);
         handle.on('exception', ex => console.log(ex));
 
-        const api = new ApiHelper(handle);
+        const { systemEvents, simulationVariables } = new ApiHelper(handle);
 
-        api.systemEvents.addEventListener('Pause', data => {
+        systemEvents.addEventListener('Pause', data => {
             console.log(data === 0 ? 'UnPaused' : 'Paused');
         });
 
-        const pos = await api.simulationVariables.readValues({
+        const pos = await simulationVariables.readValues({
             cat: {
                 simulationVariable: 'CATEGORY',
                 units: null,
                 dataType: SimConnectDataType.STRINGV,
             },
-            fuel: {
-                simulationVariable: 'FUEL TOTAL QUANTITY',
+            fuel3: {
+                simulationVariable: 'FUEL TOTAL QUANTItTY',
                 units: 'liters',
                 dataType: SimConnectDataType.INT32,
             },
-            aircraft: {
-                simulationVariable: 'TITLE',
-                units: null,
-                dataType: SimConnectDataType.STRINGV,
-            },
         });
 
-        api.simulationVariables.monitorValues(
+        simulationVariables.monitorSimulationObjects(
+            SimObjectType.AIRCRAFT,
+            10000,
             {
                 lat: {
                     simulationVariable: 'PLANE LATITUDE',
@@ -53,10 +50,9 @@ open('Testing', Protocol.KittyHawk, { host: '192.168.0.21', port: 1337 })
                     dataType: SimConnectDataType.INT32,
                 },
             },
-            data => {
-                console.log('Some of this data changed:', data);
-            },
-            { onlyOnChange: true }
+            values => {
+                console.log('nearby aircraft', values);
+            }
         );
 
         console.log(pos);
