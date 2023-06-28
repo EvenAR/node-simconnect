@@ -38,6 +38,7 @@ enum RecvID {
     ID_FACILITY_DATA,
     ID_FACILITY_DATA_END,
     ID_FACILITY_MINIMAL_LIST,
+    ID_JETWAY_DATA,
 }
 
 interface SimConnectMessage {

@@ -5,6 +5,7 @@ import { Waypoint } from './Waypoint';
 import { LatLonAlt } from './LatLonAlt';
 import { XYZ } from './XYZ';
 import { SimConnectData } from './SimConnectData';
+import { PBH } from './PBH';
 
 function readInitPosition(dataWrapper: RawBuffer): InitPosition {
     return readData(dataWrapper, new InitPosition());
@@ -31,4 +32,8 @@ function readData<T extends SimConnectData>(dataWrapper: RawBuffer, obj: T): T {
     return obj;
 }
 
-export { readInitPosition, readMarkerState, readWaypoint, readLatLonAlt, readXYZ };
+function readPBH(dataWrapper: RawBuffer): PBH {
+    return readData(dataWrapper, new PBH());
+}
+
+export { readInitPosition, readMarkerState, readWaypoint, readLatLonAlt, readXYZ, readPBH };
