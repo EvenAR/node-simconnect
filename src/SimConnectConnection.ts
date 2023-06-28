@@ -1477,9 +1477,10 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _buildAndSend(builder: SimConnectPacketBuilder): number {
-        this._clientSocket.write(builder.build(this._packetsSent));
+        const thisPacketId = this._packetsSent;
+        this._clientSocket.write(builder.build(thisPacketId));
         this._packetsSent++;
-        return this._packetsSent;
+        return thisPacketId;
     }
 
     private _handleMessage({ packetTypeId, data }: SimConnectMessage) {
