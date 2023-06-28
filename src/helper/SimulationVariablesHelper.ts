@@ -16,6 +16,8 @@ import {
     Waypoint,
     XYZ,
 } from '../dto';
+import { SimObjectType } from '../enums/SimObjectType';
+import { RecvException } from '../recv';
 
 class SimulationVariablesHelper {
     private _handle: SimConnectConnection;
@@ -31,24 +33,6 @@ class SimulationVariablesHelper {
     }
 
     /**
-     * Read a single simulation variable
-     * TODO: perhaps this is not really needed?
-     */
-    async readValue<T extends SimConnectDataType>(
-        simulationVariable: string,
-        units: string | null,
-        dataType: SimConnectDataType,
-        simObjectId: number = SimConnectConstants.OBJECT_ID_USER,
-        epsilon?: number
-    ): Promise<OutputVariableType[T]> {
-        const values = await this.readValues(
-            { value: { simulationVariable, units, dataType, simObjectId, epsilon } },
-            simObjectId
-        );
-        return values.value as OutputVariableType[T];
-    }
-
-    /**
      * Read a set of simulation variables once
      * @param requestStructure
      * @param simObjectId
@@ -57,7 +41,7 @@ class SimulationVariablesHelper {
         requestStructure: T,
         simObjectId: number = SimConnectConstants.OBJECT_ID_USER
     ): Promise<VariablesResponse<T>> {
-        const sub = this.makeSubscription({
+        const sub = this._makeSubscription({
             requestStructure,
             simObjectId,
             period: SimConnectPeriod.ONCE,
@@ -82,6 +66,9 @@ class SimulationVariablesHelper {
      * @param simulationVariables
      * @param callback
      * @param options
+     * @param options.onlyOnChange If the callback should trigger only when one of the variables change
+     * @param options.simObjectId Defaults to the user's aircraft
+     * @param {SimConnectPeriod} options.interval
      */
     monitorValues<T extends RequestedVariables>(
         simulationVariables: T,
@@ -92,7 +79,7 @@ class SimulationVariablesHelper {
             interval?: SimConnectPeriod;
         }
     ) {
-        const sub = this.makeSubscription({
+        const sub = this._makeSubscription({
             requestStructure: simulationVariables,
             simObjectId: options?.simObjectId || SimConnectConstants.OBJECT_ID_USER,
             period: options?.interval || SimConnectPeriod.SIM_FRAME,
@@ -111,28 +98,40 @@ class SimulationVariablesHelper {
         });
     }
 
-    private makeSubscription<T extends RequestedVariables>(params: {
+    monitorSimulationObjects<T extends RequestedVariables>(
+        type: SimObjectType,
+        radiusMeters: number,
+        simulationVariables: T,
+        callback: (values: VariablesResponse<T>) => void
+    ) {
+        const sub = this._makeSubscriptionByType({
+            requestStructure: simulationVariables,
+            radiusMeters,
+            type,
+        });
+
+        this._handle.on('simObjectDataByType', recvSimObjectData => {
+            if (
+                sub.requestId === recvSimObjectData.requestID &&
+                sub.defineId === recvSimObjectData.defineID
+            ) {
+                callback(
+                    extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data)
+                );
+            }
+        });
+    }
+
+    private _makeSubscription<T extends RequestedVariables>(params: {
         requestStructure: T;
         period: SimConnectPeriod;
         simObjectId: number;
         flags?: number;
     }): { defineId: number; requestId: number } {
+        const defineId = this._defineData(params.requestStructure);
         const requestId = this._nextDataRequestId++;
-        const defineId = this._nextDataDefinitionId++;
 
-        Object.values(params.requestStructure)
-            .reverse()
-            .forEach(requestedValue => {
-                this._handle.addToDataDefinition(
-                    defineId,
-                    requestedValue.simulationVariable,
-                    requestedValue.units,
-                    requestedValue.dataType,
-                    requestedValue.epsilon
-                );
-            });
-
-        this._handle.requestDataOnSimObject(
+        const sendId = this._handle.requestDataOnSimObject(
             requestId,
             defineId,
             params.simObjectId,
@@ -140,7 +139,74 @@ class SimulationVariablesHelper {
             DataRequestFlag.DATA_REQUEST_FLAG_DEFAULT | (params.flags || 0)
         );
 
+        this._checkForExceptions(sendId, 'Failed to subscribe');
+
         return { requestId, defineId };
+    }
+
+    private _makeSubscriptionByType<T extends RequestedVariables>(params: {
+        requestStructure: T;
+        radiusMeters: number;
+        type: SimObjectType;
+    }): { defineId: number; requestId: number } {
+        const requestId = this._nextDataRequestId++;
+
+        const defineId = this._defineData(params.requestStructure);
+
+        const sendId = this._handle.requestDataOnSimObjectType(
+            requestId,
+            defineId,
+            params.radiusMeters,
+            params.type
+        );
+
+        this._checkForExceptions(sendId, 'Failed to subscribe');
+
+        return { requestId, defineId };
+    }
+
+    private _defineData<T extends RequestedVariables>(requestStructure: T): number {
+        const defineId = this._nextDataDefinitionId++;
+
+        /**
+         * We register the simulation variables in reverse order, so we receive them in the
+         * same order that they were defined in the requestStructure (because that looks professional).
+         */
+        const userDefinedNames = Object.keys(requestStructure).reverse();
+        const variableDefinitions = Object.values(requestStructure).reverse();
+
+        variableDefinitions.forEach((requestedValue, index) => {
+            const sendId = this._handle.addToDataDefinition(
+                defineId,
+                requestedValue.simulationVariable,
+                requestedValue.units,
+                requestedValue.dataType,
+                requestedValue.epsilon
+            );
+            this._checkForExceptions(
+                sendId,
+                `Failed to register simulation variable '${userDefinedNames[index]}'`
+            );
+        });
+
+        return defineId;
+    }
+
+    private _checkForExceptions(sendId: number, message: string) {
+        function exceptionHandler(recvException: RecvException) {
+            if (recvException.sendId === sendId) {
+                throw Error(
+                    `SimConnectException - sendId=${recvException.sendId}, exception=${recvException.exception}, message="${message}"`
+                );
+            }
+        }
+
+        this._handle.on('exception', exceptionHandler);
+
+        // Give SimConnect server some time to throw the exception, then remove the listener
+        setTimeout(() => {
+            this._handle.off('exception', exceptionHandler);
+        }, 1000);
     }
 }
 
