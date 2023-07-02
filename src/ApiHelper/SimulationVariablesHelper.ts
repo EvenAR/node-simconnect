@@ -17,7 +17,17 @@ import {
     XYZ,
 } from '../dto';
 import { SimObjectType } from '../enums/SimObjectType';
-import { RecvException } from '../recv';
+import { checkForExceptions } from './utils';
+
+export type SimvarCallback<T extends RequestedVariables> = (
+    err: SimConnectError | null,
+    data: VariablesResponse<T> | null
+) => void;
+
+export type SimConnectError = {
+    message: string;
+    exception: string;
+};
 
 class SimulationVariablesHelper {
     private _handle: SimConnectConnection;
@@ -41,15 +51,20 @@ class SimulationVariablesHelper {
         requestStructure: T,
         simObjectId: number = SimConnectConstants.OBJECT_ID_USER
     ): Promise<VariablesResponse<T>> {
-        const sub = this._makeSubscription({
-            requestStructure,
-            simObjectId,
-            period: SimConnectPeriod.ONCE,
-        });
-
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
+            let hasFailed = false;
+            const sub = this._makeSubscription({
+                requestStructure,
+                simObjectId,
+                period: SimConnectPeriod.ONCE,
+                errorHandler: error => {
+                    hasFailed = true;
+                    reject(error);
+                },
+            });
             this._handle.once('simObjectData', recvSimObjectData => {
                 if (
+                    !hasFailed &&
                     sub.requestId === recvSimObjectData.requestID &&
                     sub.defineId === recvSimObjectData.defineID
                 ) {
@@ -72,26 +87,33 @@ class SimulationVariablesHelper {
      */
     monitorValues<T extends RequestedVariables>(
         simulationVariables: T,
-        callback: (values: VariablesResponse<T>) => void,
+        callback: SimvarCallback<T>,
         options?: {
             onlyOnChange?: boolean;
             simObjectId?: number;
             interval?: SimConnectPeriod;
         }
     ) {
+        let hasFailed = false;
         const sub = this._makeSubscription({
             requestStructure: simulationVariables,
             simObjectId: options?.simObjectId || SimConnectConstants.OBJECT_ID_USER,
             period: options?.interval || SimConnectPeriod.SIM_FRAME,
             flags: options?.onlyOnChange ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
+            errorHandler: err => {
+                hasFailed = true;
+                callback(err, null);
+            },
         });
 
         this._handle.on('simObjectData', recvSimObjectData => {
             if (
+                !hasFailed &&
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
                 callback(
+                    null,
                     extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data)
                 );
             }
@@ -102,12 +124,13 @@ class SimulationVariablesHelper {
         type: SimObjectType,
         radiusMeters: number,
         simulationVariables: T,
-        callback: (values: VariablesResponse<T>) => void
+        callback: SimvarCallback<T>
     ) {
         const sub = this._makeSubscriptionByType({
             requestStructure: simulationVariables,
             radiusMeters,
             type,
+            errorHandler: err => callback(err, null),
         });
 
         this._handle.on('simObjectDataByType', recvSimObjectData => {
@@ -116,6 +139,7 @@ class SimulationVariablesHelper {
                 sub.defineId === recvSimObjectData.defineID
             ) {
                 callback(
+                    null,
                     extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data)
                 );
             }
@@ -127,8 +151,9 @@ class SimulationVariablesHelper {
         period: SimConnectPeriod;
         simObjectId: number;
         flags?: number;
+        errorHandler: (error: SimConnectError) => void;
     }): { defineId: number; requestId: number } {
-        const defineId = this._defineData(params.requestStructure);
+        const defineId = this._defineData(params.requestStructure, params.errorHandler);
         const requestId = this._nextDataRequestId++;
 
         const sendId = this._handle.requestDataOnSimObject(
@@ -139,7 +164,12 @@ class SimulationVariablesHelper {
             DataRequestFlag.DATA_REQUEST_FLAG_DEFAULT | (params.flags || 0)
         );
 
-        this._checkForExceptions(sendId, 'Failed to subscribe');
+        checkForExceptions(this._handle, sendId, ex =>
+            params.errorHandler({
+                message: 'Failed to request data for sim object',
+                exception: ex,
+            })
+        );
 
         return { requestId, defineId };
     }
@@ -148,10 +178,11 @@ class SimulationVariablesHelper {
         requestStructure: T;
         radiusMeters: number;
         type: SimObjectType;
+        errorHandler: (error: SimConnectError) => void;
     }): { defineId: number; requestId: number } {
         const requestId = this._nextDataRequestId++;
 
-        const defineId = this._defineData(params.requestStructure);
+        const defineId = this._defineData(params.requestStructure, params.errorHandler);
 
         const sendId = this._handle.requestDataOnSimObjectType(
             requestId,
@@ -160,12 +191,20 @@ class SimulationVariablesHelper {
             params.type
         );
 
-        this._checkForExceptions(sendId, 'Failed to subscribe');
+        checkForExceptions(this._handle, sendId, ex =>
+            params.errorHandler({
+                message: 'Failed to request data for sim object type',
+                exception: ex,
+            })
+        );
 
         return { requestId, defineId };
     }
 
-    private _defineData<T extends RequestedVariables>(requestStructure: T): number {
+    private _defineData<T extends RequestedVariables>(
+        requestStructure: T,
+        errorHandler: (error: SimConnectError) => void
+    ): number {
         const defineId = this._nextDataDefinitionId++;
 
         /**
@@ -183,30 +222,15 @@ class SimulationVariablesHelper {
                 requestedValue.dataType,
                 requestedValue.epsilon
             );
-            this._checkForExceptions(
-                sendId,
-                `Failed to register simulation variable '${userDefinedNames[index]}'`
+            checkForExceptions(this._handle, sendId, ex =>
+                errorHandler({
+                    message: `Something is wrong with the requested value '${userDefinedNames[index]}'`,
+                    exception: ex,
+                })
             );
         });
 
         return defineId;
-    }
-
-    private _checkForExceptions(sendId: number, message: string) {
-        function exceptionHandler(recvException: RecvException) {
-            if (recvException.sendId === sendId) {
-                throw Error(
-                    `SimConnectException - sendId=${recvException.sendId}, exception=${recvException.exception}, message="${message}"`
-                );
-            }
-        }
-
-        this._handle.on('exception', exceptionHandler);
-
-        // Give SimConnect server some time to throw the exception, then remove the listener
-        setTimeout(() => {
-            this._handle.off('exception', exceptionHandler);
-        }, 1000);
     }
 }
 
@@ -216,13 +240,13 @@ function extractDataStructureFromBuffer<T extends RequestedVariables>(
 ) {
     return Object.keys(requestStructure)
         .reverse() // Reverse to get the same order as requested order
-        .reduce((result, propName) => {
-            return {
+        .reduce(
+            (result, propName) => ({
                 [propName]: extractSimConnectValue(rawBuffer, requestStructure[propName].dataType),
                 ...result,
-            };
-            return result;
-        }, {} as VariablesResponse<T>);
+            }),
+            {} as VariablesResponse<T>
+        );
 }
 
 function extractSimConnectValue<T extends SimConnectDataType>(
@@ -288,6 +312,7 @@ type VariablesResponse<R extends RequestedVariables> = {
     [K in keyof R]: OutputVariableType[R[K]['dataType']];
 };
 
+/** Maps the SimConnect data types to JS data types */
 type OutputVariableType = {
     [T in SimConnectDataType]: {
         [SimConnectDataType.INVALID]: undefined;
