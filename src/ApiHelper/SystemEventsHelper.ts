@@ -1,15 +1,13 @@
 import { SimConnectConnection } from '../SimConnectConnection';
-import { checkForExceptions } from './utils';
+import { BaseHelper } from './BaseHelper';
 
-export class SystemEventsHelper {
-    _nextClientEventId;
+export class SystemEventsHelper extends BaseHelper {
+    private _nextClientEventId;
 
-    _handle: SimConnectConnection;
-
-    _subscriptions: { [systemEventName: string]: EventSubscription };
+    private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
 
     constructor(handle: SimConnectConnection) {
-        this._handle = handle;
+        super(handle);
         this._nextClientEventId = 0;
         this._subscriptions = {};
 
@@ -38,7 +36,7 @@ export class SystemEventsHelper {
                 systemEventName
             );
             this._nextClientEventId++;
-            checkForExceptions(this._handle, sendId, ex => {
+            this._checkForException(sendId, ex => {
                 throw Error(`Subscription for system event '${systemEventName}' failed: ${ex}`);
             });
         }
@@ -54,7 +52,7 @@ export class SystemEventsHelper {
         if (sub.eventHandlers.length === 0) {
             const sendId = this._handle.unsubscribeFromSystemEvent(sub.clientEventId);
             delete this._subscriptions[systemEventName];
-            checkForExceptions(this._handle, sendId, ex => {
+            this._checkForException(sendId, ex => {
                 throw Error(`Unsubscription for system event '${systemEventName}' failed: ${ex}`);
             });
         }
