@@ -11,7 +11,7 @@ open('API-helper example', Protocol.KittyHawk)
     });
 
 async function doStuff(apiHelper: ApiHelper) {
-    const { systemEvents, simulationVariables } = apiHelper;
+    const { systemEvents, simulationVariables, facilities } = apiHelper;
 
     /** Subscribe to a system event */
     systemEvents.addEventListener('Pause', data => {
@@ -80,4 +80,20 @@ async function doStuff(apiHelper: ApiHelper) {
         },
         err => console.log(err)
     );
+
+    /**
+     * The property names and corresponding data types are defined here:
+     * https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
+     */
+    const airportInfo = await facilities.getAirport('ENKJ', {
+        ICAO: SimConnectDataType.STRING8,
+        NAME: SimConnectDataType.STRING32,
+        RUNWAY: {
+            // TODO: fix return type. This should be a list in the returned type definition
+            PRIMARY_NUMBER: SimConnectDataType.INT32,
+            HEADING: SimConnectDataType.FLOAT32,
+            LENGTH: SimConnectDataType.FLOAT32,
+        },
+    });
+    console.log('Got airport', airportInfo);
 }
