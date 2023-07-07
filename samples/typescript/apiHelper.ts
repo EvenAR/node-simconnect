@@ -81,15 +81,19 @@ async function doStuff(apiHelper: ApiHelper) {
         err => console.log(err)
     );
 
-    /**
-     * The property names and corresponding data types are defined here:
-     * https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-     */
-    const airportInfo = await facilities.getAirport('ENKJ', {
+    /** Get some details about a nearby airport  */
+    const airportsAroundAircraft = await facilities.getAirportList();
+
+    const airportInfo = await facilities.getAirport(airportsAroundAircraft[0].icao, {
+        /**
+         * The property names and corresponding data types are defined here:
+         * https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
+         */
         ICAO: SimConnectDataType.STRING8,
         NAME: SimConnectDataType.STRING32,
         RUNWAY: {
             PRIMARY_NUMBER: SimConnectDataType.INT32,
+            SECONDARY_NUMBER: SimConnectDataType.INT32,
             HEADING: SimConnectDataType.FLOAT32,
             LENGTH: SimConnectDataType.FLOAT32,
         },

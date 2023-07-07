@@ -7,6 +7,11 @@ import { IcaoType } from '../dto';
 import { SimConnectError } from './SimulationVariablesHelper';
 import { SimConnectException } from '../enums/SimConnectException';
 import { DataDefinitionId } from '../Types';
+import { FacilityListType } from '../enums/FacilityListType';
+import { FacilityAirport } from '../facility/FacilityAirport';
+import { FacilityWaypoint } from '../facility/FacilityWaypoint';
+import { FacilityNDB } from '../facility/FacilityNDB';
+import { FacilityVOR } from '../facility/FacilityVOR';
 
 export class FacilitiesHelper extends BaseHelper {
     /**
@@ -42,7 +47,7 @@ export class FacilitiesHelper extends BaseHelper {
      * @param facilityDefinition
      * @param options
      */
-    public async getNDB<T extends FacilityRequest>(
+    public async getNdb<T extends FacilityRequest>(
         icao: string,
         facilityDefinition: T,
         options?: { region?: string; type?: IcaoType }
@@ -62,7 +67,7 @@ export class FacilitiesHelper extends BaseHelper {
      * @param facilityDefinition
      * @param options
      */
-    public async getVOR<T extends FacilityRequest>(
+    public async getVor<T extends FacilityRequest>(
         icao: string,
         facilityDefinition: T,
         options?: { region?: string; type?: IcaoType }
@@ -74,6 +79,25 @@ export class FacilitiesHelper extends BaseHelper {
             options?.region,
             options?.type
         );
+    }
+
+    public async getAirportList(includeWholeWorld = false) {
+        return (await this._getFacilitiesList(
+            FacilityListType.AIRPORT,
+            includeWholeWorld
+        )) as FacilityAirport[];
+    }
+
+    public async getWaypointList() {
+        return (await this._getFacilitiesList(FacilityListType.WAYPOINT)) as FacilityWaypoint[];
+    }
+
+    public async getNdbList() {
+        return (await this._getFacilitiesList(FacilityListType.NDB)) as FacilityNDB[];
+    }
+
+    public async getVorList() {
+        return (await this._getFacilitiesList(FacilityListType.VOR)) as FacilityVOR[];
     }
 
     private _requestFacilityByEntryPoint<T extends FacilityRequest>(
@@ -191,6 +215,49 @@ export class FacilitiesHelper extends BaseHelper {
                 );
                 this._checkForException(sendId, handleException);
             }
+        });
+    }
+
+    private async _getFacilitiesList(facilityListType: FacilityListType, wholeWorld = false) {
+        const requestId = this._globals.nextDataRequestId;
+        const sendId = wholeWorld
+            ? this._handle.requestFacilitiesList(facilityListType, requestId)
+            : this._handle.requestFacilitiesListEx1(facilityListType, requestId);
+
+        return new Promise((resolve, reject) => {
+            if (facilityListType === FacilityListType.AIRPORT) {
+                this._handle.once('airportList', recvAirportList => {
+                    if (recvAirportList.requestID === requestId) {
+                        resolve(recvAirportList.airports);
+                    }
+                });
+            } else if (facilityListType === FacilityListType.WAYPOINT) {
+                this._handle.once('waypointList', recvWaypointList => {
+                    if (recvWaypointList.requestID === requestId) {
+                        resolve(recvWaypointList.waypoints);
+                    }
+                });
+            } else if (facilityListType === FacilityListType.NDB) {
+                this._handle.once('ndbList', recvNDBList => {
+                    if (recvNDBList.requestID === requestId) {
+                        resolve(recvNDBList.ndbs);
+                    }
+                });
+            } else if (facilityListType === FacilityListType.VOR) {
+                this._handle.once('vorList', recvVORList => {
+                    if (recvVORList.requestID === requestId) {
+                        resolve(recvVORList.vors);
+                    }
+                });
+            }
+
+            this._checkForException(sendId, ex =>
+                reject(
+                    new Error(
+                        `Failed to get facilities of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`
+                    )
+                )
+            );
         });
     }
 }

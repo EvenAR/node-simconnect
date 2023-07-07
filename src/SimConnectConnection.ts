@@ -1330,13 +1330,13 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId): number {
+    requestFacilitiesList(type: FacilityListType, requestId: DataRequestId): number {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         return this._buildAndSend(
             this._beginPacket(0x43) //
                 .putInt32(type)
-                .putInt32(clientEventId)
+                .putInt32(requestId)
         );
     }
 
