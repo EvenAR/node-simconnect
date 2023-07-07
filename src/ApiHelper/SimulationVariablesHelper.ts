@@ -2,7 +2,6 @@ import { SimConnectConstants } from '../SimConnectConstants';
 import { SimConnectDataType } from '../enums/SimConnectDataType';
 import { SimConnectPeriod } from '../enums/SimConnectPeriod';
 import { DataRequestFlag } from '../flags/DataRequestFlag';
-import { SimConnectConnection } from '../SimConnectConnection';
 import { RawBuffer } from '../RawBuffer';
 import { SimObjectType } from '../enums/SimObjectType';
 import { SimConnectException } from '../enums/SimConnectException';
@@ -20,16 +19,6 @@ export type SimConnectError = {
 };
 
 class SimulationVariablesHelper extends BaseHelper {
-    private _nextDataDefinitionId: number;
-
-    private _nextDataRequestId: number;
-
-    constructor(handle: SimConnectConnection) {
-        super(handle);
-        this._nextDataDefinitionId = 0;
-        this._nextDataRequestId = 0;
-    }
-
     /**
      * Read a set of simulation variables once
      * @param requestStructure
@@ -196,7 +185,7 @@ class SimulationVariablesHelper extends BaseHelper {
         errorHandler: (error: SimConnectError) => void;
     }): { defineId: number; requestId: number } {
         const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
-        const requestId = this._nextDataRequestId++;
+        const requestId = this._globals.nextDataRequestId;
 
         const sendId = this._handle.requestDataOnSimObject(
             requestId,
@@ -222,7 +211,7 @@ class SimulationVariablesHelper extends BaseHelper {
         type: SimObjectType;
         errorHandler: (error: SimConnectError) => void;
     }): { defineId: number; requestId: number } {
-        const requestId = this._nextDataRequestId++;
+        const requestId = this._globals.nextDataRequestId;
 
         const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
 
@@ -247,7 +236,7 @@ class SimulationVariablesHelper extends BaseHelper {
         requestStructure: T,
         errorHandler: (error: SimConnectError) => void
     ): number {
-        const defineId = this._nextDataDefinitionId++;
+        const defineId = this._globals.nextDataRequestId;
 
         /**
          * We register the simulation variables in reverse order, so we receive them in the same order

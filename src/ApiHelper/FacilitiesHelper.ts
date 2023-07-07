@@ -1,5 +1,4 @@
 import { BaseHelper } from './BaseHelper';
-import { SimConnectConnection } from '../SimConnectConnection';
 import { SimConnectDataType } from '../enums/SimConnectDataType';
 import { JavascriptDataType, readSimConnectValue } from './utils';
 import { FacilityDataType } from '../enums/FacilityDataType';
@@ -7,18 +6,9 @@ import { RawBuffer } from '../RawBuffer';
 import { IcaoType } from '../dto';
 import { SimConnectError } from './SimulationVariablesHelper';
 import { SimConnectException } from '../enums/SimConnectException';
+import { DataDefinitionId } from '../Types';
 
 export class FacilitiesHelper extends BaseHelper {
-    private _nextFacilityDefinition: number;
-
-    private _nextRequestId: number;
-
-    constructor(handle: SimConnectConnection) {
-        super(handle);
-        this._nextFacilityDefinition = 0;
-        this._nextRequestId = 0;
-    }
-
     /**
      * @param icao
      * @param facilityDefinition
@@ -94,8 +84,9 @@ export class FacilitiesHelper extends BaseHelper {
         type?: IcaoType
     ) {
         return new Promise<FacilityOutput<T>>((resolve, reject) => {
-            const defineId = this._nextFacilityDefinition++;
-            const requestId = this._nextRequestId++;
+            const defineId = this._globals.nextDataDefinitionId;
+            const requestId = this._globals.nextDataRequestId;
+
             this._registerFacilityDefinitionRecursively(
                 defineId,
                 {
@@ -158,7 +149,7 @@ export class FacilitiesHelper extends BaseHelper {
     }
 
     private _registerFacilityDefinitionRecursively(
-        defineId: number,
+        defineId: DataDefinitionId,
         definition: { [key: string]: FacilityRequest } | FacilityRequest,
         exceptionHandler: (err: SimConnectError) => void,
         objectName?: string
@@ -224,12 +215,10 @@ function readObject<T extends FacilityRequest>(
     return output as FacilityOutput<T>;
 }
 
-type FacilityOutput<Def extends FacilityRequest> = {
-    [EntryPoint in keyof Def]: {
-        [Child in keyof Def[EntryPoint]]: Def[EntryPoint][Child] extends SimConnectDataType
-            ? JavascriptDataType[Def[EntryPoint][Child]]
-            : Def[EntryPoint][Child][];
-    };
+type FacilityOutput<RequestStructure extends FacilityRequest> = {
+    [PropName in keyof RequestStructure]: RequestStructure[PropName] extends SimConnectDataType
+        ? JavascriptDataType[RequestStructure[PropName]]
+        : RequestStructure[PropName][];
 };
 
 type FacilityRequest = {

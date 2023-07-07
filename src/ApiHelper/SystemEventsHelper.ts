@@ -2,13 +2,10 @@ import { SimConnectConnection } from '../SimConnectConnection';
 import { BaseHelper } from './BaseHelper';
 
 export class SystemEventsHelper extends BaseHelper {
-    private _nextClientEventId;
-
     private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
 
     constructor(handle: SimConnectConnection) {
         super(handle);
-        this._nextClientEventId = 0;
         this._subscriptions = {};
 
         handle.on('event', event => {
@@ -27,15 +24,12 @@ export class SystemEventsHelper extends BaseHelper {
         if (existingSub) {
             existingSub.eventHandlers.push(eventHandler);
         } else {
+            const myEventId = this._globals.nextClientEventId;
             this._subscriptions[systemEventName] = {
-                clientEventId: this._nextClientEventId,
+                clientEventId: myEventId,
                 eventHandlers: [eventHandler],
             };
-            const sendId = this._handle.subscribeToSystemEvent(
-                this._nextClientEventId,
-                systemEventName
-            );
-            this._nextClientEventId++;
+            const sendId = this._handle.subscribeToSystemEvent(myEventId, systemEventName);
             this._checkForException(sendId, ex => {
                 throw Error(`Subscription for system event '${systemEventName}' failed: ${ex}`);
             });

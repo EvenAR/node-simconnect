@@ -89,7 +89,6 @@ async function doStuff(apiHelper: ApiHelper) {
         ICAO: SimConnectDataType.STRING8,
         NAME: SimConnectDataType.STRING32,
         RUNWAY: {
-            // TODO: fix return type. This should be a list in the returned type definition
             PRIMARY_NUMBER: SimConnectDataType.INT32,
             HEADING: SimConnectDataType.FLOAT32,
             LENGTH: SimConnectDataType.FLOAT32,
