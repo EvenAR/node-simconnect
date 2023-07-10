@@ -3,7 +3,7 @@ import { ClientDataDefinitionId, ClientEventId, DataDefinitionId, DataRequestId 
 /**
  * Singleton class that keeps track of IDs
  */
-export class Globals {
+export class IdFactory {
     private _nextDataRequestId: DataRequestId;
 
     private _nextDataDefinitionId: DataDefinitionId;
@@ -12,7 +12,7 @@ export class Globals {
 
     private _nextClientEventId: ClientEventId;
 
-    private static instance: Globals;
+    private static instance: IdFactory;
 
     private constructor() {
         this._nextDataRequestId = 0 as DataRequestId;
@@ -21,12 +21,12 @@ export class Globals {
         this._nextClientEventId = 0 as ClientEventId;
     }
 
-    public static getInstance(): Globals {
-        if (!Globals.instance) {
-            Globals.instance = new Globals();
+    public static getInstance(): IdFactory {
+        if (!IdFactory.instance) {
+            IdFactory.instance = new IdFactory();
         }
 
-        return Globals.instance;
+        return IdFactory.instance;
     }
 
     get nextDataRequestId() {

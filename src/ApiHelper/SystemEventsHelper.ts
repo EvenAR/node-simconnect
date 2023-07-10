@@ -1,5 +1,6 @@
 import { SimConnectConnection } from '../SimConnectConnection';
 import { BaseHelper } from './BaseHelper';
+import { SimConnectError } from './SimulationVariablesHelper';
 
 export class SystemEventsHelper extends BaseHelper {
     private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
@@ -19,7 +20,11 @@ export class SystemEventsHelper extends BaseHelper {
         });
     }
 
-    addEventListener(systemEventName: string, eventHandler: SystemEventHandler) {
+    addEventListener(
+        systemEventName: string,
+        eventHandler: SystemEventHandler,
+        errorHandler?: (err: SimConnectError) => void
+    ) {
         const existingSub = this._subscriptions[systemEventName];
         if (existingSub) {
             existingSub.eventHandlers.push(eventHandler);
@@ -31,7 +36,15 @@ export class SystemEventsHelper extends BaseHelper {
             };
             const sendId = this._handle.subscribeToSystemEvent(myEventId, systemEventName);
             this._checkForException(sendId, ex => {
-                throw Error(`Subscription for system event '${systemEventName}' failed: ${ex}`);
+                const errMsg = `Subscription for system event '${systemEventName}' failed: ${ex}`;
+                if (errorHandler) {
+                    errorHandler({
+                        message: errMsg,
+                        exception: ex,
+                    });
+                } else {
+                    throw Error(errMsg);
+                }
             });
         }
     }

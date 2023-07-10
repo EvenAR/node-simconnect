@@ -13,6 +13,16 @@ import { FacilityWaypoint } from '../facility/FacilityWaypoint';
 import { FacilityNDB } from '../facility/FacilityNDB';
 import { FacilityVOR } from '../facility/FacilityVOR';
 
+type FacilityRequest = {
+    [propName: string]: SimConnectDataType | { [propName: string]: SimConnectDataType };
+};
+
+type FacilityOutput<RequestStructure extends FacilityRequest> = {
+    [PropName in keyof RequestStructure]: RequestStructure[PropName] extends SimConnectDataType
+        ? JavascriptDataType[RequestStructure[PropName]]
+        : RequestStructure[PropName][];
+};
+
 export class FacilitiesHelper extends BaseHelper {
     /**
      * @param icao
@@ -281,16 +291,6 @@ function readObject<T extends FacilityRequest>(
     });
     return output as FacilityOutput<T>;
 }
-
-type FacilityOutput<RequestStructure extends FacilityRequest> = {
-    [PropName in keyof RequestStructure]: RequestStructure[PropName] extends SimConnectDataType
-        ? JavascriptDataType[RequestStructure[PropName]]
-        : RequestStructure[PropName][];
-};
-
-type FacilityRequest = {
-    [propName: string]: SimConnectDataType | { [propName: string]: SimConnectDataType };
-};
 
 // https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_RequestFacilityData.htm
 function explainRequestFacilityDataError(ex: SimConnectException): string | undefined {

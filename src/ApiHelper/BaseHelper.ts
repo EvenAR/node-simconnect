@@ -1,17 +1,17 @@
 import { SimConnectConnection } from '../SimConnectConnection';
 import { SimConnectException } from '../enums/SimConnectException';
-import { Globals } from './Globals';
+import { IdFactory } from './IdFactory';
 
 export class BaseHelper {
     protected readonly _handle: SimConnectConnection;
 
-    protected readonly _globals: Globals;
+    protected readonly _globals: IdFactory;
 
     private _exceptionHandlers: { [sendId: number]: (ex: SimConnectException) => void } = {};
 
     constructor(handle: SimConnectConnection) {
         this._handle = handle;
-        this._globals = Globals.getInstance();
+        this._globals = IdFactory.getInstance();
 
         this._handle.on('exception', recvException => {
             if (recvException.sendId in this._exceptionHandlers) {
@@ -22,7 +22,8 @@ export class BaseHelper {
     }
 
     /**
-     * Should be called immediately after sending a simconnect packet
+     * Should be called immediately after sending a simconnect packet.
+     * Can be used by both promise and callback based helper functions.
      * @param sendId the ID of the newly sent packet
      * @param handler function to be called in case of an exception
      * @private

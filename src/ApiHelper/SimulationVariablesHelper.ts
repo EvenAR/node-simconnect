@@ -8,23 +8,41 @@ import { SimConnectException } from '../enums/SimConnectException';
 import { BaseHelper } from './BaseHelper';
 import { JavascriptDataType, readSimConnectValue, writeSimConnectValue } from './utils';
 
-export type SimvarCallback<T extends VariablesToGet> = (
-    err: SimConnectError | null,
-    data: VariablesResponse<T> | null
-) => void;
+export type SimvarCallback<T extends VariablesToGet> = (data: VariablesResponse<T>) => void;
+export type ErrorCallback = (err: SimConnectError) => void;
+
+type SimulationVariable = {
+    units?: string | null;
+    dataType: SimConnectDataType;
+    epsilon?: number;
+};
+
+type VariablesToSet = {
+    [propName: string]: SimulationVariable & {
+        value: JavascriptDataType[SimulationVariable['dataType']];
+    };
+};
+
+type VariablesToGet = {
+    [propName: string]: SimulationVariable;
+};
+
+type VariablesResponse<R extends VariablesToGet> = {
+    [K in keyof R]: JavascriptDataType[R[K]['dataType']];
+};
 
 export type SimConnectError = {
     message: string;
     exception: SimConnectException;
 };
 
-class SimulationVariablesHelper extends BaseHelper {
+export class SimulationVariablesHelper extends BaseHelper {
     /**
      * Read a set of simulation variables once
      * @param requestStructure
      * @param simObjectId
      */
-    async request<T extends VariablesToGet>(
+    async get<T extends VariablesToGet>(
         requestStructure: T,
         simObjectId: number = SimConnectConstants.OBJECT_ID_USER
     ): Promise<VariablesResponse<T>> {
@@ -101,30 +119,32 @@ class SimulationVariablesHelper extends BaseHelper {
     /**
      * Continuously read a set of simulation variables
      * @param simulationVariables
-     * @param callback
+     * @param onData
+     * @param onError
      * @param options
      * @param options.onlyOnChange If the callback should trigger only when one of the variables change
      * @param options.simObjectId Defaults to the user's aircraft
-     * @param {SimConnectPeriod} options.interval
+     * @param {SimConnectPeriod} options.updateRate
      */
     monitor<T extends VariablesToGet>(
         simulationVariables: T,
-        callback: SimvarCallback<T>,
+        onData: SimvarCallback<T>,
+        onError: ErrorCallback,
         options?: {
             onlyOnChange?: boolean;
             simObjectId?: number;
-            interval?: SimConnectPeriod;
+            updateRate?: SimConnectPeriod;
         }
     ) {
         let hasFailed = false;
         const sub = this._makeSubscription({
             requestStructure: simulationVariables,
             simObjectId: options?.simObjectId || SimConnectConstants.OBJECT_ID_USER,
-            period: options?.interval || SimConnectPeriod.SIM_FRAME,
+            period: options?.updateRate || SimConnectPeriod.SIM_FRAME,
             flags: options?.onlyOnChange ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
             errorHandler: err => {
                 hasFailed = true;
-                callback(err, null);
+                onError(err);
                 this._handle.clearDataDefinition(sub.defineId);
             },
         });
@@ -135,10 +155,7 @@ class SimulationVariablesHelper extends BaseHelper {
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
-                callback(
-                    null,
-                    extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data)
-                );
+                onData(extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data));
             }
         });
     }
@@ -148,19 +165,21 @@ class SimulationVariablesHelper extends BaseHelper {
      * @param type
      * @param radiusMeters Radius from user's aircraft
      * @param simulationVariables
-     * @param callback
+     * @param onData
+     * @param onError
      */
     monitorObjects<T extends VariablesToGet>(
         type: SimObjectType,
         radiusMeters: number,
         simulationVariables: T,
-        callback: SimvarCallback<T>
+        onData: SimvarCallback<T>,
+        onError: ErrorCallback
     ) {
         const sub = this._makeSubscriptionByType({
             requestStructure: simulationVariables,
             radiusMeters,
             type,
-            errorHandler: err => callback(err, null),
+            errorHandler: err => onError(err),
         });
 
         this._handle.on('simObjectDataByType', recvSimObjectData => {
@@ -168,10 +187,7 @@ class SimulationVariablesHelper extends BaseHelper {
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
-                callback(
-                    null,
-                    extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data)
-                );
+                onData(extractDataStructureFromBuffer(simulationVariables, recvSimObjectData.data));
                 // this._handle.clearDataDefinition(sub.defineId);
             }
         });
@@ -242,14 +258,16 @@ class SimulationVariablesHelper extends BaseHelper {
          * We register the simulation variables in reverse order, so we receive them in the same order
          * that they were defined in the requestStructure (because the result looks more professional).
          */
-        const variableNames = Object.keys(requestStructure).reverse();
+        const variableNames = Object.keys(requestStructure)
+            .reverse()
+            .map(name => name.replace(/_/g, ' '));
         const variableDefinitions = Object.values(requestStructure).reverse();
 
         variableDefinitions.forEach((requestedValue, index) => {
             const sendId = this._handle.addToDataDefinition(
                 defineId,
                 variableNames[index],
-                requestedValue.units,
+                requestedValue.units || null,
                 requestedValue.dataType,
                 requestedValue.epsilon
             );
@@ -282,27 +300,3 @@ function extractDataStructureFromBuffer<T extends VariablesToGet>(
             {} as VariablesResponse<T>
         );
 }
-
-// Types:
-
-type SimulationVariable = {
-    units: string | null;
-    dataType: SimConnectDataType;
-    epsilon?: number;
-};
-
-type VariablesToSet = {
-    [propName: string]: SimulationVariable & {
-        value: JavascriptDataType[SimulationVariable['dataType']];
-    };
-};
-
-type VariablesToGet = {
-    [propName: string]: SimulationVariable;
-};
-
-type VariablesResponse<R extends VariablesToGet> = {
-    [K in keyof R]: JavascriptDataType[R[K]['dataType']];
-};
-
-export { SimulationVariablesHelper };

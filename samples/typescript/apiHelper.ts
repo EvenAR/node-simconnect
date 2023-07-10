@@ -1,5 +1,5 @@
 import { ApiHelper } from '../../dist/apiHelper';
-import { open, Protocol, SimConnectDataType } from '../../dist';
+import { open, Protocol, SimConnectDataType, SimConnectPeriod } from '../../dist';
 
 open('API-helper example', Protocol.KittyHawk)
     .then(async ({ recvOpen, handle }) => {
@@ -19,49 +19,41 @@ async function doStuff(apiHelper: ApiHelper) {
     });
 
     /** Get a set of simulation variables once */
-    simulationVariables
-        .request({
-            TITLE: {
-                units: null,
-                dataType: SimConnectDataType.STRING128,
-            },
-            CATEGORY: {
-                units: null,
-                dataType: SimConnectDataType.STRING128,
-            },
-            'FUEL TOTAL QUANTITY': {
-                units: 'liters',
-                dataType: SimConnectDataType.INT32,
-            },
-        })
-        .then(data => {
-            console.log(
-                `Current aircraft is '${data.TITLE}'. It has ${data['FUEL TOTAL QUANTITY']} liters of fuel on board`
-            );
-        })
-        .catch(err => console.log(err));
+    const aircraftInfo = await simulationVariables.get({
+        TITLE: {
+            dataType: SimConnectDataType.STRING128,
+        },
+        CATEGORY: {
+            dataType: SimConnectDataType.STRING128,
+        },
+        FUEL_TOTAL_QUANTITY: {
+            units: 'liters',
+            dataType: SimConnectDataType.INT32,
+        },
+    });
 
-    /** Get simulation variables whenever they change */
+    console.log(
+        `Current aircraft is '${aircraftInfo.TITLE}'. It has ${aircraftInfo.FUEL_TOTAL_QUANTITY} liters of fuel on board`
+    );
+
+    /** Get simulation variables whenever one of them change */
     simulationVariables.monitor(
         {
-            'AIRSPEED INDICATED': {
-                units: 'knots',
+            LIGHT_LANDING: {
+                units: 'Bool',
                 dataType: SimConnectDataType.INT32,
             },
-            'STRUCT LATLONALT': {
-                units: null,
-                dataType: SimConnectDataType.LATLONALT,
+            BRAKE_PARKING_POSITION: {
+                units: 'Bool',
+                dataType: SimConnectDataType.INT32,
             },
         },
-        (err, data) => {
-            if (err) {
-                console.log(err);
-            } else if (data) {
-                console.log('Airspeed:', data['AIRSPEED INDICATED']);
-                console.log('Altitude:', data['STRUCT LATLONALT'].altitude);
-            }
+        data => {
+            console.log('Landing lights:', data.LIGHT_LANDING === 1 ? 'On' : 'Off');
+            console.log('Parking brakes:', data.BRAKE_PARKING_POSITION === 1 ? 'Set' : 'Released');
         },
-        { onlyOnChange: true }
+        err => console.log(`Something went wrong: ${err}`),
+        { onlyOnChange: true, updateRate: SimConnectPeriod.VISUAL_FRAME }
     );
 
     /** Set throttles to 50% */
