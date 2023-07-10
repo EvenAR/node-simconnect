@@ -25,16 +25,16 @@ type FacilityOutput<RequestStructure extends FacilityRequest> = {
 
 export class FacilitiesHelper extends BaseHelper {
     /**
-     * @param icao
-     * @param facilityDefinition
+     * @param icao the airport ICAO code
+     * @param facilityDefinition The property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
      */
     public async getAirport<T extends FacilityRequest>(icao: string, facilityDefinition: T) {
         return this._requestFacilityByEntryPoint('AIRPORT', icao, facilityDefinition);
     }
 
     /**
-     * @param icao
-     * @param facilityDefinition
+     * @param icao the waypoint ICAO code
+     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
      * @param options
      */
     public async getWaypoint<T extends FacilityRequest>(
@@ -53,8 +53,8 @@ export class FacilitiesHelper extends BaseHelper {
 
     /**
      *
-     * @param icao
-     * @param facilityDefinition
+     * @param icao the NDB ICAO code
+     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
      * @param options
      */
     public async getNdb<T extends FacilityRequest>(
@@ -73,8 +73,8 @@ export class FacilitiesHelper extends BaseHelper {
 
     /**
      *
-     * @param icao
-     * @param facilityDefinition
+     * @param icao the VOR ICAO code
+     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
      * @param options
      */
     public async getVor<T extends FacilityRequest>(
@@ -91,6 +91,9 @@ export class FacilitiesHelper extends BaseHelper {
         );
     }
 
+    /**
+     * @param includeWholeWorld If you need facilities outside the aircraft's reality bubble
+     */
     public async getAirportList(includeWholeWorld = false) {
         return (await this._getFacilitiesList(
             FacilityListType.AIRPORT,
@@ -235,28 +238,35 @@ export class FacilitiesHelper extends BaseHelper {
             : this._handle.requestFacilitiesListEx1(facilityListType, requestId);
 
         return new Promise((resolve, reject) => {
+            const output: (FacilityAirport | FacilityWaypoint)[] = [];
+
             if (facilityListType === FacilityListType.AIRPORT) {
-                this._handle.once('airportList', recvAirportList => {
-                    if (recvAirportList.requestID === requestId) {
-                        resolve(recvAirportList.airports);
+                // We use "on" because there could be multiple chunks
+                this._handle.on('airportList', ({ requestID, entryNumber, outOf, airports }) => {
+                    output.push(...airports);
+                    if (requestID === requestId && entryNumber === outOf - 1) {
+                        resolve(output);
                     }
                 });
             } else if (facilityListType === FacilityListType.WAYPOINT) {
-                this._handle.once('waypointList', recvWaypointList => {
-                    if (recvWaypointList.requestID === requestId) {
-                        resolve(recvWaypointList.waypoints);
+                this._handle.on('waypointList', ({ requestID, entryNumber, outOf, waypoints }) => {
+                    output.push(...waypoints);
+                    if (requestID === requestId && entryNumber === outOf - 1) {
+                        resolve(output);
                     }
                 });
             } else if (facilityListType === FacilityListType.NDB) {
-                this._handle.once('ndbList', recvNDBList => {
-                    if (recvNDBList.requestID === requestId) {
-                        resolve(recvNDBList.ndbs);
+                this._handle.on('ndbList', ({ requestID, entryNumber, outOf, ndbs }) => {
+                    output.push(...ndbs);
+                    if (requestID === requestId && entryNumber === outOf - 1) {
+                        resolve(output);
                     }
                 });
             } else if (facilityListType === FacilityListType.VOR) {
-                this._handle.once('vorList', recvVORList => {
-                    if (recvVORList.requestID === requestId) {
-                        resolve(recvVORList.vors);
+                this._handle.on('vorList', ({ requestID, entryNumber, outOf, vors }) => {
+                    output.push(...vors);
+                    if (requestID === requestId && entryNumber === outOf - 1) {
+                        resolve(output);
                     }
                 });
             }

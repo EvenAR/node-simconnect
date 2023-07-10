@@ -18,7 +18,7 @@ async function doStuff(apiHelper: ApiHelper) {
         console.log(data === 0 ? 'UnPaused' : 'Paused');
     });
 
-    /** Get a set of simulation variables once */
+    /** Make a one-time request for a set of simulation variables */
     const aircraftInfo = await simulationVariables.get({
         TITLE: {
             dataType: SimConnectDataType.STRING128,
@@ -36,7 +36,7 @@ async function doStuff(apiHelper: ApiHelper) {
         `Current aircraft is '${aircraftInfo.TITLE}'. It has ${aircraftInfo.FUEL_TOTAL_QUANTITY} liters of fuel on board`
     );
 
-    /** Get simulation variables whenever one of them change */
+    /** Get simulation variables whenever one of them changes */
     simulationVariables.monitor(
         {
             LIGHT_LANDING: {
@@ -56,7 +56,7 @@ async function doStuff(apiHelper: ApiHelper) {
         { onlyOnChange: true, updateRate: SimConnectPeriod.VISUAL_FRAME }
     );
 
-    /** Set throttles to 50% */
+    /** Set aircraft throttles to 50% */
     simulationVariables.set(
         {
             'GENERAL ENG THROTTLE LEVER POSITION:1': {
@@ -73,22 +73,26 @@ async function doStuff(apiHelper: ApiHelper) {
         err => console.log(err)
     );
 
-    /** Get some details about a nearby airport  */
-    const airportsAroundAircraft = await facilities.getAirportList();
+    /** Get details about some airports  */
+    const allAirports = await facilities.getAirportList(true);
+    const favoriteAirports = ['ENGM', 'ENKJ', 'VNLK'];
 
-    const airportInfo = await facilities.getAirport(airportsAroundAircraft[0].icao, {
-        /**
-         * The property names and corresponding data types are defined here:
-         * https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-         */
-        ICAO: SimConnectDataType.STRING8,
-        NAME: SimConnectDataType.STRING32,
-        RUNWAY: {
-            PRIMARY_NUMBER: SimConnectDataType.INT32,
-            SECONDARY_NUMBER: SimConnectDataType.INT32,
-            HEADING: SimConnectDataType.FLOAT32,
-            LENGTH: SimConnectDataType.FLOAT32,
-        },
-    });
-    console.log('Got airport', airportInfo);
+    const airportDetails = allAirports
+        .filter(ap => favoriteAirports.includes(ap.icao))
+        .map(ap =>
+            facilities.getAirport(ap.icao, {
+                ICAOo: SimConnectDataType.STRING8,
+                NAME: SimConnectDataType.STRING32,
+                N_RUNWAYS: SimConnectDataType.INT32,
+                N_TAXI_PARKINGS: SimConnectDataType.INT32,
+                RUNWAY: {
+                    PRIMARY_NUMBER: SimConnectDataType.INT32,
+                    SECONDARY_NUMBER: SimConnectDataType.INT32,
+                    HEADING: SimConnectDataType.FLOAT32,
+                    LENGTH: SimConnectDataType.FLOAT32,
+                },
+            })
+        );
+
+    console.log('Favorite airports:', await Promise.all(airportDetails));
 }
