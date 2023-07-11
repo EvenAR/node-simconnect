@@ -77,18 +77,14 @@ async function doStuff(apiHelper: ApiHelper) {
     const allAirports = await facilities.getAll(FacilityListType.AIRPORT, true);
     console.log(`There are currently ${allAirports.length} airports in MSFS!`);
 
-    const allWaypoints = await facilities.getAll(FacilityListType.WAYPOINT);
-    console.log(
-        `There are currently ${allWaypoints.length} waypoints in the range of the aircraft!`
-    );
-
-    const allVors = await facilities.getAll(FacilityListType.VOR);
-    console.log(`There are currently ${allVors.length} VOR stations in MSFS!`);
-
+    /** Subscribe to changes in the list of surrounding waypoints */
     facilities.monitorList(
         FacilityListType.WAYPOINT,
         list => {
-            console.log('List updated', list.length);
+            console.log(
+                `Number of elements in waypoint cache updated: ${list.length}. Here is one of them:`,
+                list[0]
+            );
         },
         err => {
             console.log(err);
