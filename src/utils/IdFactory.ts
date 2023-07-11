@@ -1,7 +1,7 @@
 import { ClientDataDefinitionId, ClientEventId, DataDefinitionId, DataRequestId } from '../Types';
 
 /**
- * Singleton class that keeps track of IDs
+ * Helper class that keeps track of IDs
  */
 export class IdFactory {
     private _nextDataRequestId: DataRequestId;
@@ -12,21 +12,11 @@ export class IdFactory {
 
     private _nextClientEventId: ClientEventId;
 
-    private static instance: IdFactory;
-
-    private constructor() {
+    constructor() {
         this._nextDataRequestId = 0 as DataRequestId;
         this._nextDataDefinitionId = 0 as DataDefinitionId;
         this._nextClientDataDefinitionId = 0 as ClientDataDefinitionId;
         this._nextClientEventId = 0 as ClientEventId;
-    }
-
-    public static getInstance(): IdFactory {
-        if (!IdFactory.instance) {
-            IdFactory.instance = new IdFactory();
-        }
-
-        return IdFactory.instance;
     }
 
     get nextDataRequestId() {

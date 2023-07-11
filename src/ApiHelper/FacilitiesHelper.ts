@@ -1,17 +1,18 @@
 import { BaseHelper } from './BaseHelper';
 import { SimConnectDataType } from '../enums/SimConnectDataType';
-import { JavascriptDataType, readSimConnectValue } from './utils';
+import {
+    ApiHelperError,
+    FacilityResponseType,
+    JavascriptDataType,
+    readSimConnectValue,
+} from './utils';
 import { FacilityDataType } from '../enums/FacilityDataType';
 import { RawBuffer } from '../RawBuffer';
 import { IcaoType } from '../dto';
-import { SimConnectError } from './SimulationVariablesHelper';
 import { SimConnectException } from '../enums/SimConnectException';
-import { DataDefinitionId } from '../Types';
+import { DataDefinitionId, DataRequestId } from '../Types';
 import { FacilityListType } from '../enums/FacilityListType';
-import { FacilityAirport } from '../facility/FacilityAirport';
-import { FacilityWaypoint } from '../facility/FacilityWaypoint';
-import { FacilityNDB } from '../facility/FacilityNDB';
-import { FacilityVOR } from '../facility/FacilityVOR';
+import { RecvAirportList, RecvNDBList, RecvVORList, RecvWaypointList } from '../recv';
 
 type FacilityRequest = {
     [propName: string]: SimConnectDataType | { [propName: string]: SimConnectDataType };
@@ -92,25 +93,66 @@ export class FacilitiesHelper extends BaseHelper {
     }
 
     /**
-     * @param includeWholeWorld If you need facilities outside the aircraft's reality bubble
+     * @param facilityListType
+     * @param includeWholeWorld If you need airports outside the aircraft's reality bubble
      */
-    public async getAirportList(includeWholeWorld = false) {
-        return (await this._getFacilitiesList(
-            FacilityListType.AIRPORT,
-            includeWholeWorld
-        )) as FacilityAirport[];
+    public async getAll<T extends FacilityListType>(
+        facilityListType: T,
+        ...includeWholeWorld: T extends FacilityListType.AIRPORT ? [boolean] : [never?]
+    ) {
+        return new Promise<FacilityResponseType[T][]>((resolve, reject) => {
+            const requestId = this._handle.idFactory.nextDataRequestId;
+
+            this._waitForFacilityList(facilityListType, requestId, true, data => resolve(data));
+
+            const sendId = includeWholeWorld
+                ? this._handle.requestFacilitiesList(facilityListType, requestId)
+                : this._handle.requestFacilitiesListEx1(facilityListType, requestId);
+
+            this._checkForException(sendId, ex =>
+                reject(
+                    Error(
+                        `Failed to get facilities of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`
+                    )
+                )
+            );
+        });
     }
 
-    public async getWaypointList() {
-        return (await this._getFacilitiesList(FacilityListType.WAYPOINT)) as FacilityWaypoint[];
-    }
+    /**
+     * Subscribe for changes in the simulator's facility cache
+     * @param facilityListType
+     * @param onListUpdated called whenever facilities are added/removed to/from the cache
+     * @param onError
+     */
+    public monitorList<T extends FacilityListType>(
+        facilityListType: T,
+        onListUpdated: (list: FacilityResponseType[T][]) => void,
+        onError: (err: ApiHelperError) => void
+    ) {
+        const itemAddedRequestId = this._handle.idFactory.nextDataRequestId;
+        const itemRemovedRequestId = this._handle.idFactory.nextDataRequestId;
 
-    public async getNdbList() {
-        return (await this._getFacilitiesList(FacilityListType.NDB)) as FacilityNDB[];
-    }
+        const sendId = this._handle.subscribeToFacilitiesEx1(
+            facilityListType,
+            itemAddedRequestId,
+            itemRemovedRequestId
+        );
 
-    public async getVorList() {
-        return (await this._getFacilitiesList(FacilityListType.VOR)) as FacilityVOR[];
+        this._checkForException(sendId, ex =>
+            onError({
+                message: `Failed to subscribe for facility of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`,
+                exception: ex,
+            })
+        );
+
+        this._waitForFacilityList(facilityListType, itemAddedRequestId, false, data =>
+            onListUpdated(data)
+        );
+
+        this._waitForFacilityList(facilityListType, itemRemovedRequestId, false, data =>
+            onListUpdated(data)
+        );
     }
 
     private _requestFacilityByEntryPoint<T extends FacilityRequest>(
@@ -121,8 +163,8 @@ export class FacilitiesHelper extends BaseHelper {
         type?: IcaoType
     ) {
         return new Promise<FacilityOutput<T>>((resolve, reject) => {
-            const defineId = this._globals.nextDataDefinitionId;
-            const requestId = this._globals.nextDataRequestId;
+            const defineId = this._handle.idFactory.nextDataDefinitionId;
+            const requestId = this._handle.idFactory.nextDataRequestId;
 
             this._registerFacilityDefinitionRecursively(
                 defineId,
@@ -188,7 +230,7 @@ export class FacilitiesHelper extends BaseHelper {
     private _registerFacilityDefinitionRecursively(
         defineId: DataDefinitionId,
         definition: { [key: string]: FacilityRequest } | FacilityRequest,
-        exceptionHandler: (err: SimConnectError) => void,
+        exceptionHandler: (err: ApiHelperError) => void,
         objectName?: string
     ) {
         const names = Object.keys(definition);
@@ -231,54 +273,66 @@ export class FacilitiesHelper extends BaseHelper {
         });
     }
 
-    private async _getFacilitiesList(facilityListType: FacilityListType, wholeWorld = false) {
-        const requestId = this._globals.nextDataRequestId;
-        const sendId = wholeWorld
-            ? this._handle.requestFacilitiesList(facilityListType, requestId)
-            : this._handle.requestFacilitiesListEx1(facilityListType, requestId);
+    private _waitForFacilityList<T extends FacilityListType>(
+        facilityListType: T,
+        requestId: DataRequestId,
+        isOnetimeRequest: boolean,
+        onData: (data: FacilityResponseType[T][]) => void
+    ) {
+        const output: FacilityResponseType[T][] = [];
 
-        return new Promise((resolve, reject) => {
-            const output: (FacilityAirport | FacilityWaypoint)[] = [];
-
-            if (facilityListType === FacilityListType.AIRPORT) {
-                // We use "on" because there could be multiple chunks
-                this._handle.on('airportList', ({ requestID, entryNumber, outOf, airports }) => {
-                    output.push(...airports);
-                    if (requestID === requestId && entryNumber === outOf - 1) {
-                        resolve(output);
-                    }
-                });
-            } else if (facilityListType === FacilityListType.WAYPOINT) {
-                this._handle.on('waypointList', ({ requestID, entryNumber, outOf, waypoints }) => {
-                    output.push(...waypoints);
-                    if (requestID === requestId && entryNumber === outOf - 1) {
-                        resolve(output);
-                    }
-                });
-            } else if (facilityListType === FacilityListType.NDB) {
-                this._handle.on('ndbList', ({ requestID, entryNumber, outOf, ndbs }) => {
-                    output.push(...ndbs);
-                    if (requestID === requestId && entryNumber === outOf - 1) {
-                        resolve(output);
-                    }
-                });
-            } else if (facilityListType === FacilityListType.VOR) {
-                this._handle.on('vorList', ({ requestID, entryNumber, outOf, vors }) => {
-                    output.push(...vors);
-                    if (requestID === requestId && entryNumber === outOf - 1) {
-                        resolve(output);
-                    }
-                });
+        const airportsListHandler = ({
+            requestID,
+            entryNumber,
+            outOf,
+            airports,
+        }: RecvAirportList) => {
+            output.push(...(airports as FacilityResponseType[T][]));
+            if (requestID === requestId && entryNumber === outOf - 1) {
+                onData(output);
+                if (isOnetimeRequest) this._handle.off('airportList', airportsListHandler);
             }
+        };
 
-            this._checkForException(sendId, ex =>
-                reject(
-                    new Error(
-                        `Failed to get facilities of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`
-                    )
-                )
-            );
-        });
+        const waypointListHandler = ({
+            requestID,
+            entryNumber,
+            outOf,
+            waypoints,
+        }: RecvWaypointList) => {
+            output.push(...(waypoints as FacilityResponseType[T][]));
+            if (requestID === requestId && entryNumber === outOf - 1) {
+                onData(output);
+                if (isOnetimeRequest) this._handle.off('waypointList', waypointListHandler);
+            }
+        };
+
+        const ndbListHandler = ({ requestID, entryNumber, outOf, ndbs }: RecvNDBList) => {
+            output.push(...(ndbs as FacilityResponseType[T][]));
+            if (requestID === requestId && entryNumber === outOf - 1) {
+                onData(output);
+                if (isOnetimeRequest) this._handle.off('ndbList', ndbListHandler);
+            }
+        };
+
+        const vorListHandler = ({ requestID, entryNumber, outOf, vors }: RecvVORList) => {
+            output.push(...(vors as FacilityResponseType[T][]));
+            if (requestID === requestId && entryNumber === outOf - 1) {
+                onData(output);
+                if (isOnetimeRequest) this._handle.off('vorList', vorListHandler);
+            }
+        };
+
+        // We use "on" because there could be multiple chunks
+        if (facilityListType === FacilityListType.AIRPORT) {
+            this._handle.on('airportList', airportsListHandler);
+        } else if (facilityListType === FacilityListType.WAYPOINT) {
+            this._handle.on('waypointList', waypointListHandler);
+        } else if (facilityListType === FacilityListType.NDB) {
+            this._handle.on('ndbList', ndbListHandler);
+        } else if (facilityListType === FacilityListType.VOR) {
+            this._handle.on('vorList', vorListHandler);
+        }
     }
 }
 

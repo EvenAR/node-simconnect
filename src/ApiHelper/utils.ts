@@ -12,6 +12,12 @@ import {
     Waypoint,
     XYZ,
 } from '../dto';
+import { FacilityListType } from '../enums/FacilityListType';
+import { FacilityWaypoint } from '../facility/FacilityWaypoint';
+import { FacilityNDB } from '../facility/FacilityNDB';
+import { FacilityAirport } from '../facility/FacilityAirport';
+import { FacilityVOR } from '../facility/FacilityVOR';
+import { SimConnectException } from '../enums/SimConnectException';
 
 export function readSimConnectValue<T extends SimConnectDataType>(
     rawBuffer: RawBuffer,
@@ -128,4 +134,18 @@ export type JavascriptDataType = {
         [SimConnectDataType.XYZ]: XYZ;
         [SimConnectDataType.MAX]: undefined;
     }[T];
+};
+
+export type FacilityResponseType = {
+    [T in FacilityListType]: {
+        [FacilityListType.WAYPOINT]: FacilityWaypoint;
+        [FacilityListType.NDB]: FacilityNDB;
+        [FacilityListType.AIRPORT]: FacilityAirport;
+        [FacilityListType.VOR]: FacilityVOR;
+    }[T];
+};
+
+export type ApiHelperError = {
+    message: string;
+    exception: SimConnectException;
 };

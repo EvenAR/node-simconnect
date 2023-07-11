@@ -1,6 +1,6 @@
 import { SimConnectConnection } from '../SimConnectConnection';
 import { BaseHelper } from './BaseHelper';
-import { SimConnectError } from './SimulationVariablesHelper';
+import { ApiHelperError } from './utils';
 
 export class SystemEventsHelper extends BaseHelper {
     private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
@@ -23,13 +23,13 @@ export class SystemEventsHelper extends BaseHelper {
     addEventListener(
         systemEventName: string,
         eventHandler: SystemEventHandler,
-        errorHandler?: (err: SimConnectError) => void
+        errorHandler?: (err: ApiHelperError) => void
     ) {
         const existingSub = this._subscriptions[systemEventName];
         if (existingSub) {
             existingSub.eventHandlers.push(eventHandler);
         } else {
-            const myEventId = this._globals.nextClientEventId;
+            const myEventId = this._handle.idFactory.nextClientEventId;
             this._subscriptions[systemEventName] = {
                 clientEventId: myEventId,
                 eventHandlers: [eventHandler],

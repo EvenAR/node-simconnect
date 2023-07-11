@@ -1,5 +1,5 @@
 import { ApiHelper } from '../../dist/apiHelper';
-import { open, Protocol, SimConnectDataType, SimConnectPeriod } from '../../dist';
+import { FacilityListType, open, Protocol, SimConnectDataType, SimConnectPeriod } from '../../dist';
 
 open('API-helper example', Protocol.KittyHawk)
     .then(async ({ recvOpen, handle }) => {
@@ -73,26 +73,44 @@ async function doStuff(apiHelper: ApiHelper) {
         err => console.log(err)
     );
 
-    /** Get details about some airports  */
-    const allAirports = await facilities.getAirportList(true);
-    const favoriteAirports = ['ENGM', 'ENKJ', 'VNLK'];
+    /** Get all airports in the world */
+    const allAirports = await facilities.getAll(FacilityListType.AIRPORT, true);
+    console.log(`There are currently ${allAirports.length} airports in MSFS!`);
 
-    const airportDetails = allAirports
-        .filter(ap => favoriteAirports.includes(ap.icao))
-        .map(ap =>
-            facilities.getAirport(ap.icao, {
-                ICAOo: SimConnectDataType.STRING8,
-                NAME: SimConnectDataType.STRING32,
-                N_RUNWAYS: SimConnectDataType.INT32,
-                N_TAXI_PARKINGS: SimConnectDataType.INT32,
-                RUNWAY: {
-                    PRIMARY_NUMBER: SimConnectDataType.INT32,
-                    SECONDARY_NUMBER: SimConnectDataType.INT32,
-                    HEADING: SimConnectDataType.FLOAT32,
-                    LENGTH: SimConnectDataType.FLOAT32,
-                },
-            })
-        );
+    const allWaypoints = await facilities.getAll(FacilityListType.WAYPOINT);
+    console.log(
+        `There are currently ${allWaypoints.length} waypoints in the range of the aircraft!`
+    );
+
+    const allVors = await facilities.getAll(FacilityListType.VOR);
+    console.log(`There are currently ${allVors.length} VOR stations in MSFS!`);
+
+    facilities.monitorList(
+        FacilityListType.WAYPOINT,
+        list => {
+            console.log('List updated', list.length);
+        },
+        err => {
+            console.log(err);
+        }
+    );
+
+    /** Get details about some airports  */
+    const favoriteAirports = ['ENGM', 'ENKJ', 'VNLK'];
+    const airportDetails = favoriteAirports.map(apIcao =>
+        facilities.getAirport(apIcao, {
+            ICAO: SimConnectDataType.STRING8,
+            NAME: SimConnectDataType.STRING32,
+            N_RUNWAYS: SimConnectDataType.INT32,
+            N_TAXI_PARKINGS: SimConnectDataType.INT32,
+            RUNWAY: {
+                PRIMARY_NUMBER: SimConnectDataType.INT32,
+                SECONDARY_NUMBER: SimConnectDataType.INT32,
+                HEADING: SimConnectDataType.FLOAT32,
+                LENGTH: SimConnectDataType.FLOAT32,
+            },
+        })
+    );
 
     console.log('Favorite airports:', await Promise.all(airportDetails));
 }

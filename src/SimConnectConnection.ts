@@ -55,6 +55,7 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import { IdFactory } from './utils/IdFactory';
 
 type OpenPacketData = {
     major: number;
@@ -152,6 +153,8 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _ourProtocol: Protocol;
 
+    idFactory: IdFactory;
+
     _clientSocket: SimConnectSocket;
 
     private _openTimeout: null | Timeout;
@@ -174,6 +177,8 @@ class SimConnectConnection extends EventEmitter {
         this._clientSocket.on('data', this._handleMessage.bind(this));
         this._clientSocket.on('close', () => this.emit('close'));
         this._clientSocket.on('error', (connectError: Error) => this.emit('error', connectError));
+
+        this.idFactory = new IdFactory();
     }
 
     public on<U extends keyof SimConnectRecvEvents>(

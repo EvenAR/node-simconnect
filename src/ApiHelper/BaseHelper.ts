@@ -1,17 +1,13 @@
 import { SimConnectConnection } from '../SimConnectConnection';
 import { SimConnectException } from '../enums/SimConnectException';
-import { IdFactory } from './IdFactory';
 
 export class BaseHelper {
     protected readonly _handle: SimConnectConnection;
-
-    protected readonly _globals: IdFactory;
 
     private _exceptionHandlers: { [sendId: number]: (ex: SimConnectException) => void } = {};
 
     constructor(handle: SimConnectConnection) {
         this._handle = handle;
-        this._globals = IdFactory.getInstance();
 
         this._handle.on('exception', recvException => {
             if (recvException.sendId in this._exceptionHandlers) {

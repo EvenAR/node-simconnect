@@ -6,10 +6,15 @@ import { RawBuffer } from '../RawBuffer';
 import { SimObjectType } from '../enums/SimObjectType';
 import { SimConnectException } from '../enums/SimConnectException';
 import { BaseHelper } from './BaseHelper';
-import { JavascriptDataType, readSimConnectValue, writeSimConnectValue } from './utils';
+import {
+    JavascriptDataType,
+    readSimConnectValue,
+    ApiHelperError,
+    writeSimConnectValue,
+} from './utils';
 
 export type SimvarCallback<T extends VariablesToGet> = (data: VariablesResponse<T>) => void;
-export type ErrorCallback = (err: SimConnectError) => void;
+export type ErrorCallback = (err: ApiHelperError) => void;
 
 type SimulationVariable = {
     units?: string | null;
@@ -29,11 +34,6 @@ type VariablesToGet = {
 
 type VariablesResponse<R extends VariablesToGet> = {
     [K in keyof R]: JavascriptDataType[R[K]['dataType']];
-};
-
-export type SimConnectError = {
-    message: string;
-    exception: SimConnectException;
 };
 
 export class SimulationVariablesHelper extends BaseHelper {
@@ -81,7 +81,7 @@ export class SimulationVariablesHelper extends BaseHelper {
      */
     set<T extends VariablesToSet>(
         variablesToSet: T,
-        errorHandler?: (err: SimConnectError) => void,
+        errorHandler?: (err: ApiHelperError) => void,
         simObjectId = SimConnectConstants.OBJECT_ID_USER
     ) {
         const defineId = this._createDataDefinition(
@@ -198,10 +198,10 @@ export class SimulationVariablesHelper extends BaseHelper {
         period: SimConnectPeriod;
         simObjectId: number;
         flags?: number;
-        errorHandler: (error: SimConnectError) => void;
+        errorHandler: (error: ApiHelperError) => void;
     }): { defineId: number; requestId: number } {
         const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
-        const requestId = this._globals.nextDataRequestId;
+        const requestId = this._handle.idFactory.nextDataRequestId;
 
         const sendId = this._handle.requestDataOnSimObject(
             requestId,
@@ -225,9 +225,9 @@ export class SimulationVariablesHelper extends BaseHelper {
         requestStructure: T;
         radiusMeters: number;
         type: SimObjectType;
-        errorHandler: (error: SimConnectError) => void;
+        errorHandler: (error: ApiHelperError) => void;
     }): { defineId: number; requestId: number } {
-        const requestId = this._globals.nextDataRequestId;
+        const requestId = this._handle.idFactory.nextDataRequestId;
 
         const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
 
@@ -250,9 +250,9 @@ export class SimulationVariablesHelper extends BaseHelper {
 
     private _createDataDefinition<T extends VariablesToGet>(
         requestStructure: T,
-        errorHandler: (error: SimConnectError) => void
+        errorHandler: (error: ApiHelperError) => void
     ): number {
-        const defineId = this._globals.nextDataRequestId;
+        const defineId = this._handle.idFactory.nextDataRequestId;
 
         /**
          * We register the simulation variables in reverse order, so we receive them in the same order
