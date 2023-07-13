@@ -27,15 +27,9 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 const startCommand =
-    process.platform === 'darwin'
-        ? 'open'
-        : process.platform === 'win32'
-        ? 'start'
-        : 'xdg-open';
+    process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
 
-require('child_process').exec(
-    `${startCommand} file:///${__dirname}/index.html`
-);
+require('child_process').exec(`${startCommand} file:///${__dirname}/index.html`);
 
 // SimConnect client ////////////////////
 
@@ -71,7 +65,7 @@ open('Clouds example', Protocol.FSX_SP2)
             client?.send(JSON.stringify(cloudState.data));
         });
 
-        handle.on('simObjectData', (data) => {
+        handle.on('simObjectData', data => {
             if (data.requestID === RequestID.POSITION) {
                 const pos = readLatLonAlt(data.data);
                 console.log(pos);
@@ -89,6 +83,6 @@ open('Clouds example', Protocol.FSX_SP2)
             }
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });

@@ -77,16 +77,8 @@ open('My app', Protocol.FSX_SP2)
             NotificationGroupID.GROUP0,
             NotificationPriority.HIGHEST
         );
-        handle.mapInputEventToClientEvent(
-            InputGroupID.INPUT0,
-            'Ctrl+F1',
-            EventID.OPEN_MENU_1
-        );
-        handle.mapInputEventToClientEvent(
-            InputGroupID.INPUT0,
-            'Ctrl+F2',
-            EventID.OPEN_MENU_2
-        );
+        handle.mapInputEventToClientEvent(InputGroupID.INPUT0, 'Ctrl+F1', EventID.OPEN_MENU_1);
+        handle.mapInputEventToClientEvent(InputGroupID.INPUT0, 'Ctrl+F2', EventID.OPEN_MENU_2);
         handle.setInputGroupState(InputGroupID.INPUT0, true);
 
         handle.text(TextType.PRINT_RED, 15, 3, 'Facilities Data');
@@ -126,8 +118,7 @@ open('My app', Protocol.FSX_SP2)
                             );
                         } else if (data < 2 * FacilityListType.COUNT) {
                             handle.unSubscribeToFacilities(
-                                (data -
-                                    FacilityListType.COUNT) as FacilityListType
+                                (data - FacilityListType.COUNT) as FacilityListType
                             );
                         }
                     }
@@ -145,24 +136,22 @@ open('My app', Protocol.FSX_SP2)
             );
         }
 
-        handle.on('airportList', (recvAirportList) => {
-            console.log(recvAirportList.airports.map((ap) => ap.icao).join(','));
+        handle.on('airportList', recvAirportList => {
+            console.log(recvAirportList.airports.map(ap => ap.icao).join(','));
         });
 
-        handle.on('ndbList', (recvNDBList) => {
-            console.log(recvNDBList.ndbs.map((ndb) => ndb.icao).join(','));
+        handle.on('ndbList', recvNDBList => {
+            console.log(recvNDBList.ndbs.map(ndb => ndb.icao).join(','));
         });
 
-        handle.on('vorList', (recvVORList) => {
-            console.log(recvVORList.vors.map((vor) => vor.icao).join(','));
+        handle.on('vorList', recvVORList => {
+            console.log(recvVORList.vors.map(vor => vor.icao).join(','));
         });
 
-        handle.on('waypointList', (recvWaypointList) => {
-            console.log(
-                recvWaypointList.waypoints.map((wp) => wp.icao).join(',')
-            );
+        handle.on('waypointList', recvWaypointList => {
+            console.log(recvWaypointList.waypoints.map(wp => wp.icao).join(','));
         });
     })
-    .catch((error) => {
+    .catch(error => {
         console.log('Failed to connect', error);
     });

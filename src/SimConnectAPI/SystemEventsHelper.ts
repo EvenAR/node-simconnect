@@ -20,7 +20,7 @@ export class SystemEventsHelper extends BaseHelper {
         });
     }
 
-    addEventListener(
+    on(
         systemEventName: string,
         eventHandler: SystemEventHandler,
         errorHandler?: (err: ApiHelperError) => void
@@ -49,7 +49,7 @@ export class SystemEventsHelper extends BaseHelper {
         }
     }
 
-    removeEventListener(systemEventName: string, eventHandler?: SystemEventHandler) {
+    off(systemEventName: string, eventHandler?: SystemEventHandler) {
         const sub = this._subscriptions[systemEventName];
         if (!sub) {
             throw Error(`No subscription exists for system event '${systemEventName}'`);

@@ -1,20 +1,27 @@
-import { ApiHelper } from '../../dist/apiHelper';
-import { FacilityListType, open, Protocol, SimConnectDataType, SimConnectPeriod } from '../../dist';
+import { FacilityListType, Protocol, SimConnectDataType, SimConnectPeriod } from '../dist';
+import { ApiHelpers, SimConnectAPI } from '../dist/SimConnectAPI';
 
-open('API-helper example', Protocol.KittyHawk)
-    .then(async ({ recvOpen, handle }) => {
-        console.log('Yay, connected!', recvOpen);
-        await doStuff(new ApiHelper(handle));
-    })
-    .catch(e => {
-        console.log('Unhandled error', e);
-    });
+const simConnect = new SimConnectAPI('My App');
 
-async function doStuff(apiHelper: ApiHelper) {
-    const { systemEvents, simulationVariables, facilities } = apiHelper;
+console.log('Connecting to msfs');
+
+simConnect.connect({
+    minimumSim: Protocol.KittyHawk,
+    retryInterval: 5000,
+    onConnect: (simInfo, handle, apiHelpers) => {
+        console.log(`Connected: ${simInfo.applicationName}`);
+        doStuff(apiHelpers);
+    },
+    onRetry: (reason: string) => {
+        console.log(reason);
+    },
+});
+
+async function doStuff(apiHelpers: ApiHelpers) {
+    const { systemEvents, simulationVariables, facilities } = apiHelpers;
 
     /** Subscribe to a system event */
-    systemEvents.addEventListener('Pause', data => {
+    systemEvents.on('Pause', data => {
         console.log(data === 0 ? 'UnPaused' : 'Paused');
     });
 

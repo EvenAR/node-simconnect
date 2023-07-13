@@ -17,11 +17,7 @@ wss.on('connection', (ws: WebSocket) => {
 });
 
 const command =
-    process.platform === 'darwin'
-        ? 'open'
-        : process.platform === 'win32'
-        ? 'start'
-        : 'xdg-open';
+    process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
 
 childProcess.exec(`${command} file:///${__dirname}/index.html`);
 
