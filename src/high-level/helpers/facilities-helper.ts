@@ -1,18 +1,24 @@
-import { BaseHelper } from './BaseHelper';
-import { SimConnectDataType } from '../enums/SimConnectDataType';
+import { SimConnectApiHelper } from './sim-connect-api-helper';
+import {
+    SimConnectDataType,
+    SimConnectException,
+    FacilityListType,
+    FacilityDataType,
+    RawBuffer,
+    IcaoType,
+    DataDefinitionId,
+    DataRequestId,
+    RecvAirportList,
+    RecvNDBList,
+    RecvVORList,
+    RecvWaypointList,
+} from '../../core';
 import {
     ApiHelperError,
     FacilityResponseType,
     JavascriptDataType,
     readSimConnectValue,
-} from './utils';
-import { FacilityDataType } from '../enums/FacilityDataType';
-import { RawBuffer } from '../RawBuffer';
-import { IcaoType } from '../dto';
-import { SimConnectException } from '../enums/SimConnectException';
-import { DataDefinitionId, DataRequestId } from '../Types';
-import { FacilityListType } from '../enums/FacilityListType';
-import { RecvAirportList, RecvNDBList, RecvVORList, RecvWaypointList } from '../recv';
+} from '../utils';
 
 type FacilityRequest = {
     [propName: string]: SimConnectDataType | { [propName: string]: SimConnectDataType };
@@ -24,95 +30,78 @@ type FacilityOutput<RequestStructure extends FacilityRequest> = {
         : RequestStructure[PropName][];
 };
 
-export class FacilitiesHelper extends BaseHelper {
-    /**
-     * @param icao the airport ICAO code
-     * @param facilityDefinition The property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-     */
-    public async getAirport<T extends FacilityRequest>(icao: string, facilityDefinition: T) {
+type RequestListOptions<T extends FacilityListType> = {
+    facilityListType: T;
+    includeWholeWorld?: boolean;
+};
+
+type FaciliyRequestOptions<T extends FacilityRequest> = {
+    icao: string;
+    facilityDefinition: T;
+    /** Two letter region. Used if the requested facility does not have a unique ICAO code (like a lot of VORs) */
+    region?: string;
+    icaoType?: IcaoType;
+};
+
+type ObserveListOptions<T extends FacilityListType> = {
+    facilityListType: T;
+    onListUpdated: (list: FacilityResponseType[T][]) => void;
+    onError: (err: ApiHelperError) => void;
+};
+
+export class FacilitiesHelper extends SimConnectApiHelper {
+    public async requestAirport<T extends FacilityRequest>(icao: string, facilityDefinition: T) {
         return this._requestFacilityByEntryPoint('AIRPORT', icao, facilityDefinition);
     }
 
-    /**
-     * @param icao the waypoint ICAO code
-     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-     * @param options
-     */
-    public async getWaypoint<T extends FacilityRequest>(
-        icao: string,
-        facilityDefinition: T,
-        options?: { region?: string; type?: IcaoType }
-    ) {
+    public async requestWaypoint<T extends FacilityRequest>(options: FaciliyRequestOptions<T>) {
         return this._requestFacilityByEntryPoint(
             'WAYPOINT',
-            icao,
-            facilityDefinition,
-            options?.region,
-            options?.type
+            options.icao,
+            options.facilityDefinition,
+            options.region,
+            options.icaoType
         );
     }
 
-    /**
-     *
-     * @param icao the NDB ICAO code
-     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-     * @param options
-     */
-    public async getNdb<T extends FacilityRequest>(
-        icao: string,
-        facilityDefinition: T,
-        options?: { region?: string; type?: IcaoType }
-    ) {
+    public async requestNdb<T extends FacilityRequest>(options: FaciliyRequestOptions<T>) {
         return this._requestFacilityByEntryPoint(
             'NDB',
-            icao,
-            facilityDefinition,
-            options?.region,
-            options?.type
+            options.icao,
+            options.facilityDefinition,
+            options.region,
+            options.icaoType
         );
     }
 
-    /**
-     *
-     * @param icao the VOR ICAO code
-     * @param facilityDefinition the property names and corresponding data types used in this object are defined here: https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/API_Reference/Facilities/SimConnect_AddToFacilityDefinition.htm
-     * @param options
-     */
-    public async getVor<T extends FacilityRequest>(
-        icao: string,
-        facilityDefinition: T,
-        options?: { region?: string; type?: IcaoType }
-    ) {
+    public async requestVor<T extends FacilityRequest>(options: FaciliyRequestOptions<T>) {
         return this._requestFacilityByEntryPoint(
             'VOR',
-            icao,
-            facilityDefinition,
-            options?.region,
-            options?.type
+            options.icao,
+            options.facilityDefinition,
+            options.region,
+            options.icaoType
         );
     }
 
-    /**
-     * @param facilityListType
-     * @param includeWholeWorld If you need airports outside the aircraft's reality bubble
-     */
-    public async getAll<T extends FacilityListType>(
-        facilityListType: T,
-        ...includeWholeWorld: T extends FacilityListType.AIRPORT ? [boolean] : [never?]
-    ) {
+    public async requestList<T extends FacilityListType>(options: RequestListOptions<T>) {
         return new Promise<FacilityResponseType[T][]>((resolve, reject) => {
             const requestId = this._handle.idFactory.nextDataRequestId;
 
-            this._waitForFacilityList(facilityListType, requestId, true, data => resolve(data));
+            this._waitForFacilityList(options.facilityListType, requestId, true, data =>
+                resolve(data)
+            );
 
-            const sendId = includeWholeWorld
-                ? this._handle.requestFacilitiesList(facilityListType, requestId)
-                : this._handle.requestFacilitiesListEx1(facilityListType, requestId);
+            const sendId = options.includeWholeWorld
+                ? this._handle.requestFacilitiesList(options.facilityListType, requestId)
+                : this._handle.requestFacilitiesListEx1(options.facilityListType, requestId);
 
             this._checkForException(sendId, ex =>
                 reject(
                     Error(
-                        `Failed to get facilities of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`
+                        `Failed to get facilities of type '${
+                            FacilityListType[options.facilityListType]
+                        }': ${SimConnectException[ex]}`
                     )
                 )
             );
@@ -121,37 +110,32 @@ export class FacilitiesHelper extends BaseHelper {
 
     /**
      * Subscribe for changes in the simulator's facility cache
-     * @param facilityListType
-     * @param onListUpdated called whenever facilities are added/removed to/from the cache
-     * @param onError
      */
-    public monitorList<T extends FacilityListType>(
-        facilityListType: T,
-        onListUpdated: (list: FacilityResponseType[T][]) => void,
-        onError: (err: ApiHelperError) => void
-    ) {
+    public observeList<T extends FacilityListType>(options: ObserveListOptions<T>) {
         const itemAddedRequestId = this._handle.idFactory.nextDataRequestId;
         const itemRemovedRequestId = this._handle.idFactory.nextDataRequestId;
 
         const sendId = this._handle.subscribeToFacilitiesEx1(
-            facilityListType,
+            options.facilityListType,
             itemAddedRequestId,
             itemRemovedRequestId
         );
 
         this._checkForException(sendId, ex =>
-            onError({
-                message: `Failed to subscribe for facility of type '${FacilityListType[facilityListType]}': ${SimConnectException[ex]}`,
+            options.onError({
+                message: `Failed to subscribe for facility of type '${
+                    FacilityListType[options.facilityListType]
+                }': ${SimConnectException[ex]}`,
                 exception: ex,
             })
         );
 
-        this._waitForFacilityList(facilityListType, itemAddedRequestId, false, data =>
-            onListUpdated(data)
+        this._waitForFacilityList(options.facilityListType, itemAddedRequestId, false, data =>
+            options.onListUpdated(data)
         );
 
-        this._waitForFacilityList(facilityListType, itemRemovedRequestId, false, data =>
-            onListUpdated(data)
+        this._waitForFacilityList(options.facilityListType, itemRemovedRequestId, false, data =>
+            options.onListUpdated(data)
         );
     }
 

@@ -1,8 +1,8 @@
-import { SimConnectConnection } from '../SimConnectConnection';
-import { BaseHelper } from './BaseHelper';
-import { ApiHelperError } from './utils';
+import { SimConnectConnection } from '../../core';
+import { SimConnectApiHelper } from './sim-connect-api-helper';
+import { ApiHelperError } from '../utils';
 
-export class SystemEventsHelper extends BaseHelper {
+export class SystemEventsHelper extends SimConnectApiHelper {
     private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
 
     constructor(handle: SimConnectConnection) {

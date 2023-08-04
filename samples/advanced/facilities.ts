@@ -1,5 +1,4 @@
-import { Protocol, open, FacilityListType } from '../../dist';
-import { FacilityDataType } from '../../dist/enums/FacilityDataType';
+import { Protocol, open, FacilityListType, FacilityDataType } from '../../dist';
 
 /**
  * Reading navigational data from an airport (KittyHawk only)

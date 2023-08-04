@@ -1,7 +1,6 @@
-import { SimConnectConnection } from '../SimConnectConnection';
-import { SimConnectException } from '../enums/SimConnectException';
+import { SimConnectConnection, SimConnectException } from '../../core';
 
-export class BaseHelper {
+export class SimConnectApiHelper {
     protected readonly _handle: SimConnectConnection;
 
     private _exceptionHandlers: { [sendId: number]: (ex: SimConnectException) => void } = {};

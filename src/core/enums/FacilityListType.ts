@@ -7,6 +7,7 @@ export enum FacilityListType {
     NDB,
     /**   Specifies that the type of information is for a VOR */
     VOR,
+    COUNT,
 }
 
 module.exports = {

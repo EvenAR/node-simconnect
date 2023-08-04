@@ -7,9 +7,6 @@ export class RecvEventWeatherMode extends RecvEvent {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.mode =
-            this.data < 0 || this.data > WeatherMode.GLOBAL
-                ? WeatherMode.THEME
-                : this.data;
+        this.mode = this.data < 0 || this.data > WeatherMode.GLOBAL ? WeatherMode.THEME : this.data;
     }
 }

@@ -1,6 +1,8 @@
-import { SimConnectDataType } from '../enums/SimConnectDataType';
-import { RawBuffer } from '../RawBuffer';
 import {
+    SimConnectDataType,
+    FacilityListType,
+    SimConnectException,
+    RawBuffer,
     InitPosition,
     LatLonAlt,
     MarkerState,
@@ -11,13 +13,11 @@ import {
     readXYZ,
     Waypoint,
     XYZ,
-} from '../dto';
-import { FacilityListType } from '../enums/FacilityListType';
-import { FacilityWaypoint } from '../facility/FacilityWaypoint';
-import { FacilityNDB } from '../facility/FacilityNDB';
-import { FacilityAirport } from '../facility/FacilityAirport';
-import { FacilityVOR } from '../facility/FacilityVOR';
-import { SimConnectException } from '../enums/SimConnectException';
+    FacilityWaypoint,
+    FacilityNDB,
+    FacilityAirport,
+    FacilityVOR,
+} from '../core';
 
 export function readSimConnectValue<T extends SimConnectDataType>(
     rawBuffer: RawBuffer,
@@ -142,6 +142,7 @@ export type FacilityResponseType = {
         [FacilityListType.NDB]: FacilityNDB;
         [FacilityListType.AIRPORT]: FacilityAirport;
         [FacilityListType.VOR]: FacilityVOR;
+        [FacilityListType.COUNT]: never;
     }[T];
 };
 

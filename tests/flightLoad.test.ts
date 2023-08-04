@@ -1,5 +1,5 @@
-import { SimConnectConnection } from '../src/SimConnectConnection';
-import { Protocol } from '../src/enums/Protocol';
+import { SimConnectConnection } from '../src/core/SimConnectConnection';
+import { Protocol } from '../src/core/enums/Protocol';
 import { expectBufferContent } from './utils';
 
 test('The packet content when loading a flight is correctly formatted', () => {
