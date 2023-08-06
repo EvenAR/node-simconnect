@@ -8,7 +8,7 @@ import {
     SimConnectPeriod,
     SimObjectType,
 } from '../../../dist';
-import { client } from './websocketServer';
+import { client } from './websocket-server';
 
 /**
  * Lists all aircraft within a 10 km radius
