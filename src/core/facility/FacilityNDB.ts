@@ -1,4 +1,4 @@
-import { RawBuffer } from '../RawBuffer';
+import type { RawBuffer } from '../RawBuffer';
 import { FacilityWaypoint } from './FacilityWaypoint';
 
 export class FacilityNDB extends FacilityWaypoint {

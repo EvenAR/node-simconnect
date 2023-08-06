@@ -1,2 +1,2 @@
-export * from './high-level';
+export * from './wrapper';
 export * from './core';

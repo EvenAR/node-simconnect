@@ -1,5 +1,6 @@
-import { Icao, LatLonAlt, readLatLonAlt } from '../dto';
-import { RawBuffer } from '../RawBuffer';
+import type { RawBuffer } from '../RawBuffer';
+import { Icao } from '../dto/icao';
+import type { LatLonAlt } from '../dto/LatLonAlt';
 
 export class FacilityMinimal {
     icao: Icao;
@@ -8,6 +9,6 @@ export class FacilityMinimal {
 
     constructor(data: RawBuffer) {
         this.icao = new Icao(data);
-        this.latLonAlt = readLatLonAlt(data);
+        this.latLonAlt = data.readLatLonAlt();
     }
 }

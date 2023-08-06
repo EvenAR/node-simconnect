@@ -1,4 +1,13 @@
 import ByteBuffer = require('bytebuffer');
+import { SimConnectDataType } from './enums/SimConnectDataType';
+import { InitPosition } from './dto/InitPosition';
+import { MarkerState } from './dto/MarkerState';
+import { Waypoint } from './dto/Waypoint';
+import { LatLonAlt } from './dto/LatLonAlt';
+import { XYZ } from './dto/XYZ';
+import { SimConnectData } from './dto/SimConnectData';
+import { PBH } from './dto/PBH';
+import { JavascriptDataType } from './type-helpers';
 
 class RawBuffer {
     private readonly buffer: ByteBuffer;
@@ -182,6 +191,121 @@ class RawBuffer {
 
     remaining() {
         return this.buffer.remaining();
+    }
+
+    readInitPosition(): InitPosition {
+        return this.readData(new InitPosition());
+    }
+
+    readMarkerState(): MarkerState {
+        return this.readData(new MarkerState());
+    }
+
+    readWaypoint(): Waypoint {
+        return this.readData(new Waypoint());
+    }
+
+    readLatLonAlt(): LatLonAlt {
+        return this.readData(new LatLonAlt());
+    }
+
+    readXYZ(): XYZ {
+        return this.readData(new XYZ());
+    }
+
+    readData<T extends SimConnectData>(obj: T): T {
+        obj.readFrom(this);
+        return obj;
+    }
+
+    readPBH(): PBH {
+        return this.readData(new PBH());
+    }
+
+    readSimConnectValue<T extends SimConnectDataType>(dataType: T): JavascriptDataType[T] {
+        switch (dataType) {
+            case SimConnectDataType.INVALID:
+                return undefined as JavascriptDataType[T];
+            case SimConnectDataType.INT32:
+                return this.readInt32() as JavascriptDataType[T];
+            case SimConnectDataType.INT64:
+                return this.readInt64() as JavascriptDataType[T];
+            case SimConnectDataType.FLOAT32:
+                return this.readFloat32() as JavascriptDataType[T];
+            case SimConnectDataType.FLOAT64:
+                return this.readFloat64() as JavascriptDataType[T];
+            case SimConnectDataType.STRING8:
+                return this.readString8() as JavascriptDataType[T];
+            case SimConnectDataType.STRING32:
+                return this.readString32() as JavascriptDataType[T];
+            case SimConnectDataType.STRING64:
+                return this.readString64() as JavascriptDataType[T];
+            case SimConnectDataType.STRING128:
+                return this.readString128() as JavascriptDataType[T];
+            case SimConnectDataType.STRING256:
+                return this.readString256() as JavascriptDataType[T];
+            case SimConnectDataType.STRING260:
+                return this.readString260() as JavascriptDataType[T];
+            case SimConnectDataType.STRINGV:
+                return this.readStringV() as JavascriptDataType[T];
+            case SimConnectDataType.INITPOSITION:
+                return this.readInitPosition() as JavascriptDataType[T];
+            case SimConnectDataType.MARKERSTATE:
+                return this.readMarkerState() as JavascriptDataType[T];
+            case SimConnectDataType.WAYPOINT:
+                return this.readWaypoint() as JavascriptDataType[T];
+            case SimConnectDataType.LATLONALT:
+                return this.readLatLonAlt() as JavascriptDataType[T];
+            case SimConnectDataType.XYZ:
+                return this.readXYZ() as JavascriptDataType[T];
+            case SimConnectDataType.MAX:
+                return undefined as JavascriptDataType[T];
+            default:
+                return undefined as JavascriptDataType[T];
+        }
+    }
+
+    writeSimConnectValue<T extends SimConnectDataType>(value: JavascriptDataType[T], dataType: T) {
+        switch (dataType) {
+            case SimConnectDataType.INVALID:
+                break;
+            case SimConnectDataType.INT32:
+                this.writeInt32(value as number);
+                break;
+            case SimConnectDataType.INT64:
+                this.writeInt64(value as number);
+                break;
+            case SimConnectDataType.FLOAT32:
+                this.writeFloat32(value as number);
+                break;
+            case SimConnectDataType.FLOAT64:
+                this.writeFloat64(value as number);
+                break;
+            case SimConnectDataType.STRING8:
+                this.writeString8(value as string);
+                break;
+            case SimConnectDataType.STRING32:
+                this.writeString32(value as string);
+                break;
+            case SimConnectDataType.STRING64:
+                this.writeString64(value as string);
+                break;
+            case SimConnectDataType.STRING128:
+                this.writeString128(value as string);
+                break;
+            case SimConnectDataType.STRING256:
+                this.writeString256(value as string);
+                break;
+            case SimConnectDataType.STRING260:
+                this.writeString260(value as string);
+                break;
+            case SimConnectDataType.STRINGV:
+                this.writeString(value as string);
+                break;
+            default:
+                // TODO: implement writing of the struct types
+                throw Error(`Unhandled data type: ${dataType} (${SimConnectDataType[dataType]})`);
+        }
     }
 }
 

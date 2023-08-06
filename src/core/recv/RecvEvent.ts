@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { ClientEventId, InputGroupId, NotificationGroupId } from '../Types';
+import { ClientEventId, InputGroupId, NotificationGroupId } from '../id-types';
 
 export class RecvEvent {
     groupID: NotificationGroupId | InputGroupId;

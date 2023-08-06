@@ -5,7 +5,7 @@ import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
 import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { IcaoType, InitPosition, SimConnectData } from './dto';
+import type { IcaoType, InitPosition, SimConnectData } from '.';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
@@ -54,7 +54,7 @@ import {
     InputGroupId,
     NotificationGroupId,
     ObjectId,
-} from './Types';
+} from './id-types';
 import { IdFactory } from './utils/IdFactory';
 
 type OpenPacketData = {

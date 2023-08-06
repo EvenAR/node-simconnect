@@ -1,6 +1,5 @@
 import { SimConnectConnection } from '../../core';
-import { SimConnectApiHelper } from './sim-connect-api-helper';
-import { ApiHelperError } from '../utils';
+import { ApiHelperError, SimConnectApiHelper } from './sim-connect-api-helper';
 
 export class SystemEventsHelper extends SimConnectApiHelper {
     private readonly _subscriptions: { [systemEventName: string]: EventSubscription };

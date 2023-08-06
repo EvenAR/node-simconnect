@@ -1,6 +1,6 @@
 import { RawBuffer } from '../RawBuffer';
 import { DataRequestFlag } from '../flags/DataRequestFlag';
-import { DataDefinitionId, DataRequestId, ObjectId } from '../Types';
+import { DataDefinitionId, DataRequestId, ObjectId } from '../id-types';
 
 export class RecvSimObjectData {
     requestID: DataRequestId;

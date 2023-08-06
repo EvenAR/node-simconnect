@@ -1,7 +1,6 @@
 import {
     open,
     Protocol,
-    readLatLonAlt,
     RecvCloudState,
     SimConnectConstants,
     SimConnectDataType,
@@ -67,7 +66,7 @@ open('Clouds example', Protocol.FSX_SP2)
 
         handle.on('simObjectData', data => {
             if (data.requestID === RequestID.POSITION) {
-                const pos = readLatLonAlt(data.data);
+                const pos = data.data.readLatLonAlt();
                 console.log(pos);
                 const altFt = pos.altitude * 3.2808;
 

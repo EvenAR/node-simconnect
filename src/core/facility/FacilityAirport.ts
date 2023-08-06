@@ -1,4 +1,4 @@
-import { RawBuffer } from '../RawBuffer';
+import type { RawBuffer } from '../RawBuffer';
 
 export class FacilityAirport {
     icao: string;

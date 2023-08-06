@@ -25,10 +25,18 @@ export * from './facility/FacilityAirport';
 export * from './facility/FacilityNDB';
 export * from './facility/FacilityVOR';
 export * from './facility/FacilityWaypoint';
-export * from './Types';
-
+export * from './id-types';
+export * from './type-helpers';
 export * from './recv';
-export * from './dto';
+export * from './dto/XYZ';
+export * from './dto/PBH';
+export * from './dto/icao';
+export * from './dto/LatLonAlt';
+export * from './dto/MarkerState';
+export * from './dto/InitPosition';
+export * from './dto/SimConnectData';
+export * from './dto/Waypoint';
+
 export { RawBuffer } from './RawBuffer';
 
 export interface OpenEvent {

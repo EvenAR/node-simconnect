@@ -1,9 +1,14 @@
-import { SimConnectApiHelper } from './sim-connect-api-helper';
+import { ApiHelperError, SimConnectApiHelper } from './sim-connect-api-helper';
 import {
     DataDefinitionId,
     DataRequestId,
+    FacilityAirport,
     FacilityDataType,
     FacilityListType,
+    FacilityNDB,
+    FacilityVOR,
+    FacilityWaypoint,
+    JavascriptDataType,
     RawBuffer,
     RecvAirportList,
     RecvNDBList,
@@ -12,12 +17,6 @@ import {
     SimConnectDataType,
     SimConnectException,
 } from '../../core';
-import {
-    ApiHelperError,
-    FacilityResponseType,
-    JavascriptDataType,
-    readSimConnectValue,
-} from '../utils';
 
 type FacilityRequest = {
     [propName: string]: SimConnectDataType | { [propName: string]: SimConnectDataType };
@@ -45,6 +44,16 @@ type ObserveListOptions<T extends FacilityListType> = {
     /** Called whenever a facility leaves or enters the cache of surrounding facilities */
     onListUpdated: (list: FacilityResponseType[T][]) => void;
     onError: (err: ApiHelperError) => void;
+};
+
+export type FacilityResponseType = {
+    [T in FacilityListType]: {
+        [FacilityListType.WAYPOINT]: FacilityWaypoint;
+        [FacilityListType.NDB]: FacilityNDB;
+        [FacilityListType.AIRPORT]: FacilityAirport;
+        [FacilityListType.VOR]: FacilityVOR;
+        [FacilityListType.COUNT]: never;
+    }[T];
 };
 
 export class FacilitiesHelper extends SimConnectApiHelper {
@@ -372,7 +381,7 @@ function readObject<T extends FacilityRequest>(
         if (typeof valueType !== 'object') {
             output = {
                 ...output,
-                [propName]: readSimConnectValue(rawBuffer, valueType),
+                [propName]: rawBuffer.readSimConnectValue(valueType),
             };
         }
     });

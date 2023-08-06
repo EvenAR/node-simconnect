@@ -1,4 +1,4 @@
-import { ObjectId } from './Types';
+import { ObjectId } from './id-types';
 
 export const SimConnectConstants = {
     /** Specify the user aircraft in {@link SimConnectRecvEvents#simObjectDataByType} and {@link SimConnectConnection.requestDataOnSimObject} */

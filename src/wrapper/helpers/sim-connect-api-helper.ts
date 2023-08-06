@@ -34,3 +34,8 @@ export class SimConnectApiHelper {
         }, 1000);
     }
 }
+
+export type ApiHelperError = {
+    message: string;
+    exception: SimConnectException;
+};

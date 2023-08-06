@@ -1,7 +1,6 @@
 import {
     open,
     Protocol,
-    readLatLonAlt,
     SimConnectConstants,
     SimConnectDataType,
     SimConnectPeriod,
@@ -95,7 +94,7 @@ open('My app', Protocol.FSX_SP2)
                     switch (datumId) {
                         case Tag.LAT_LON_ALT:
                             {
-                                const value = readLatLonAlt(recvSimObjectData.data);
+                                const value = recvSimObjectData.data.readLatLonAlt();
                                 console.log('Position', value);
                             }
                             break;

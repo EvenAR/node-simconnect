@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId } from '../Types';
+import { DataRequestId } from '../id-types';
 
 export class RecvFacilityDataEnd {
     // extends RecvEvent

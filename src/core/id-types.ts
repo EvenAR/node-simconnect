@@ -3,7 +3,6 @@
  * These provide no type safety at all. Need to make them "opaque" somehow,
  * preferably in a way that allows the user to instantiate them with an enum.
  * */
-
 export type DataRequestId = number;
 export type DataDefinitionId = number;
 export type ClientDataDefinitionId = number;

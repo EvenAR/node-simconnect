@@ -1,4 +1,4 @@
-import { RawBuffer } from '../RawBuffer';
+import type { RawBuffer } from '../RawBuffer';
 import { FacilityAirport } from './FacilityAirport';
 
 export class FacilityWaypoint extends FacilityAirport {

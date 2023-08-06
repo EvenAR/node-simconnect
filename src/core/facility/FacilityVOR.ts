@@ -1,4 +1,4 @@
-import { RawBuffer } from '../RawBuffer';
+import type { RawBuffer } from '../RawBuffer';
 import { FacilityNDB } from './FacilityNDB';
 
 export class FacilityVOR extends FacilityNDB {

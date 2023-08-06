@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId, ObjectId } from '../Types';
+import { DataRequestId, ObjectId } from '../id-types';
 
 export class RecvAssignedObjectID {
     requestID: DataRequestId;

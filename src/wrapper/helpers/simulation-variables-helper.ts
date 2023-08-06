@@ -1,4 +1,4 @@
-import { SimConnectApiHelper } from './sim-connect-api-helper';
+import { ApiHelperError, SimConnectApiHelper } from './sim-connect-api-helper';
 import {
     SimConnectConstants,
     SimConnectDataType,
@@ -7,13 +7,8 @@ import {
     RawBuffer,
     SimObjectType,
     SimConnectException,
-} from '../../core';
-import {
     JavascriptDataType,
-    readSimConnectValue,
-    ApiHelperError,
-    writeSimConnectValue,
-} from '../utils';
+} from '../../core';
 
 export type SimvarCallback<T extends VariablesToGet> = (data: VariablesResponse<T>) => void;
 export type ErrorCallback = (err: ApiHelperError) => void;
@@ -123,8 +118,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         const rawBuffer = new RawBuffer(0);
 
         Object.keys(options.variables).forEach(name => {
-            writeSimConnectValue(
-                rawBuffer,
+            rawBuffer.writeSimConnectValue(
                 options.variables[name].value,
                 options.variables[name].dataType
             );
@@ -310,8 +304,7 @@ function extractDataStructureFromBuffer<T extends VariablesToGet>(
         .reverse() // Reverse to get the same order as requested order
         .reduce(
             (result, variableName) => ({
-                [variableName]: readSimConnectValue(
-                    rawBuffer,
+                [variableName]: rawBuffer.readSimConnectValue(
                     requestStructure[variableName].dataType
                 ),
                 ...result,

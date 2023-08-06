@@ -1,6 +1,6 @@
 import { FacilityDataType } from '../enums/FacilityDataType';
 import { RawBuffer } from '../RawBuffer';
-import { DataDefinitionId, DataRequestId } from '../Types';
+import { DataDefinitionId, DataRequestId } from '../id-types';
 
 export class RecvFacilityData {
     userRequestId: DataRequestId;

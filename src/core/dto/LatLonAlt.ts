@@ -1,6 +1,6 @@
-import { SimConnectData } from './SimConnectData';
-import { RawBuffer } from '../RawBuffer';
-import { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
+import type { SimConnectData } from './SimConnectData';
+import type { RawBuffer } from '../RawBuffer';
+import type { SimConnectPacketBuilder } from '../SimConnectPacketBuilder';
 
 class LatLonAlt implements SimConnectData {
     latitude = 0;
