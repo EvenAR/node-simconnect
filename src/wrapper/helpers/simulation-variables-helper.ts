@@ -18,7 +18,7 @@ type SimulationVariable = {
     dataType: SimConnectDataType;
     /** The unit (like "degrees", "meter", "radians", etc). See {@link https://docs.flightsimulator.com/html/Programming_Tools/SimVars/Simulation_Variable_Units.htm} */
     units?: string | null;
-    /** When `onlyOnChange` on used, this can be used to tell how much the value needs to change before the updated value is sent */
+    /** When `changesOnly` on used, this can be used to tell how much the value needs to change before the updated value is sent */
     epsilon?: number;
 };
 
@@ -63,7 +63,7 @@ type ObjectObserveOptions<T extends VariablesToGet> = ObserveOptions<T> & {
     /** How often should the simulation variables be read */
     updateRate?: SimConnectPeriod;
     /** Used to specify that only data should be sent when one of the simulation variables has changed */
-    onlyOnChange?: boolean;
+    changesOnly?: boolean;
 };
 
 type ObjectsObserveOptions<T extends VariablesToGet> = ObserveOptions<T> & {
@@ -155,7 +155,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
             requestStructure: options.simulationVariables,
             simObjectId: options.simObjectId || SimConnectConstants.OBJECT_ID_USER,
             period: options.updateRate || SimConnectPeriod.SIM_FRAME,
-            flags: options.onlyOnChange ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
+            flags: options.changesOnly ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
             onError: err => {
                 hasFailed = true;
                 if (options.onError) options.onError(err);

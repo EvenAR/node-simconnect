@@ -26,6 +26,7 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     // Observe aircraft position data
     apiHelpers.simulationVariables.observe({
+        changesOnly: true, // We only want to get the position data if it changes
         simulationVariables: {
             // All property names of this object must match a simulation variable name
             PLANE_LATITUDE: {
@@ -37,7 +38,6 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
                 units: 'Degrees',
             },
         },
-        onlyOnChange: true, // We only want to get the position data if it changes
         onData: data => {
             // The data object will have the same props as the input object (simulationVariables)
             console.log(`Aircraft position: ${data.PLANE_LONGITUDE}, ${data.PLANE_LONGITUDE}`);
