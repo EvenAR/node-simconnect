@@ -55,7 +55,7 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './id-types';
-import { IdFactory } from './utils/IdFactory';
+import { IdFactory } from './utils/id-factory';
 
 type OpenPacketData = {
     major: number;
