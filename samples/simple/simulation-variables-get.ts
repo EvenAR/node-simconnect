@@ -5,7 +5,7 @@ const app = new SimConnectApp('My App');
 
 // Connect to the simulator with specified configuration
 app.connect({
-    baseProtocol: Protocol.FSX_SP1,
+    minimumCompatability: Protocol.FSX_SP2,
     onConnect: onConnectedHandler,
     onRetry: reason => console.log('Retrying to connect', reason),
 });
@@ -15,8 +15,8 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
     console.log(`Connected to ${simulatorInfo.applicationName}`);
 
     // Make a one-time request for a set of simulation variables
-    const aircraftInfo = await apiHelpers.simulationVariables.requestValues({
-        requestStructure: {
+    const aircraftInfo = await apiHelpers.simulationVariables.getValues({
+        variables: {
             TITLE: {
                 dataType: SimConnectDataType.STRING128,
             },
@@ -27,6 +27,7 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
     // Observe aircraft position data
     apiHelpers.simulationVariables.observe({
         simulationVariables: {
+            // All property names of this object must match a simulation variable name
             PLANE_LATITUDE: {
                 dataType: SimConnectDataType.FLOAT32,
                 units: 'Degrees',
@@ -36,10 +37,10 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
                 units: 'Degrees',
             },
         },
-        // We only want to get the position data if it changes
-        onlyOnChange: true,
+        onlyOnChange: true, // We only want to get the position data if it changes
         onData: data => {
-            console.log(`Aircraft position: ${data.PLANE_LATITUDE}, ${data.PLANE_LONGITUDE}`);
+            // The data object will have the same props as the input object (simulationVariables)
+            console.log(`Aircraft position: ${data.PLANE_LONGITUDE}, ${data.PLANE_LONGITUDE}`);
         },
         onError: err => {
             // An error could occur if a simulation variable name is unknown

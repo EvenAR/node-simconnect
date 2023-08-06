@@ -6,8 +6,8 @@ import { Protocol } from '../core/enums/Protocol';
 import { open, RecvOpen } from '../core';
 
 export type SimConnectAppOptions = {
-    /** To access the latest features in MSFS, use Kittyhawk (default) */
-    baseProtocol?: Protocol;
+    /** If you want your app to be backwards compatible with FSX, use FSX_SP2. Use KittyHawk to access the newest MSFS features (default) */
+    minimumCompatability?: Protocol;
     /** Called whenever a connection attempt has failed or when the connection with the simulator is lost */
     onRetry?: (reason: string) => void;
     /** Called when connection with the flight simulator is established (also after a reconnect) */
@@ -23,7 +23,7 @@ export type ConnectionEvent = {
     simulatorInfo: RecvOpen;
     /** Contains different helper classes for interacting with SimConnect */
     apiHelpers: ApiHelpers;
-    /** The connection object. Must be used where the ApiHelpers can't help */
+    /** The connection object. Used in cases where none of the apiHelpers can help you */
     simConnectConnection: SimConnectConnection;
 };
 
@@ -47,7 +47,11 @@ export class SimConnectApp {
      * @param options.baseProtocol The minimum protocol to support. Defaults to Kittyhawk (MSFS 2020)
      */
     connect(options: SimConnectAppOptions) {
-        open(this._appName, options.baseProtocol || Protocol.KittyHawk, options.connectionOption)
+        open(
+            this._appName,
+            options.minimumCompatability || Protocol.KittyHawk,
+            options.connectionOption
+        )
             .then(({ recvOpen, handle }) => {
                 options.onConnect({
                     simulatorInfo: recvOpen,

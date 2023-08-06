@@ -3,7 +3,7 @@ import { ConnectionEvent, Protocol, SimConnectApp } from '../../dist';
 const app = new SimConnectApp('My App');
 
 app.connect({
-    baseProtocol: Protocol.FSX_SP1,
+    minimumCompatability: Protocol.FSX_SP2,
     onConnect: onConnectedHandler,
     onRetry: reason => console.log('Retrying to connect', reason),
 });

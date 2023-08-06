@@ -5,7 +5,7 @@ const app = new SimConnectApp('My App');
 
 // Connect to the simulator with specified configuration
 app.connect({
-    baseProtocol: Protocol.FSX_SP1,
+    minimumCompatability: Protocol.FSX_SP2,
     onConnect: onConnectedHandler,
     onRetry: reason => console.log('Retrying to connect', reason),
 });
@@ -16,7 +16,7 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     /** Set aircraft throttles to 50% */
     apiHelpers.simulationVariables.updateValues({
-        variablesToSet: {
+        variables: {
             'GENERAL ENG THROTTLE LEVER POSITION:1': {
                 value: 50,
                 units: 'Percent',
@@ -28,6 +28,6 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
                 dataType: SimConnectDataType.INT32,
             },
         },
-        errorHandler: err => console.log(err),
+        onError: err => console.log(err),
     });
 }

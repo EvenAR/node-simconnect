@@ -21,7 +21,7 @@ export type ErrorCallback = (err: ApiHelperError) => void;
 type SimulationVariable = {
     /** This should match the data type in the SimConnect documentation */
     dataType: SimConnectDataType;
-    /** The unit (like "degrees", "meter", "radians", etc). See https://docs.flightsimulator.com/html/Programming_Tools/SimVars/Simulation_Variable_Units.htm */
+    /** The unit (like "degrees", "meter", "radians", etc). See {@link https://docs.flightsimulator.com/html/Programming_Tools/SimVars/Simulation_Variable_Units.htm} */
     units?: string | null;
     /** When `onlyOnChange` on used, this can be used to tell how much the value needs to change before the updated value is sent */
     epsilon?: number;
@@ -41,15 +41,15 @@ type VariablesResponse<R extends VariablesToGet> = {
     [K in keyof R]: JavascriptDataType[R[K]['dataType']];
 };
 
-type SetVariablesOptions<T extends VariablesToSet> = {
+type VariablesSetOptions<T extends VariablesToSet> = {
     /** The simulation variables to set */
-    variablesToSet: T;
-    errorHandler?: (err: ApiHelperError) => void;
+    variables: T;
+    onError?: (err: ApiHelperError) => void;
     simObjectId?: number;
 };
 
-type RequestValuesOptions<T extends VariablesToGet> = {
-    requestStructure: T;
+type VariablesGetOptions<T extends VariablesToGet> = {
+    variables: T;
     simObjectId?: number;
 };
 
@@ -62,7 +62,7 @@ type ObserveOptions<T extends VariablesToGet> = {
     onError?: ErrorCallback;
 };
 
-type ObserveObjectOptions<T extends VariablesToGet> = ObserveOptions<T> & {
+type ObjectObserveOptions<T extends VariablesToGet> = ObserveOptions<T> & {
     /** The sim object ID (defaults to 0 = the user's aircraft) */
     simObjectId?: number;
     /** How often should the simulation variables be read */
@@ -71,7 +71,7 @@ type ObserveObjectOptions<T extends VariablesToGet> = ObserveOptions<T> & {
     onlyOnChange?: boolean;
 };
 
-type ObserveObjectsOptions<T extends VariablesToGet> = ObserveOptions<T> & {
+type ObjectsObserveOptions<T extends VariablesToGet> = ObserveOptions<T> & {
     /** The type of objects to observe */
     type: SimObjectType;
     /** The radius around the user's aircraft to observe */
@@ -82,16 +82,16 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
     /**
      * Request a set of simulation variables once
      */
-    async requestValues<T extends VariablesToGet>(
-        options: RequestValuesOptions<T>
+    async getValues<T extends VariablesToGet>(
+        options: VariablesGetOptions<T>
     ): Promise<VariablesResponse<T>> {
         return new Promise((resolve, reject) => {
             let hasFailed = false;
             const sub = this._makeSubscription({
-                requestStructure: options.requestStructure,
+                requestStructure: options.variables,
                 simObjectId: options.simObjectId || SimConnectConstants.OBJECT_ID_USER,
                 period: SimConnectPeriod.ONCE,
-                errorHandler: error => {
+                onError: error => {
                     hasFailed = true;
                     reject(error);
                     this._handle.clearDataDefinition(sub.defineId);
@@ -104,10 +104,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
                     sub.defineId === recvSimObjectData.defineID
                 ) {
                     resolve(
-                        extractDataStructureFromBuffer(
-                            options.requestStructure,
-                            recvSimObjectData.data
-                        )
+                        extractDataStructureFromBuffer(options.variables, recvSimObjectData.data)
                     );
                     this._handle.clearDataDefinition(sub.defineId);
                 }
@@ -118,18 +115,18 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
     /**
      * Update a set of simulation variables
      */
-    updateValues<T extends VariablesToSet>(options: SetVariablesOptions<T>) {
+    updateValues<T extends VariablesToSet>(options: VariablesSetOptions<T>) {
         const defineId = this._createDataDefinition(
-            options.variablesToSet,
-            error => options.errorHandler && options.errorHandler(error)
+            options.variables,
+            error => options.onError && options.onError(error)
         );
         const rawBuffer = new RawBuffer(0);
 
-        Object.keys(options.variablesToSet).forEach(name => {
+        Object.keys(options.variables).forEach(name => {
             writeSimConnectValue(
                 rawBuffer,
-                options.variablesToSet[name].value,
-                options.variablesToSet[name].dataType
+                options.variables[name].value,
+                options.variables[name].dataType
             );
         });
 
@@ -144,8 +141,8 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         );
 
         this._checkForException(sendId, ex => {
-            if (options.errorHandler) {
-                options.errorHandler({
+            if (options.onError) {
+                options.onError({
                     message: `Failed to set data on sim object: ${SimConnectException[ex]}`,
                     exception: ex,
                 });
@@ -158,14 +155,14 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
     /**
      * Continuously read a set of simulation variables
      */
-    observe<T extends VariablesToGet>(options: ObserveObjectOptions<T>) {
+    observe<T extends VariablesToGet>(options: ObjectObserveOptions<T>) {
         let hasFailed = false;
         const sub = this._makeSubscription({
             requestStructure: options.simulationVariables,
             simObjectId: options.simObjectId || SimConnectConstants.OBJECT_ID_USER,
             period: options.updateRate || SimConnectPeriod.SIM_FRAME,
             flags: options.onlyOnChange ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
-            errorHandler: err => {
+            onError: err => {
                 hasFailed = true;
                 if (options.onError) options.onError(err);
                 this._handle.clearDataDefinition(sub.defineId);
@@ -191,12 +188,12 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
     /**
      * Read simulation variables for a certain object type
      */
-    observeObjects<T extends VariablesToGet>(options: ObserveObjectsOptions<T>) {
+    observeObjects<T extends VariablesToGet>(options: ObjectsObserveOptions<T>) {
         const sub = this._makeSubscriptionByType({
             requestStructure: options.simulationVariables,
             radiusMeters: options.radiusMeters,
             type: options.type,
-            errorHandler: err => options.onError && options.onError(err),
+            onError: err => options.onError && options.onError(err),
         });
 
         this._handle.on('simObjectDataByType', recvSimObjectData => {
@@ -220,9 +217,9 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         period: SimConnectPeriod;
         simObjectId: number;
         flags?: number;
-        errorHandler: (error: ApiHelperError) => void;
+        onError: (error: ApiHelperError) => void;
     }): { defineId: number; requestId: number } {
-        const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
+        const defineId = this._createDataDefinition(params.requestStructure, params.onError);
         const requestId = this._handle.idFactory.nextDataRequestId;
 
         const sendId = this._handle.requestDataOnSimObject(
@@ -234,7 +231,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         );
 
         this._checkForException(sendId, ex =>
-            params.errorHandler({
+            params.onError({
                 message: `Failed to request data for sim object: ${SimConnectException[ex]}`,
                 exception: ex,
             })
@@ -247,11 +244,11 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         requestStructure: T;
         radiusMeters: number;
         type: SimObjectType;
-        errorHandler: (error: ApiHelperError) => void;
+        onError: (error: ApiHelperError) => void;
     }): { defineId: number; requestId: number } {
         const requestId = this._handle.idFactory.nextDataRequestId;
 
-        const defineId = this._createDataDefinition(params.requestStructure, params.errorHandler);
+        const defineId = this._createDataDefinition(params.requestStructure, params.onError);
 
         const sendId = this._handle.requestDataOnSimObjectType(
             requestId,
@@ -261,7 +258,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         );
 
         this._checkForException(sendId, ex =>
-            params.errorHandler({
+            params.onError({
                 message: `Failed to request data for sim object type: ${SimConnectException[ex]}`,
                 exception: ex,
             })
@@ -272,7 +269,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
 
     private _createDataDefinition<T extends VariablesToGet>(
         requestStructure: T,
-        errorHandler: (error: ApiHelperError) => void
+        onError: (error: ApiHelperError) => void
     ): number {
         const defineId = this._handle.idFactory.nextDataRequestId;
 
@@ -294,7 +291,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
                 requestedValue.epsilon
             );
             this._checkForException(sendId, ex =>
-                errorHandler({
+                onError({
                     message: `Something is wrong with the definition of '${variableNames[index]}': ${SimConnectException[ex]}`,
                     exception: ex,
                 })
