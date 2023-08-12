@@ -1,6 +1,6 @@
 import { ConnectionOptions, SimConnectConnection } from '../core/SimConnectConnection';
 import { SimulationVariablesHelper } from './helpers/simulation-variables-helper';
-import { SystemEventsHelper } from './helpers/system-events-helper';
+import { EventsHelper } from './helpers/events-helper';
 import { FacilitiesHelper } from './helpers/facilities-helper';
 import { Protocol } from '../core/enums/Protocol';
 import { open, RecvOpen } from '../core';
@@ -29,7 +29,7 @@ export type ConnectionEvent = {
 
 export type ApiHelpers = {
     simulationVariables: SimulationVariablesHelper;
-    systemEvents: SystemEventsHelper;
+    events: EventsHelper;
     facilities: FacilitiesHelper;
 };
 
@@ -58,7 +58,7 @@ export class SimConnectApp {
                     simConnectConnection: handle,
                     apiHelpers: {
                         simulationVariables: new SimulationVariablesHelper(handle),
-                        systemEvents: new SystemEventsHelper(handle),
+                        events: new EventsHelper(handle),
                         facilities: new FacilitiesHelper(handle),
                     },
                 });

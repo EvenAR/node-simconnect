@@ -1349,7 +1349,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    transmitClientEventEx(
+    transmitClientEventEx1(
         objectId: ObjectId,
         clientEventId: ClientEventId,
         notificationGroupId: NotificationGroupId,
@@ -1360,6 +1360,8 @@ class SimConnectConnection extends EventEmitter {
         data3 = 0,
         data4 = 0
     ): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
         return this._buildAndSend(
             this._beginPacket(0x44)
                 .putInt32(objectId)
