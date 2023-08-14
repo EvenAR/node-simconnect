@@ -63,6 +63,7 @@
   "dependencies": {
     "@types/node": "*",
     "bytebuffer": "^5.0.1",
+    "cheerio": "^1.0.0-rc.12",
     "debug": "^4.3.4",
     "ini": "^2.0.0",
     "regedit": "^5.1.1"

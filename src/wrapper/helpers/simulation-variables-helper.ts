@@ -14,7 +14,7 @@ export type SimvarCallback<T extends SimulationVariable> = (data: VariablesRespo
 
 export type ErrorCallback = (err: ApiHelperError) => void;
 
-type SimulationVariable = {
+export type SimulationVariable = {
     name: string;
     /** This should match the data type in the SimConnect documentation */
     dataType: SimConnectDataType;
