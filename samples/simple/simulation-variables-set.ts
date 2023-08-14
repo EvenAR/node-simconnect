@@ -1,7 +1,7 @@
-import { ConnectionEvent, Protocol, SimConnectApi, SimConnectDataType } from '../../dist';
+import { ConnectionEvent, Protocol, SimConnectApp, SimConnectDataType } from '../../dist';
 
 // Create a new instance of the SimConnectApp
-const app = new SimConnectApi('My App');
+const app = new SimConnectApp('My App');
 
 // Connect to the simulator with specified configuration
 app.connect({
@@ -16,18 +16,20 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     /** Set aircraft throttles to 50% */
     apiHelpers.simulationVariables.updateValues({
-        simulationVariables: {
-            'GENERAL ENG THROTTLE LEVER POSITION:1': {
+        variables: [
+            {
+                name: 'GENERAL ENG THROTTLE LEVER POSITION:1',
                 value: 50,
                 units: 'Percent',
                 dataType: SimConnectDataType.INT32,
             },
-            'GENERAL ENG THROTTLE LEVER POSITION:2': {
+            {
+                name: 'GENERAL ENG THROTTLE LEVER POSITION:2',
                 value: 50,
                 units: 'Percent',
                 dataType: SimConnectDataType.INT32,
             },
-        },
+        ],
         onError: err => console.log(err),
     });
 }
