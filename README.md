@@ -60,20 +60,18 @@ function onConnectedHandler({ apiHelpers }: ConnectionEvent) {
     /** Observe simulation variables */
     apiHelpers.simulationVariables.observe({
         changesOnly: true /** We don't need position updates when the aircraft doesn't move */,
-        simulationVariables: {
-            /**
-             * All property names in this object must match a simulation
-             * variable name found in the offical SimConnect docs.
-             */
-            PLANE_LATITUDE: {
+        simulationVariables: [
+            {
+                name: 'PLANE_LATITUDE',
                 dataType: SimConnectDataType.FLOAT32,
                 units: 'Degrees',
             },
-            PLANE_LONGITUDE: {
+            {
+                name: 'PLANE_LONGITUDE',
                 dataType: SimConnectDataType.FLOAT32,
                 units: 'Degrees',
             },
-        },
+        ],
         onData: data => {
             /** The data object will have the same props as the input object (simulationVariables) */
             console.log(`Aircraft position: ${data.PLANE_LONGITUDE}, ${data.PLANE_LONGITUDE}`);

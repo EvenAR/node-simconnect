@@ -16,18 +16,20 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     /** Set aircraft throttles to 50% */
     apiHelpers.simulationVariables.updateValues({
-        variables: {
-            'GENERAL ENG THROTTLE LEVER POSITION:1': {
+        variables: [
+            {
+                name: 'GENERAL ENG THROTTLE LEVER POSITION:1',
                 value: 50,
                 units: 'Percent',
                 dataType: SimConnectDataType.INT32,
             },
-            'GENERAL ENG THROTTLE LEVER POSITION:2': {
+            {
+                name: 'GENERAL ENG THROTTLE LEVER POSITION:2',
                 value: 50,
                 units: 'Percent',
                 dataType: SimConnectDataType.INT32,
             },
-        },
+        ],
         onError: err => console.log(err),
     });
 }

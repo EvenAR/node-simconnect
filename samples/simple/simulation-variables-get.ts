@@ -16,28 +16,31 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     // Make a one-time request for a set of simulation variables
     const aircraftInfo = await apiHelpers.simulationVariables.getValues({
-        variables: {
-            TITLE: {
+        variables: [
+            {
+                name: 'TITLE',
                 dataType: SimConnectDataType.STRING128,
             },
-        },
+        ],
     });
     console.log(`Current aircraft is '${aircraftInfo.TITLE}'`);
 
     // Observe aircraft position data
     apiHelpers.simulationVariables.observe({
         changesOnly: true, // We only want to get the position data if it changes
-        simulationVariables: {
+        simulationVariables: [
             // All property names of this object must match a simulation variable name
-            PLANE_LATITUDE: {
+            {
+                name: 'PLANE_LATITUDE',
                 dataType: SimConnectDataType.FLOAT32,
                 units: 'Degrees',
             },
-            PLANE_LONGITUDE: {
+            {
+                name: 'PLANE_LONGITUDE',
                 dataType: SimConnectDataType.FLOAT32,
                 units: 'Degrees',
             },
-        },
+        ],
         onData: data => {
             // The data object will have the same props as the input object (simulationVariables)
             console.log(`Aircraft position: ${data.PLANE_LONGITUDE}, ${data.PLANE_LONGITUDE}`);
