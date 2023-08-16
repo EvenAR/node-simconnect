@@ -1,6 +1,6 @@
-import { ConnectionEvent, Protocol, SimConnectApp, SimConnectDataType } from '../../dist';
+import { ConnectionEvent, Protocol, SimConnectApi, SimConnectDataType } from '../../dist';
 
-const app = new SimConnectApp('My App');
+const app = new SimConnectApi('My App');
 
 app.connect({
     minimumCompatability: Protocol.KittyHawk,

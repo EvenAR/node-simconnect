@@ -5,7 +5,7 @@ import { FacilitiesHelper } from './helpers/facilities-helper';
 import { Protocol } from '../core/enums/Protocol';
 import { open, RecvOpen } from '../core';
 
-export type SimConnectAppOptions = {
+export type SimConnectApiOptions = {
     /** If you want your app to be backwards compatible with FSX, use FSX_SP2. Use KittyHawk to access the newest MSFS features (default) */
     minimumCompatability?: Protocol;
     /** Called whenever a connection attempt has failed or when the connection with the simulator is lost */
@@ -33,7 +33,7 @@ export type ApiHelpers = {
     facilities: FacilitiesHelper;
 };
 
-export class SimConnectApp {
+export class SimConnectApi {
     private _appName: string;
 
     private _connectionTimeout: NodeJS.Timeout | undefined;
@@ -46,7 +46,7 @@ export class SimConnectApp {
      *
      * @param options.baseProtocol The minimum protocol to support. Defaults to Kittyhawk (MSFS 2020)
      */
-    connect(options: SimConnectAppOptions) {
+    connect(options: SimConnectApiOptions) {
         open(
             this._appName,
             options.minimumCompatability || Protocol.KittyHawk,
@@ -68,7 +68,7 @@ export class SimConnectApp {
             .catch(e => this._retry(e, options));
     }
 
-    private _retry(reason: string, options: SimConnectAppOptions) {
+    private _retry(reason: string, options: SimConnectApiOptions) {
         if (options.onRetry) {
             options.onRetry(reason);
         }

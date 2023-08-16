@@ -1,7 +1,7 @@
-import { ConnectionEvent, Protocol, SimConnectApp, SimConnectDataType } from '../../dist';
+import { ConnectionEvent, Protocol, SimConnectApi, SimConnectDataType } from '../../dist';
 
 // Create a new instance of the SimConnectApp
-const app = new SimConnectApp('My App');
+const app = new SimConnectApi('My App');
 
 // Connect to the simulator with specified configuration
 app.connect({

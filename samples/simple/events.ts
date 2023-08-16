@@ -1,6 +1,6 @@
-import { ConnectionEvent, Protocol, SimConnectApp } from '../../dist';
+import { ConnectionEvent, Protocol, SimConnectApi } from '../../dist';
 
-const app = new SimConnectApp('My App');
+const app = new SimConnectApi('My App');
 
 app.connect({
     minimumCompatability: Protocol.FSX_SP2,
