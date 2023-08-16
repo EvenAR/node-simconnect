@@ -101,7 +101,7 @@ export class FacilitiesHelper extends SimConnectApiHelper {
         );
     }
 
-    public async getAirports(includeWholeWorld?: boolean) {
+    public async getAirports({ includeWholeWorld }: { includeWholeWorld?: boolean }) {
         return this._getList({ facilityListType: FacilityListType.AIRPORT, includeWholeWorld });
     }
 

@@ -10,7 +10,7 @@ app.connect({
 
 async function onConnectedHandler({ apiHelpers }: ConnectionEvent) {
     /** Get all airports in the world */
-    const allAirports = await apiHelpers.facilities.getAirports(true);
+    const allAirports = await apiHelpers.facilities.getAirports({ includeWholeWorld: true });
     console.log(`There are currently ${allAirports.length} airports in MSFS!`);
 
     /** Subscribe to changes in the list of surrounding waypoints */

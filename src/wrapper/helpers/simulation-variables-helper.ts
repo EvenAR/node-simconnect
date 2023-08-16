@@ -38,13 +38,13 @@ type VariablesResponse<R extends VariablesToGet> = {
 
 type VariablesSetOptions<T extends VariablesToSet> = {
     /** The simulation variables to set */
-    variables: T;
+    simulationVariables: T;
     onError?: (err: ApiHelperError) => void;
     simObjectId?: number;
 };
 
 type VariablesGetOptions<T extends VariablesToGet> = {
-    variables: T;
+    simulationVariables: T;
     simObjectId?: number;
 };
 
@@ -83,7 +83,7 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
         return new Promise((resolve, reject) => {
             let hasFailed = false;
             const sub = this._makeSubscription({
-                requestStructure: options.variables,
+                requestStructure: options.simulationVariables,
                 simObjectId: options.simObjectId || SimConnectConstants.OBJECT_ID_USER,
                 period: SimConnectPeriod.ONCE,
                 onError: error => {
@@ -99,7 +99,10 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
                     sub.defineId === recvSimObjectData.defineID
                 ) {
                     resolve(
-                        extractDataStructureFromBuffer(options.variables, recvSimObjectData.data)
+                        extractDataStructureFromBuffer(
+                            options.simulationVariables,
+                            recvSimObjectData.data
+                        )
                     );
                     this._handle.clearDataDefinition(sub.defineId);
                 }
@@ -112,15 +115,15 @@ export class SimulationVariablesHelper extends SimConnectApiHelper {
      */
     updateValues<T extends VariablesToSet>(options: VariablesSetOptions<T>) {
         const defineId = this._createDataDefinition(
-            options.variables,
+            options.simulationVariables,
             error => options.onError && options.onError(error)
         );
         const rawBuffer = new RawBuffer(0);
 
-        Object.keys(options.variables).forEach(name => {
+        Object.keys(options.simulationVariables).forEach(name => {
             rawBuffer.writeSimConnectValue(
-                options.variables[name].value,
-                options.variables[name].dataType
+                options.simulationVariables[name].value,
+                options.simulationVariables[name].dataType
             );
         });
 

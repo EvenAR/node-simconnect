@@ -16,7 +16,7 @@ async function onConnectedHandler({ simulatorInfo, apiHelpers }: ConnectionEvent
 
     // Make a one-time request for a set of simulation variables
     const aircraftInfo = await apiHelpers.simulationVariables.getValues({
-        variables: {
+        simulationVariables: {
             TITLE: {
                 dataType: SimConnectDataType.STRING128,
             },
