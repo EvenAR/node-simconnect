@@ -17,7 +17,10 @@ export class SystemStateHelper extends SimConnectApiHelper {
     }
 
     getAircraftLoaded() {
-        return this.makeSystemStatePromise('AircraftLoaded', state => state.dataString);
+        return this.makeSystemStatePromise(
+            'AircraftLoaded',
+            state => state.dataString || undefined
+        );
     }
 
     getDialogMode() {
@@ -25,11 +28,11 @@ export class SystemStateHelper extends SimConnectApiHelper {
     }
 
     getFlightLoaded() {
-        return this.makeSystemStatePromise('FlightLoaded', state => state.dataString);
+        return this.makeSystemStatePromise('FlightLoaded', state => state.dataString || undefined);
     }
 
     getFlightPlan() {
-        return this.makeSystemStatePromise('FlightPlan', state => state.dataString);
+        return this.makeSystemStatePromise('FlightPlan', state => state.dataString || undefined);
     }
 
     getSimulationIsRunning() {
