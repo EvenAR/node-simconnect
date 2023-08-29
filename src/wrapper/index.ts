@@ -4,6 +4,7 @@ import { EventsHelper } from './helpers/events-helper';
 import { FacilitiesHelper } from './helpers/facilities-helper';
 import { Protocol } from '../core/enums/Protocol';
 import { open, RecvOpen } from '../core';
+import { SystemStateHelper } from './helpers/system-state-helper';
 
 export type SimConnectApiOptions = {
     /** If you want your app to be backwards compatible with FSX, use FSX_SP2. Use KittyHawk to access the newest MSFS features (default) */
@@ -31,6 +32,7 @@ export type ApiHelpers = {
     simulationVariables: SimulationVariablesHelper;
     events: EventsHelper;
     facilities: FacilitiesHelper;
+    systemState: SystemStateHelper;
 };
 
 export class SimConnectApi {
@@ -60,6 +62,7 @@ export class SimConnectApi {
                         simulationVariables: new SimulationVariablesHelper(handle),
                         events: new EventsHelper(handle),
                         facilities: new FacilitiesHelper(handle),
+                        systemState: new SystemStateHelper(handle),
                     },
                 });
 
