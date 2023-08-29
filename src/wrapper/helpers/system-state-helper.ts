@@ -1,21 +1,9 @@
 import { SimConnectApiHelper } from './sim-connect-api-helper';
-import { RecvSystemState, SimConnectConnection } from '../../core';
-
-type SystemStateRequest = {
-    requestId: number;
-    responseHandlers: ResponseHandler[];
-};
+import { RecvSystemState } from '../../core';
 
 type ResponseHandler = (state: RecvSystemState) => void;
 
 export class SystemStateHelper extends SimConnectApiHelper {
-    private readonly _requests: { [systemEventName: string]: SystemStateRequest };
-
-    constructor(handle: SimConnectConnection) {
-        super(handle);
-        this._requests = {};
-    }
-
     getAircraftLoaded() {
         return this.makeSystemStatePromise(
             'AircraftLoaded',
