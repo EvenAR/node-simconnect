@@ -1,6 +1,15 @@
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
-import { SimConnectDataType } from '../src/core';
+import { outdent } from 'outdent'; // TODO: this should be part of dev dependencies
+import { SimConnectDataType } from '../src';
+
+type SimvarSpecs = {
+    name: string;
+    description: string;
+    units: string;
+    type: SimConnectDataType;
+    settable: boolean;
+};
 
 async function clone() {
     const pages = [
@@ -14,6 +23,10 @@ async function clone() {
         'Aircraft_SimVars/Aircraft_Misc_Variables.htm',
         'Aircraft_SimVars/Aircraft_RadioNavigation_Variables.htm',
         'Aircraft_SimVars/Aircraft_System_Variables.htm',
+        'Helicopter_Variables.htm',
+        'Camera_Variables.htm',
+        'Miscellaneous_Variables.htm',
+        'Services_Variables.htm',
     ];
 
     const results = await Promise.all(
@@ -22,38 +35,17 @@ async function clone() {
         )
     );
 
-    let outpStr = '';
+    const allSimvars: { [key: string]: SimvarSpecs } = {};
 
     results.forEach(page => {
         page.forEach(simvar => {
-            outpStr += `
-    /** ${simvar.description} */
-    '${simvar.name}': {
-        name: '${simvar.name}',
-        units: '${simvar.units.split('\n')[0]}',
-        dataType: SimConnectDataType.${SimConnectDataType[simvar.type]},
-        settable: ${simvar.settable},
-    },
-            `;
+            allSimvars[simvar.name] = simvar;
         });
     });
 
-    const final = `
-import { SimConnectDataType } from '..';
-import {SimulationVariable} from "../src/wrapper/helpers/simulation-variables-helper";
+    const fileContent = createOutputFile(allSimvars);
 
-export type SimvarDefinition = SimulationVariable & {
-    settable: boolean,
-};
-
-export const simvarDefinitions: {[simvarName: string]: SimvarDefinition} = {
-    ${outpStr}
-} as const;
-
-export type SimvarName = keyof typeof simvarDefinitions;
-    `;
-
-    fs.writeFile('generated/simvars.ts', final, err => {
+    fs.writeFile('generated/simvars.ts', fileContent, err => {
         if (err) {
             console.error(err);
         }
@@ -61,18 +53,12 @@ export type SimvarName = keyof typeof simvarDefinitions;
     });
 }
 
-async function extractTables(url: string) {
+async function extractTables(url: string): Promise<SimvarSpecs[]> {
     const xml = await fetch(url).then(res => res.text());
     const $ = cheerio.load(xml);
     const rows = $('table:has(th:contains("Simulation Variable")) tr:has(td)');
 
-    const output: {
-        name: string;
-        description: string;
-        units: string;
-        type: SimConnectDataType;
-        settable: boolean;
-    }[] = [];
+    const output: SimvarSpecs[] = [];
 
     for (let i = 0; i < rows.length; i++) {
         // Process the rows and create arrays per row
@@ -111,3 +97,29 @@ function typeFromUnit(type: string): SimConnectDataType {
 }
 
 clone();
+
+function createOutputFile(simvars: { [key: string]: SimvarSpecs }) {
+    let output = '';
+    Object.values(simvars).forEach(simvar => {
+        output += outdent({ trimTrailingNewline: false })`
+            ${outdent}
+                /** ${simvar.description} */
+                '${simvar.name}': {
+                    name: '${simvar.name}',
+                    units: '${simvar.units.split('\n')[0]}',
+                    dataType: SimConnectDataType.${SimConnectDataType[simvar.type]},
+                    settable: ${simvar.settable}
+                },
+            `;
+    });
+
+    return outdent`
+        import { SimConnectDataType } from '..';
+        
+        export const simvarDefinitions = {
+        ${output}
+        } as const;
+        
+        export type SimvarName = keyof typeof simvarDefinitions;
+    `;
+}
