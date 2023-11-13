@@ -480,7 +480,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     *
+     * @deprecated use mapInputEventToClientEvent_EX1 instead
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     mapInputEventToClientEvent(
@@ -1486,11 +1486,44 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     enumerateControllers(): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(0x4c);
         return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    mapInputEventToClientEvent_EX1(
+        inputGroupId: InputGroupId,
+        inputDefinition: string,
+        clientEventDownID: ClientEventId,
+        downValue?: number, // 0
+        clientEventUpID?: ClientEventId, // SimConnectConstants.UNUSED
+        upValue?: number, // 0,
+        maskable?: boolean // false
+    ): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(
+            this._beginPacket(0x4d)
+                .putInt32(inputGroupId)
+                .putString256(inputDefinition)
+                .putInt32(clientEventDownID)
+                .putInt32(downValue || 0)
+                .putInt32(
+                    clientEventUpID === undefined ? SimConnectConstants.UNUSED : clientEventUpID
+                )
+                .putInt32(upValue || 0)
+                .putInt32(maskable ? 1 : 0)
+        );
     }
 
     close() {
