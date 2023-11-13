@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { FacilityWaypoint } from '../facility/FacilityWaypoint';
+import { FacilityWaypoint } from '../datastructures/FacilityWaypoint';
 import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvWaypointList extends RecvFacilitiesList {

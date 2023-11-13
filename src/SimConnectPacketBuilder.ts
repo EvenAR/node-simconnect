@@ -39,6 +39,11 @@ export class SimConnectPacketBuilder {
         return this;
     }
 
+    putInt16(value: number, offset?: number) {
+        this.packetContent.writeInt16(value, offset);
+        return this;
+    }
+
     putInt32(value: number, offset?: number) {
         this.packetContent.writeInt32(value, offset);
         return this;
