@@ -56,6 +56,10 @@ import {
 } from './Types';
 import Timeout = NodeJS.Timeout;
 import { RecvControllersList } from './recv/RecvControllersList';
+import { RecvEnumerateInputEvents } from './recv/RecvEnumerateInputEvents';
+import { RecvGetInputEvent } from './recv/RecvGetInputEvent';
+import { RecvSubscribeInputEvent } from './recv/RecvSubscribeInputEvent';
+import { RecvEnumerateInputEventParams } from './recv/RecvEnumerateInputEventParams';
 
 type OpenPacketData = {
     major: number;
@@ -131,6 +135,12 @@ interface SimConnectRecvEvents {
     facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
     jetwayData: (recvJetwayData: RecvJetwayData) => void;
     controllersList: (recvControllersList: RecvControllersList) => void;
+    inputEventsList: (recvEnumerateInputEvents: RecvEnumerateInputEvents) => void;
+    getInputEvent: (recvGetInputEvent: RecvGetInputEvent) => void;
+    subscribeInputEvent: (recvSubscribeInputEvent: RecvSubscribeInputEvent) => void;
+    enumerateInputEventParams: (
+        recvEnumerateInputEventParams: RecvEnumerateInputEventParams
+    ) => void;
 }
 
 type ConnectionOptions =
@@ -1526,6 +1536,78 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    // TODO: implement 0x4e: executeAction(dataRequestID: number, actionID: string, values: RawBuffer)
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateInputEvents(dataRequestID: number): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x4f).putInt32(dataRequestID);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    getInputEvent(dataRequestID: number, inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    setInputEvent(inputEventHashID: Long, value: number | string): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x51).putUint64(inputEventHashID);
+
+        if (typeof value === 'string') {
+            packet.putInt32(value.length).putString(value);
+        } else {
+            packet.putInt32(4).putFloat32(value);
+        }
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeInputEvent(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x52).putUint64(inputEventHashID));
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeInputEvent(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x53).putUint64(inputEventHashID));
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateInputEventParams(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x54).putUint64(inputEventHashID));
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
@@ -1656,6 +1738,20 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_CONTROLLERS_LIST:
                 this.emit('controllersList', new RecvControllersList(data));
+                break;
+            case RecvID.ID_ACTION_CALLBACK:
+                break;
+            case RecvID.ID_ENUMERATE_INPUT_EVENTS:
+                this.emit('inputEventsList', new RecvEnumerateInputEvents(data));
+                break;
+            case RecvID.ID_GET_INPUT_EVENT:
+                this.emit('getInputEvent', new RecvGetInputEvent(data));
+                break;
+            case RecvID.ID_SUBSCRIBE_INPUT_EVENT:
+                this.emit('subscribeInputEvent', new RecvSubscribeInputEvent(data));
+                break;
+            case RecvID.ID_ENUMERATE_INPUT_EVENT_PARAMS:
+                this.emit('enumerateInputEventParams', new RecvEnumerateInputEventParams(data));
                 break;
         }
     }
