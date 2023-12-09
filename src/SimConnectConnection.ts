@@ -18,10 +18,14 @@ import { ClientDataRequestFlag } from './flags/ClientDataRequestFlag';
 import { SimConnectConstants } from './SimConnectConstants';
 import { SimConnectPacketBuilder } from './SimConnectPacketBuilder';
 import {
+    RecvActionCallback,
     RecvAirportList,
     RecvAssignedObjectID,
     RecvCloudState,
+    RecvControllersList,
     RecvCustomAction,
+    RecvEnumerateInputEventParams,
+    RecvEnumerateInputEvents,
     RecvEvent,
     RecvEventAddRemove,
     RecvEventEx1,
@@ -34,11 +38,13 @@ import {
     RecvFacilityData,
     RecvFacilityDataEnd,
     RecvFacilityMinimalList,
+    RecvGetInputEvent,
     RecvJetwayData,
     RecvNDBList,
     RecvOpen,
     RecvReservedKey,
     RecvSimObjectData,
+    RecvSubscribeInputEvent,
     RecvSystemState,
     RecvVORList,
     RecvWaypointList,
@@ -55,11 +61,6 @@ import {
     ObjectId,
 } from './Types';
 import Timeout = NodeJS.Timeout;
-import { RecvControllersList } from './recv/RecvControllersList';
-import { RecvEnumerateInputEvents } from './recv/RecvEnumerateInputEvents';
-import { RecvGetInputEvent } from './recv/RecvGetInputEvent';
-import { RecvSubscribeInputEvent } from './recv/RecvSubscribeInputEvent';
-import { RecvEnumerateInputEventParams } from './recv/RecvEnumerateInputEventParams';
 
 type OpenPacketData = {
     major: number;
@@ -134,6 +135,7 @@ interface SimConnectRecvEvents {
     facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
     facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
     jetwayData: (recvJetwayData: RecvJetwayData) => void;
+    actionCallback: (recvActionCallback: RecvActionCallback) => void;
     controllersList: (recvControllersList: RecvControllersList) => void;
     inputEventsList: (recvEnumerateInputEvents: RecvEnumerateInputEvents) => void;
     getInputEvent: (recvGetInputEvent: RecvGetInputEvent) => void;
@@ -1536,7 +1538,23 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
-    // TODO: implement 0x4e: executeAction(dataRequestID: number, actionID: string, values: RawBuffer)
+    /**
+     * See https://www.fsdeveloper.com/wiki/index.php/MSFS_Mission_Script_-_Actions
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    executeAction(dataRequestID: number, actionID: string, values: RawBuffer) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const paramValues = values.getBuffer();
+
+        const packet = this._beginPacket(0x4e)
+            .putInt32(dataRequestID)
+            .putString256(actionID)
+            .putInt32(paramValues.length)
+            .putBytes(paramValues);
+        return this._buildAndSend(packet);
+    }
 
     /**
      *
@@ -1740,6 +1758,7 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('controllersList', new RecvControllersList(data));
                 break;
             case RecvID.ID_ACTION_CALLBACK:
+                this.emit('actionCallback', new RecvActionCallback(data));
                 break;
             case RecvID.ID_ENUMERATE_INPUT_EVENTS:
                 this.emit('inputEventsList', new RecvEnumerateInputEvents(data));
