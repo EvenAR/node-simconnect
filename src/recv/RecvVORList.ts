@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { FacilityVOR } from '../facility/FacilityVOR';
+import { FacilityVOR } from '../datastructures/FacilityVOR';
 import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvVORList extends RecvFacilitiesList {

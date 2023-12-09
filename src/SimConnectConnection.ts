@@ -16,7 +16,6 @@ import { EventFlag } from './flags/EventFlag';
 import { DataSetFlag } from './flags/DataSetFlag';
 import { ClientDataRequestFlag } from './flags/ClientDataRequestFlag';
 import { SimConnectConstants } from './SimConnectConstants';
-import Timeout = NodeJS.Timeout;
 import { SimConnectPacketBuilder } from './SimConnectPacketBuilder';
 import {
     RecvAirportList,
@@ -25,12 +24,17 @@ import {
     RecvCustomAction,
     RecvEvent,
     RecvEventAddRemove,
+    RecvEventEx1,
     RecvEventFilename,
     RecvEventFrame,
     RecvEventRaceEnd,
     RecvEventRaceLap,
     RecvEventWeatherMode,
     RecvException,
+    RecvFacilityData,
+    RecvFacilityDataEnd,
+    RecvFacilityMinimalList,
+    RecvJetwayData,
     RecvNDBList,
     RecvOpen,
     RecvReservedKey,
@@ -39,11 +43,6 @@ import {
     RecvVORList,
     RecvWaypointList,
     RecvWeatherObservation,
-    RecvFacilityData,
-    RecvFacilityDataEnd,
-    RecvFacilityMinimalList,
-    RecvEventEx1,
-    RecvJetwayData,
 } from './recv';
 import {
     ClientDataDefinitionId,
@@ -55,6 +54,8 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import Timeout = NodeJS.Timeout;
+import { RecvControllersList } from './recv/RecvControllersList';
 
 type OpenPacketData = {
     major: number;
@@ -129,6 +130,7 @@ interface SimConnectRecvEvents {
     facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
     facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
     jetwayData: (recvJetwayData: RecvJetwayData) => void;
+    controllersList: (recvControllersList: RecvControllersList) => void;
 }
 
 type ConnectionOptions =
@@ -1462,6 +1464,10 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     requestJetwayData(airportIcao: string, parkingIndices?: number[]): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
@@ -1477,6 +1483,13 @@ class SimConnectConnection extends EventEmitter {
             });
         }
 
+        return this._buildAndSend(packet);
+    }
+
+    enumerateControllers(): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x4c);
         return this._buildAndSend(packet);
     }
 
@@ -1607,6 +1620,9 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_JETWAY_DATA:
                 this.emit('jetwayData', new RecvJetwayData(data));
+                break;
+            case RecvID.ID_CONTROLLERS_LIST:
+                this.emit('controllersList', new RecvControllersList(data));
                 break;
         }
     }

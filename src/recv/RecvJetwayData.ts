@@ -1,5 +1,5 @@
 import { RecvListTemplate } from './RecvListTemplate';
-import { JetwayData } from '../facility/JetwayData';
+import { JetwayData } from '../datastructures/JetwayData';
 import { RawBuffer } from '../RawBuffer';
 
 export class RecvJetwayData extends RecvListTemplate {

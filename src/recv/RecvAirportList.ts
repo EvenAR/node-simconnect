@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { FacilityAirport } from '../facility/FacilityAirport';
+import { FacilityAirport } from '../datastructures/FacilityAirport';
 import { RecvFacilitiesList } from './RecvFacilitiesList';
 
 export class RecvAirportList extends RecvFacilitiesList {

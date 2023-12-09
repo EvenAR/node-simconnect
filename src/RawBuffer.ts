@@ -41,12 +41,20 @@ class RawBuffer {
         return bytes.toBuffer();
     }
 
+    readInt16(): number {
+        return this.buffer.readInt16();
+    }
+
     readInt32(): number {
         return this.buffer.readInt32();
     }
 
     readUint32(): number {
         return this.buffer.readUint32();
+    }
+
+    writeInt16(value: number, offset?: number) {
+        this.buffer.writeInt16(value, offset);
     }
 
     /** @deprecated use readInt32() instead */

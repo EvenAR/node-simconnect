@@ -7,3 +7,4 @@ export * from './XYZ';
 export * from './bufferHelpers';
 export * from './icao';
 export * from './PBH';
+export * from '../datastructures/VersionBaseType';

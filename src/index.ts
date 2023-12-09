@@ -20,10 +20,10 @@ export * from './flags/EventFlag';
 export * from './flags/DataRequestFlag';
 export * from './flags/DataSetFlag';
 export * from './flags/ClientDataRequestFlag';
-export * from './facility/FacilityAirport';
-export * from './facility/FacilityNDB';
-export * from './facility/FacilityVOR';
-export * from './facility/FacilityWaypoint';
+export * from './datastructures/FacilityAirport';
+export * from './datastructures/FacilityNDB';
+export * from './datastructures/FacilityVOR';
+export * from './datastructures/FacilityWaypoint';
 export * from './Types';
 
 export * from './recv';
