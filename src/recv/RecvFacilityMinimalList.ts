@@ -1,4 +1,4 @@
-import { FacilityMinimal } from '../facility/FacilityMinimal';
+import { FacilityMinimal } from '../datastructures/FacilityMinimal';
 import { RawBuffer } from '../RawBuffer';
 import { RecvFacilitiesList } from './RecvFacilitiesList';
 
