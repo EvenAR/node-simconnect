@@ -116,9 +116,13 @@ Prepar3D support and Prepar3D-only-features will not be prioritized.
 | `clearInputGroup`                   |            |            |             |
 | `clearNotificationGroup`            |            |            |             |
 | `createClientData`                  |            |            |             |
+| `enumerateInputEvents`              | n/a        | n/a        | ✅          |
+| `enumerateInputEventParams`         | n/a        | n/a        | ✅          |
+| `getInputEvent`                     | n/a        | n/a        |             |
 | `mapClientDataNameToID`             |            |            |             |
 | `mapClientEventToSimEvent`          |            |            |             |
 | `mapInputEventToClientEvent`        |            |            |             |
+| `mapInputEventToClientEventEx1`     |            |            |             |
 | `removeClientEvent`                 |            |            |             |
 | `removeInputEvent`                  |            |            |             |
 | `requestClientData`                 |            |            |             |
@@ -129,10 +133,12 @@ Prepar3D support and Prepar3D-only-features will not be prioritized.
 | `subscribeToSystemEvent`            | ✅         |            |             |
 | `setClientData`                     |            |            |             |
 | `setDataOnSimObject`                | ✅         |            |             |
+| `setInputEvent`                     | n/a        | n/a        |             |
 | `setInputGroupPriority`             |            |            |             |
 | `setInputGroupState`                |            |            |             |
 | `setSystemEventState`               |            |            |             |
 | `setSystemState`                    |            |            |             |
+| `subscribeInputEvent`               | n/a        | n/a        |             |
 | `unsubscribeFromSystemEvent`        | ✅         |            |             |
 
 ### AI Objects
@@ -208,3 +214,4 @@ Prepar3D support and Prepar3D-only-features will not be prioritized.
 | `requestSystemState`           | ✅         |            |             |
 | `setNotificationGroupPriority` |            |            |             |
 | `text`                         | ✅         |            | ⚠️          |
+| `executeAction`                | n/a        | n/a        | ️           |

@@ -492,7 +492,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     * @deprecated use mapInputEventToClientEvent_EX1 instead
+     * @deprecated use mapInputEventToClientEventEx1 instead
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     mapInputEventToClientEvent(
@@ -1513,7 +1513,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    mapInputEventToClientEvent_EX1(
+    mapInputEventToClientEventEx1(
         inputGroupId: InputGroupId,
         inputDefinition: string,
         clientEventDownID: ClientEventId,
