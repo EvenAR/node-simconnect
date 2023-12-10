@@ -1626,6 +1626,42 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(this._beginPacket(0x54).putUint64(inputEventHashID));
     }
 
+    /**
+     *
+     * @param dataDefinitionId
+     * @param filterPath
+     * @param filterData use null to remove a previously applied filter
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    addFacilityDataDefinitionFilter(
+        dataDefinitionId: DataDefinitionId,
+        filterPath: string,
+        filterData: RawBuffer | null
+    ) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x55).putInt32(dataDefinitionId).putString256(filterPath);
+
+        if (filterData === null) {
+            packet.putInt32(0);
+        } else {
+            const filterDataBuffer = filterData.getBuffer();
+            packet.putInt32(filterDataBuffer.length).putBytes(filterDataBuffer);
+        }
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    clearAllFacilityDataDefinitionFilters(dataDefinitionId: DataDefinitionId) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        return this._buildAndSend(this._beginPacket(0x56).putInt32(dataDefinitionId));
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
