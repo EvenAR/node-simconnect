@@ -38,6 +38,11 @@ export enum SimConnectException {
     OBJECT_ATC,
     OBJECT_SCHEDULE,
     JETWAY_DATA,
+    ACTION_NOT_FOUND,
+    NOT_AN_ACTION,
+    INCORRECT_ACTION_PARAMS,
+    GET_INPUT_EVENT_FAILED,
+    SET_INPUT_EVENT_FAILED,
 }
 
 module.exports = {

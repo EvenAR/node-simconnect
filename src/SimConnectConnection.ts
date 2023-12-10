@@ -18,10 +18,14 @@ import { ClientDataRequestFlag } from './flags/ClientDataRequestFlag';
 import { SimConnectConstants } from './SimConnectConstants';
 import { SimConnectPacketBuilder } from './SimConnectPacketBuilder';
 import {
+    RecvActionCallback,
     RecvAirportList,
     RecvAssignedObjectID,
     RecvCloudState,
+    RecvControllersList,
     RecvCustomAction,
+    RecvEnumerateInputEventParams,
+    RecvEnumerateInputEvents,
     RecvEvent,
     RecvEventAddRemove,
     RecvEventEx1,
@@ -34,11 +38,13 @@ import {
     RecvFacilityData,
     RecvFacilityDataEnd,
     RecvFacilityMinimalList,
+    RecvGetInputEvent,
     RecvJetwayData,
     RecvNDBList,
     RecvOpen,
     RecvReservedKey,
     RecvSimObjectData,
+    RecvSubscribeInputEvent,
     RecvSystemState,
     RecvVORList,
     RecvWaypointList,
@@ -55,7 +61,6 @@ import {
     ObjectId,
 } from './Types';
 import Timeout = NodeJS.Timeout;
-import { RecvControllersList } from './recv/RecvControllersList';
 
 type OpenPacketData = {
     major: number;
@@ -130,7 +135,14 @@ interface SimConnectRecvEvents {
     facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
     facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
     jetwayData: (recvJetwayData: RecvJetwayData) => void;
+    actionCallback: (recvActionCallback: RecvActionCallback) => void;
     controllersList: (recvControllersList: RecvControllersList) => void;
+    inputEventsList: (recvEnumerateInputEvents: RecvEnumerateInputEvents) => void;
+    getInputEvent: (recvGetInputEvent: RecvGetInputEvent) => void;
+    subscribeInputEvent: (recvSubscribeInputEvent: RecvSubscribeInputEvent) => void;
+    enumerateInputEventParams: (
+        recvEnumerateInputEventParams: RecvEnumerateInputEventParams
+    ) => void;
 }
 
 type ConnectionOptions =
@@ -480,7 +492,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     *
+     * @deprecated use mapInputEventToClientEventEx1 instead
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     mapInputEventToClientEvent(
@@ -1486,11 +1498,168 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     enumerateControllers(): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(0x4c);
         return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    mapInputEventToClientEventEx1(
+        inputGroupId: InputGroupId,
+        inputDefinition: string,
+        clientEventDownID: ClientEventId,
+        downValue?: number, // 0
+        clientEventUpID?: ClientEventId, // SimConnectConstants.UNUSED
+        upValue?: number, // 0,
+        maskable?: boolean // false
+    ): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(
+            this._beginPacket(0x4d)
+                .putInt32(inputGroupId)
+                .putString256(inputDefinition)
+                .putInt32(clientEventDownID)
+                .putInt32(downValue || 0)
+                .putInt32(
+                    clientEventUpID === undefined ? SimConnectConstants.UNUSED : clientEventUpID
+                )
+                .putInt32(upValue || 0)
+                .putInt32(maskable ? 1 : 0)
+        );
+    }
+
+    /**
+     * See https://www.fsdeveloper.com/wiki/index.php/MSFS_Mission_Script_-_Actions
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    executeAction(dataRequestID: number, actionID: string, values: RawBuffer) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const paramValues = values.getBuffer();
+
+        const packet = this._beginPacket(0x4e)
+            .putInt32(dataRequestID)
+            .putString256(actionID)
+            .putInt32(paramValues.length)
+            .putBytes(paramValues);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateInputEvents(dataRequestID: number): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x4f).putInt32(dataRequestID);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    getInputEvent(dataRequestID: number, inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    setInputEvent(inputEventHashID: Long, value: number | string): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x51).putUint64(inputEventHashID);
+
+        if (typeof value === 'string') {
+            packet.putInt32(value.length).putString(value);
+        } else {
+            packet.putInt32(4).putFloat32(value);
+        }
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeInputEvent(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x52).putUint64(inputEventHashID));
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeInputEvent(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x53).putUint64(inputEventHashID));
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateInputEventParams(inputEventHashID: Long): number {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(this._beginPacket(0x54).putUint64(inputEventHashID));
+    }
+
+    /**
+     *
+     * @param dataDefinitionId
+     * @param filterPath
+     * @param filterData use null to remove a previously applied filter
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    addFacilityDataDefinitionFilter(
+        dataDefinitionId: DataDefinitionId,
+        filterPath: string,
+        filterData: RawBuffer | null
+    ) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x55).putInt32(dataDefinitionId).putString256(filterPath);
+
+        if (filterData === null) {
+            packet.putInt32(0);
+        } else {
+            const filterDataBuffer = filterData.getBuffer();
+            packet.putInt32(filterDataBuffer.length).putBytes(filterDataBuffer);
+        }
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    clearAllFacilityDataDefinitionFilters(dataDefinitionId: DataDefinitionId) {
+        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        return this._buildAndSend(this._beginPacket(0x56).putInt32(dataDefinitionId));
     }
 
     close() {
@@ -1623,6 +1792,21 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_CONTROLLERS_LIST:
                 this.emit('controllersList', new RecvControllersList(data));
+                break;
+            case RecvID.ID_ACTION_CALLBACK:
+                this.emit('actionCallback', new RecvActionCallback(data));
+                break;
+            case RecvID.ID_ENUMERATE_INPUT_EVENTS:
+                this.emit('inputEventsList', new RecvEnumerateInputEvents(data));
+                break;
+            case RecvID.ID_GET_INPUT_EVENT:
+                this.emit('getInputEvent', new RecvGetInputEvent(data));
+                break;
+            case RecvID.ID_SUBSCRIBE_INPUT_EVENT:
+                this.emit('subscribeInputEvent', new RecvSubscribeInputEvent(data));
+                break;
+            case RecvID.ID_ENUMERATE_INPUT_EVENT_PARAMS:
+                this.emit('enumerateInputEventParams', new RecvEnumerateInputEventParams(data));
                 break;
         }
     }
