@@ -49,6 +49,16 @@ export class SimConnectPacketBuilder {
         return this;
     }
 
+    putUint32(value: number, offset?: number) {
+        this.packetContent.writeUint32(value, offset);
+        return this;
+    }
+
+    putUint64(value: Long, offset?: number) {
+        this.packetContent.writeUint64(value, offset);
+        return this;
+    }
+
     putByte(value: number) {
         this.packetContent.writeByte(value);
         return this;

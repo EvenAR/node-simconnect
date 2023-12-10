@@ -71,11 +71,23 @@ class RawBuffer {
         return this.buffer.readInt64().toNumber();
     }
 
+    readUint64(): Long {
+        return this.buffer.readUint64();
+    }
+
     /** @deprecated use readInt64() instead */
     readLong = this.readInt64;
 
     writeInt64(value: number) {
         this.buffer.writeInt64(value);
+    }
+
+    writeUint32(value: number, offset?: number) {
+        this.buffer.writeUint64(value, offset);
+    }
+
+    writeUint64(value: Long, offset?: number) {
+        this.buffer.writeUint64(value, offset);
     }
 
     /** @deprecated use writeInt64() instead */
