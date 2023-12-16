@@ -38,7 +38,7 @@ export interface OpenEvent {
 /**
  * Try opening a connection to SimConnect
  *
- * @param appName - An appropriate name for the client program
+ * @param appName - An appropriate name for the client program. Your app will appear with this name in the SimConnect inspector in MSFS.
  * @param protocolVersion - Lowest protocol version
  * @param options - Used for connecting to a remote instance of SimConnect. If omitted it will attempt to read connection parameters from the following sources:
  *
