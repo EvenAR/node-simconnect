@@ -20,6 +20,8 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 2. Check out the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for example scripts.
 3. Refer to the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) for comprehensive details on SimConnect APIs and usage.
 
+There are also [auto generated API-docs](https://evenar.github.io/node-simconnect/).
+
 ### General introduction
 
 You always start by calling [`open(...)`](https://evenar.github.io/node-simconnect/functions/open.html) which will attempt to open a connection with the SimConnect server (your flight simulator). If this succeeds you will get access to:
