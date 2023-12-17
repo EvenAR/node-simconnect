@@ -407,6 +407,27 @@ class SimConnectConnection extends EventEmitter {
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     *
+     * @remarks
+     * Listen for {@link SimConnectRecvEvents.simObjectData} to get the data.
+     *
+     * @example
+     * ```ts
+     * const LIVE_DATA_REQ_ID = 1234;
+     *
+     * handle.addToDataDefinition(
+     *   LIVE_DATA_REQ_ID,
+     *   'STRUCT LATLONALT',
+     *   null,
+     *   SimConnectDataType.LATLONALT
+     * );
+     *
+     * handle.on('simObjectData', recvSimObjectData => {
+     *   if (recvSimObjectData.requestID === LIVE_DATA_REQ_ID) {
+     *     console.log(readLatLonAlt(recvSimObjectData.data));
+     *   }
+     * });
+     * ```
      */
     requestDataOnSimObject(
         dataRequestId: DataRequestId,
@@ -434,6 +455,10 @@ class SimConnectConnection extends EventEmitter {
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     *
+     * @remarks
+     * Listen for {@link SimConnectRecvEvents.simObjectDataByType} to get the data.
+     *
      */
     requestDataOnSimObjectType(
         dataRequestId: DataRequestId,

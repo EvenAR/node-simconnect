@@ -13,20 +13,20 @@ class Waypoint implements SimConnectData {
     altitude = 0;
 
     /** flags of waypoints
-     * @see SimConnectConstants.WAYPOINT_ON_GROUND
-     * @see SimConnectConstants.WAYPOINT_REVERSE
-     * @see SimConnectConstants.WAYPOINT_ALTITUDE_IS_AGL
-     * @see SimConnectConstants.WAYPOINT_COMPUTE_VERTICAL_SPEED
-     * @see SimConnectConstants.WAYPOINT_SPEED_REQUESTED
-     * @see SimConnectConstants.WAYPOINT_THROTTLE_REQUESTED
-     *
+     * @see
+     * - {@link SimConnectConstants.WAYPOINT_ON_GROUND}
+     * - {@link SimConnectConstants.WAYPOINT_REVERSE}
+     * - {@link SimConnectConstants.WAYPOINT_ALTITUDE_IS_AGL}
+     * - {@link SimConnectConstants.WAYPOINT_COMPUTE_VERTICAL_SPEED}
+     * - {@link SimConnectConstants.WAYPOINT_SPEED_REQUESTED}
+     * - {@link SimConnectConstants.WAYPOINT_THROTTLE_REQUESTED}
      */
     flags = 0;
 
-    /** Speed, in kots. SimConnectConstants.WAYPOINT_SPEED_REQUESTED must be on */
+    /** Speed, in kots. {@link SimConnectConstants.WAYPOINT_SPEED_REQUESTED} must be on */
     speed = 0;
 
-    /** Throttle, in percent SimConnectConstants.WAYPOINT_THROTTLE_REQUESTED must be on */
+    /** Throttle, in percent {@link SimConnectConstants.WAYPOINT_THROTTLE_REQUESTED} must be on */
     throttle = 0;
 
     readFrom(buffer: RawBuffer) {
