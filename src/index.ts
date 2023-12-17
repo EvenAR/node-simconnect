@@ -3,33 +3,21 @@ import { Protocol } from './enums/Protocol';
 import { RecvOpen } from './recv';
 
 export * from './SimConnectConstants';
-export * from './enums/ClientDataPeriod';
-export * from './enums/SimConnectDataType';
-export * from './enums/TextType';
-export * from './enums/TextResult';
-export * from './enums/SimConnectPeriod';
-export * from './enums/SimConnectException';
-export * from './enums/SimObjectType';
-export * from './enums/FacilityListType';
-export * from './enums/NotificationPriority';
-export * from './enums/Protocol';
-export * from './enums/WeatherMode';
+export * from './SimConnectPacketBuilder';
+export * from './enums';
 export * from './SimConnectConnection';
 export * from './SimConnectSocket';
-export * from './flags/EventFlag';
-export * from './flags/DataRequestFlag';
-export * from './flags/DataSetFlag';
-export * from './flags/ClientDataRequestFlag';
-export * from './datastructures/FacilityAirport';
-export * from './datastructures/FacilityNDB';
-export * from './datastructures/FacilityVOR';
-export * from './datastructures/FacilityWaypoint';
+export * from './flags';
+export * from './datastructures';
 export * from './Types';
-
 export * from './recv';
 export * from './dto';
 export { RawBuffer } from './RawBuffer';
 
+/**
+ * @member recvOpen - Information about the flight simulator
+ * @member handle - The object used to interact with SimConnect
+ */
 export interface OpenEvent {
     recvOpen: RecvOpen;
     handle: SimConnectConnection;

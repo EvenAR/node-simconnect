@@ -172,7 +172,7 @@ class SimConnectConnection extends EventEmitter {
 
     private _packetsSent: number;
 
-    private packetDataBuffer = new RawBuffer(256);
+    private readonly _packetDataBuffer = new RawBuffer(256);
 
     constructor(appName: string, protocolVersion: Protocol) {
         super();
@@ -1628,9 +1628,9 @@ class SimConnectConnection extends EventEmitter {
 
     /**
      *
-     * @param dataDefinitionId
-     * @param filterPath
-     * @param filterData use null to remove a previously applied filter
+     * @param dataDefinitionId -
+     * @param filterPath -
+     * @param filterData - use null to remove a previously applied filter
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
@@ -1675,7 +1675,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _beginPacket(packetId: number): SimConnectPacketBuilder {
-        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this.packetDataBuffer);
+        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this._packetDataBuffer);
     }
 
     private _buildAndSend(builder: SimConnectPacketBuilder): number {

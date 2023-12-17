@@ -75,7 +75,7 @@ export class SimConnectPacketBuilder {
 
     /**
      * Finalize
-     * @param sendId of packet (can be used to identify packet when exception event occurs)
+     * @param sendId - of packet (can be used to identify packet when exception event occurs)
      */
     build(sendId: number): Buffer {
         const packetSize = this.packetContent.getOffset();

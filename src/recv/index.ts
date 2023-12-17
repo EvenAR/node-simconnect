@@ -30,3 +30,4 @@ export * from './RecvGetInputEvent';
 export * from './RecvSubscribeInputEvent';
 export * from './RecvEnumerateInputEventParams';
 export * from './RecvActionCallback';
+export * from './RecvListTemplate';

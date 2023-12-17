@@ -59,9 +59,9 @@ interface SimConnectMessage {
  * Inspired by https://www.derpturkey.com/extending-tcp-socket-in-node-js/
  */
 class SimConnectSocket extends Duplex {
-    _socket: Socket;
+    private readonly _socket: Socket;
 
-    _readingPaused;
+    private _readingPaused;
 
     constructor() {
         super({ objectMode: true });

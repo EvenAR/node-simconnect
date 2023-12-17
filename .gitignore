@@ -4,4 +4,5 @@ dist
 .DS_Store
 temp
 doc
+docs
 build
