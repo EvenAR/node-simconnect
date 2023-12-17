@@ -68,35 +68,35 @@ export const SimConnectConstants = {
     /** automatically compute offset of the ClientData variable */
     CLIENTDATAOFFSET_AUTO: -1,
 
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_1: 0,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_2: 1,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_3: 2,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_4: 3,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_5: 4,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_6: 5,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_7: 6,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_8: 7,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_9: 8,
-    /**   Specifies that the user has selected the menu item. */
+    /** Specifies that the user has selected the menu item. */
     TEXT_RESULT_MENU_SELECT_10: 9,
-    /**   Specifies that the menu or text identified by the EventID is now on display. */
+    /** Specifies that the menu or text identified by the EventID is now on display. */
     TEXT_RESULT_DISPLAYED: 0x00010000,
-    /**   Specifies that the menu or text identified by the EventID is waiting in a queue. */
+    /** Specifies that the menu or text identified by the EventID is waiting in a queue. */
     TEXT_RESULT_QUEUED: 0x00010001,
-    /**   Specifies that the menu or text identified by the EventID has been removed from the queue. */
+    /** Specifies that the menu or text identified by the EventID has been removed from the queue. */
     TEXT_RESULT_REMOVED: 0x00010002,
-    /**    Specifies that the menu or text identified by the EventID has been replaced in the queue. */
+    /**  Specifies that the menu or text identified by the EventID has been replaced in the queue. */
     TEXT_RESULT_REPLACED: 0x00010003,
-    /**   Specifies that the menu or text identified by the EventID has timed-out and is no longer on display. */
+    /** Specifies that the menu or text identified by the EventID has timed-out and is no longer on display. */
     TEXT_RESULT_TIMEOUT: 0x00010004,
 
     /** @see SimConnect#addToClientDataDefinition(int, int, int, float, int) */
