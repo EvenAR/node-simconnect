@@ -172,7 +172,7 @@ class SimConnectConnection extends EventEmitter {
 
     private _packetsSent: number;
 
-    private packetDataBuffer = new RawBuffer(256);
+    private readonly _packetDataBuffer = new RawBuffer(256);
 
     constructor(appName: string, protocolVersion: Protocol) {
         super();
@@ -407,6 +407,27 @@ class SimConnectConnection extends EventEmitter {
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     *
+     * @remarks
+     * Listen for {@link SimConnectRecvEvents.simObjectData} to get the data.
+     *
+     * @example
+     * ```ts
+     * const LIVE_DATA_REQ_ID = 1234;
+     *
+     * handle.addToDataDefinition(
+     *   LIVE_DATA_REQ_ID,
+     *   'STRUCT LATLONALT',
+     *   null,
+     *   SimConnectDataType.LATLONALT
+     * );
+     *
+     * handle.on('simObjectData', recvSimObjectData => {
+     *   if (recvSimObjectData.requestID === LIVE_DATA_REQ_ID) {
+     *     console.log(readLatLonAlt(recvSimObjectData.data));
+     *   }
+     * });
+     * ```
      */
     requestDataOnSimObject(
         dataRequestId: DataRequestId,
@@ -434,6 +455,10 @@ class SimConnectConnection extends EventEmitter {
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     *
+     * @remarks
+     * Listen for {@link SimConnectRecvEvents.simObjectDataByType} to get the data.
+     *
      */
     requestDataOnSimObjectType(
         dataRequestId: DataRequestId,
@@ -1628,9 +1653,9 @@ class SimConnectConnection extends EventEmitter {
 
     /**
      *
-     * @param dataDefinitionId
-     * @param filterPath
-     * @param filterData use null to remove a previously applied filter
+     * @param dataDefinitionId -
+     * @param filterPath -
+     * @param filterData - use null to remove a previously applied filter
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
@@ -1675,7 +1700,7 @@ class SimConnectConnection extends EventEmitter {
     }
 
     private _beginPacket(packetId: number): SimConnectPacketBuilder {
-        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this.packetDataBuffer);
+        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this._packetDataBuffer);
     }
 
     private _buildAndSend(builder: SimConnectPacketBuilder): number {

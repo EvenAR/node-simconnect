@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
 
-A SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
+A non-official SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
 
 ## Credits
 
@@ -12,15 +12,24 @@ This project is a rewrite of the Java client library
 [lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581).
 Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description).
 
-## Instructions
+## Getting started
 
-> :bulb: Tip: check out the [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper) for a simplified API.
+> :bulb: Tip: check out the [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper) which provides a more user-friendly wrapper around some of the `node-simconnect` APIs.
 
-Please refer to the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for help.
+1. `npm install node-simconnect`
+2. Check out the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for example scripts.
+3. Refer to the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) for comprehensive details on SimConnect APIs and usage.
 
-The API works similar to the SimConnect API described in the [official documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm).
+There are also [auto generated API-docs](https://evenar.github.io/node-simconnect/).
 
-### Quick start
+### General introduction
+
+You always start by calling [`open(...)`](https://evenar.github.io/node-simconnect/functions/open.html) which will attempt to open a connection with the SimConnect server (your flight simulator). If this succeeds you will get access to:
+
+-   [`recvOpen`](https://evenar.github.io/node-simconnect/classes/RecvOpen.html): contains simulator information
+-   [`handle`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html): will be used for all SimConnect interactions
+
+Example:
 
 ```js
 import { open, Protocol } from 'node-simconnect';
@@ -29,8 +38,6 @@ const EVENT_ID_PAUSE = 1;
 
 open('My SimConnect client', Protocol.FSX_SP2)
     .then(function ({ recvOpen, handle }) {
-        // recvOpen: object containing simulator information
-        // handle: the SimConnect handle
         console.log('Connected to', recvOpen.applicationName);
         handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
         handle.on('event', function (recvEvent) {
