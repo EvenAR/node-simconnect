@@ -5,14 +5,13 @@
 
 A non-official SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
 
-## Credits
-
-This project is a rewrite of the Java client library
+This project is a port of the Java client library
 [jsimconnect](https://github.com/mharj/jsimconnect), originally written by
-[lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581).
-Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description).
+[lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581). Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description). A huge thanks to everyone involved in that project! :pray:
 
-## Getting started
+---
+
+## Installation and use
 
 > :bulb: Tip: check out the [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper) which provides a more user-friendly wrapper around some of the `node-simconnect` APIs.
 
@@ -22,12 +21,12 @@ Details about the protocol can be found on [lc0277's old website](http://web.arc
 
 There are also [auto generated API-docs](https://evenar.github.io/node-simconnect/).
 
-### General introduction
+### Getting started
 
 You always start by calling [`open(...)`](https://evenar.github.io/node-simconnect/functions/open.html) which will attempt to open a connection with the SimConnect server (your flight simulator). If this succeeds you will get access to:
 
 -   [`recvOpen`](https://evenar.github.io/node-simconnect/classes/RecvOpen.html): contains simulator information
--   [`handle`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html): will be used for all SimConnect interactions
+-   [`handle`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html): used for accessing all available SimConnect APIs
 
 Example:
 
@@ -39,7 +38,7 @@ const EVENT_ID_PAUSE = 1;
 open('My SimConnect client', Protocol.FSX_SP2)
     .then(function ({ recvOpen, handle }) {
         console.log('Connected to', recvOpen.applicationName);
-        handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
+
         handle.on('event', function (recvEvent) {
             switch (recvEvent.clientEventId) {
                 case EVENT_ID_PAUSE:
@@ -56,13 +55,110 @@ open('My SimConnect client', Protocol.FSX_SP2)
         handle.on('close', function () {
             console.log('Connection closed unexpectedly (simulator CTD?)');
         });
+
+        handle.subscribeToSystemEvent(EVENT_ID_PAUSE, 'Pause');
     })
     .catch(function (error) {
         console.log('Connection failed:', error);
     });
 ```
 
-### Running over network?
+---
+
+## node-simconnect vs the official API
+
+### Supported APIs
+
+Most of the APIs described in the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) are implemented in `node-simconnect`. For information on how each feature works, please refer to the official documentation.
+
+Several new features have been added to the SimConnect API after the new Microsoft Flight Simulator was released, and more features are likely to come. Most of these will only be implemented on request. If you are missing any features in `node-simconnect` feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
+
+Prepar3D support and Prepar3D-only-features will not be prioritized.
+
+For a complete list of available API methods, please refer to the [`SimConnectConnection`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html) class.
+
+### Data unwrapping
+
+A major feature used by C/C++/C# implementation of SimConnect client libraries is the ability to directly cast a memory block to a user-defined structure. This is technically impossible to do in JavaScript or TypeScript since memory layout of classes and types are not accessible. Consequently, the wrapping/unwrapping steps must be done by the user.
+
+Example from the official SimConnect SDK (C++):
+
+```C++
+struct Struct1
+{
+    double  kohlsmann;
+    double  altitude;
+    double  latitude;
+    double  longitude;
+    int     verticalSpeed;
+};
+
+// ....
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "Kohlsman setting hg", "inHg");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "Indicated Altitude", "feet");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "Plane Latitude", "degrees");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "Plane Longitude", "degrees");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "VERTICAL SPEED", "Feet per second", SimConnectDataType.INT32);
+
+    SimConnect_AddToDataDefinition(hSimConnect, REQUEST_1, DEFINITION_1, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SECOND);
+// ....
+
+void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData) {
+    switch(pData->dwID) {
+        case SIMCONNECT_RECV_ID_SIMOBJECT_DATA: {
+            SIMCONNECT_RECV_SIMOBJECT_DATA *pObjData = (SIMCONNECT_RECV_SIMOBJECT_DATA*) pData;
+            switch(pObjData->dwRequestID) {
+                case REQUEST_1:
+                    Struct1 *pS = (Struct1*)&pObjData->dwData;
+                    break;
+                }
+            break;
+        }
+    }
+}
+```
+
+The code below demonstrates how the same is achieved using `node-simconnect`. When the `simObjectData`-callback triggers we get access to `recvSimObjectData.data` which contains the five simulation variables that were requested. The values are stored in a continuous chunk/buffer of 288 bits (64 + 64 + 64 + 64 + 32), or 36 bytes, in the same order as the simulation variables were added to the data definition. To extract the values correctly the values must be read in the correct **order** using the correct **data type** (the different data types have different sizes). After every `read****()` the reading "cursor" (offset) is moved automatically to the beginning of the next value in the buffer (given that the values are read correctly).
+
+```ts
+const REQUEST_1 = 0;
+const DEFINITION_1 = 0;
+// ....
+handle.addToDataDefinition(DEFINITION_1, 'Kohlsman setting hg', 'inHg', SimConnectDataType.FLOAT64);
+handle.addToDataDefinition(DEFINITION_1, 'Indicated Altitude', 'feet', SimConnectDataType.FLOAT64);
+handle.addToDataDefinition(DEFINITION_1, 'Plane Latitude', 'degrees', SimConnectDataType.FLOAT64);
+handle.addToDataDefinition(DEFINITION_1, 'Plane Longitude', 'degrees', SimConnectDataType.FLOAT64);
+handle.addToDataDefinition(
+    DEFINITION_1,
+    'VERTICAL SPEED',
+    'Feet per second',
+    SimConnectDataType.INT32
+);
+
+handle.requestDataOnSimObject(
+    REQUEST_1,
+    DEFINITION_1,
+    SimConnectConstants.OBJECT_ID_USER,
+    SimConnectPeriod.SIM_FRAME
+);
+// ....
+handle.on('simObjectData', recvSimObjectData => {
+    if (recvSimObjectData.requestID === REQUEST_1) {
+        const receivedData = {
+            // Read order is important!
+            kohlsmann: recvSimObjectData.data.readFloat64(),
+            altitude: recvSimObjectData.data.readFloat64(),
+            latitude: recvSimObjectData.data.readFloat64(),
+            longitude: recvSimObjectData.data.readFloat64(),
+            verticalSpeed: recvSimObjectData.data.readInt32(),
+        };
+    }
+});
+```
+
+---
+
+## Running over network?
 
 1. Open `SimConnect.xml`.
 
@@ -100,125 +196,3 @@ If no connection options are specified, node-simconnect will auto-discover conne
 1. Look for a `SimConnect.cfg` in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
 1. Look for a named pipe in the Windows registry, automatically set by the simulator
 1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
-
-## Functionality
-
-Most of the APIs described in the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) are implemented in `node-simconnect`. For information on how each feature works, please refer to the official documentation.
-
-Several new features have been added to the SimConnect API after the new Microsoft Flight Simulator was released, and more features are likely to come. Most of these will only be implemented on request. If you are missing any features in `node-simconnect` feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
-
-Prepar3D support and Prepar3D-only-features will not be prioritized.
-
-⚠️ = deprecated and will not work, according to the official documentation.
-
-### Events and data
-
-| Method                              | Tested FSX | Tested P3D | Tested MSFS |
-| ----------------------------------- | ---------- | ---------- | ----------- |
-| `addClientEventToNotificationGroup` |            |            |             |
-| `addToClientDataDefinition`         |            |            |             |
-| `addToDataDefinition`               | ✅         |            |             |
-| `clearClientDataDefinition`         |            |            |             |
-| `clearDataDefinition`               | ✅         |            |             |
-| `clearInputGroup`                   |            |            |             |
-| `clearNotificationGroup`            |            |            |             |
-| `createClientData`                  |            |            |             |
-| `enumerateInputEvents`              | n/a        | n/a        | ✅          |
-| `enumerateInputEventParams`         | n/a        | n/a        | ✅          |
-| `getInputEvent`                     | n/a        | n/a        |             |
-| `mapClientDataNameToID`             |            |            |             |
-| `mapClientEventToSimEvent`          |            |            |             |
-| `mapInputEventToClientEvent`        |            |            |             |
-| `mapInputEventToClientEventEx1`     |            |            |             |
-| `removeClientEvent`                 |            |            |             |
-| `removeInputEvent`                  |            |            |             |
-| `requestClientData`                 |            |            |             |
-| `requestDataOnSimObject`            | ✅         |            |             |
-| `requestDataOnSimObjectType`        | ✅         |            |             |
-| `requestNotificationGroup`          |            |            |             |
-| `requestReservedKey`                |            |            |             |
-| `subscribeToSystemEvent`            | ✅         |            |             |
-| `setClientData`                     |            |            |             |
-| `setDataOnSimObject`                | ✅         |            |             |
-| `setInputEvent`                     | n/a        | n/a        |             |
-| `setInputGroupPriority`             |            |            |             |
-| `setInputGroupState`                |            |            |             |
-| `setSystemEventState`               |            |            |             |
-| `setSystemState`                    |            |            |             |
-| `subscribeInputEvent`               | n/a        | n/a        |             |
-| `unsubscribeFromSystemEvent`        | ✅         |            |             |
-
-### AI Objects
-
-| Method                       | Tested FSX | Tested P3D | Tested MSFS |
-| ---------------------------- | ---------- | ---------- | ----------- |
-| `aICreateParkedATCAircraft`  |            |            |             |
-| `aICreateEnrouteATCAircraft` |            |            |             |
-| `aICreateNonATCAircraft`     |            |            |             |
-| `aICreateSimulatedObject`    |            |            |             |
-| `aIReleaseControl`           |            |            |             |
-| `aIRemoveObject`             |            |            |             |
-| `aISetAircraftFlightPlan`    |            |            |             |
-
-### Flights
-
-| Method           | Tested FSX | Tested P3D | Tested MSFS |
-| ---------------- | ---------- | ---------- | ----------- |
-| `flightLoad`     |            |            |             |
-| `flightPlanLoad` |            |            |             |
-| `flightSave`     |            |            |             |
-
-### Facility
-
-| Method                       | Tested FSX | Tested P3D | Tested MSFS |
-| ---------------------------- | ---------- | ---------- | ----------- |
-| `addToFacilityDefinition`    | n/a        | n/a        | ✅          |
-| `requestFacilitiesList`      |            |            |             |
-| `requestFacilitiesListEx1`   | n/a        | n/a        | ✅          |
-| `requestFacilityData`        | n/a        | n/a        | ✅          |
-| `requestFacilityDataEx1`     | n/a        | n/a        | ✅          |
-| `requestJetwayData`          | n/a        | n/a        | ✅          |
-| `subscribeToFacilities`      | ✅         |            |             |
-| `subscribeToFacilitiesEx1`   | n/a        | n/a        | ✅          |
-| `unSubscribeToFacilities`    | ✅         |            |             |
-| `unSubscribeToFacilitiesEx1` | n/a        | n/a        | ✅          |
-
-### Menu
-
-| Method              | Tested FSX | Tested P3D | Tested MSFS |
-| ------------------- | ---------- | ---------- | ----------- |
-| `menu`              | ✅         |            | ⚠️          |
-| `menuAddItem`       |            |            | ⚠️          |
-| `menuAddSubItem`    |            |            | ⚠️          |
-| `menuDeleteItem`    |            |            | ⚠️          |
-| `menuDeleteSubItem` |            |            | ⚠️          |
-
-### Weather
-
-| Method                                      | Tested FSX | Tested P3D | Tested MSFS |
-| ------------------------------------------- | ---------- | ---------- | ----------- |
-| `weatherRequestObservationAtNearestStation` | ✅         |            | ⚠️          |
-| `weatherRequestCloudState`                  | ✅         |            | ⚠️          |
-| `weatherRequestInterpolatedObservation`     |            |            | ⚠️          |
-| `weatherRequestObservationAtStation`        |            |            | ⚠️          |
-| `weatherCreateStation`                      |            |            | ⚠️          |
-| `weatherSetObservation`                     |            |            | ⚠️          |
-| `weatherSetModeServer`                      |            |            | ⚠️          |
-| `weatherSetModeTheme`                       |            |            | ⚠️          |
-| `weatherSetModeGlobal`                      |            |            | ⚠️          |
-| `weatherSetModeCustom`                      |            |            | ⚠️          |
-| `weatherSetDynamicUpdateRate`               |            |            | ⚠️          |
-| `weatherCreateThermal`                      |            |            | ⚠️          |
-| `weatherRemoveThermal`                      |            |            | ⚠️          |
-
-### Misc
-
-| Method                         | Tested FSX | Tested P3D | Tested MSFS |
-| ------------------------------ | ---------- | ---------- | ----------- |
-| `cameraSetRelative6DOF`        |            |            |             |
-| `completeCustomMissionAction`  |            |            |             |
-| `executeMissionAction`         |            |            |             |
-| `requestSystemState`           | ✅         |            |             |
-| `setNotificationGroupPriority` |            |            |             |
-| `text`                         | ✅         |            | ⚠️          |
-| `executeAction`                | n/a        | n/a        | ️           |
