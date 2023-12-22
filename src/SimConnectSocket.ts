@@ -61,10 +61,13 @@ interface SimConnectMessage {
 class SimConnectSocket extends Duplex {
     private readonly _socket: Socket;
 
-    private _readingPaused;
+    private _dataBuffer: Buffer;
+
+    private _readingPaused: boolean;
 
     constructor() {
         super({ objectMode: true });
+        this._dataBuffer = Buffer.from([]);
         this._readingPaused = false;
         this._socket = new Socket();
         this._socket.setNoDelay(false);
@@ -88,7 +91,7 @@ class SimConnectSocket extends Duplex {
         this._socket.destroy();
     }
 
-    _wrapSocket() {
+    private _wrapSocket() {
         this._socket.on('close', hadError => this.emit('close', hadError));
         this._socket.on('connect', () => this.emit('connect'));
         this._socket.on('drain', () => this.emit('drain'));
@@ -101,33 +104,40 @@ class SimConnectSocket extends Duplex {
         this._socket.on('readable', this._onReadable.bind(this));
     }
 
-    _onReadable() {
+    private _onReadable() {
         while (!this._readingPaused) {
-            // Read message length header
-            const lenBuf = this._socket.read(HEADER_LENGTH);
-            if (!lenBuf) return;
-            const bodyLength = lenBuf.readInt32LE() - HEADER_LENGTH;
+            const chunk: Buffer | null = this._socket.read();
+            if (chunk === null) break;
 
-            // Read message body
-            const body: Buffer = this._socket.read(bodyLength);
-            if (!body) {
-                // Put header back in read buffer
-                this._socket.unshift(lenBuf);
-                return;
+            this._dataBuffer = Buffer.concat([this._dataBuffer, chunk]);
+
+            while (this._dataBuffer.length >= HEADER_LENGTH) {
+                const totalMessageSize: number = this._dataBuffer.readInt32LE(0);
+
+                if (this._dataBuffer.length >= totalMessageSize) {
+                    const messageBody: Buffer = this._dataBuffer.slice(
+                        HEADER_LENGTH,
+                        totalMessageSize
+                    );
+
+                    const simConnectMessage: SimConnectMessage = {
+                        protocolVersion: messageBody.readInt32LE(0),
+                        packetTypeId: messageBody.readInt32LE(4),
+                        data: new RawBuffer(messageBody.slice(8)),
+                    };
+
+                    const pushOk = this.push(simConnectMessage);
+
+                    if (!pushOk) {
+                        this._readingPaused = true;
+                        break; // Pause reading if consumer is slow
+                    }
+
+                    this._dataBuffer = this._dataBuffer.slice(totalMessageSize); // Remove processed message from the buffer
+                } else {
+                    break; // Not enough data for a complete SimConnect message, break out of the loop
+                }
             }
-
-            const message: SimConnectMessage = {
-                // Mandatory fields
-                protocolVersion: body.readInt32LE(0),
-                packetTypeId: body.readInt32LE(4),
-                data: new RawBuffer(body.slice(8)),
-            };
-
-            // Add object to read buffer
-            const pushOk = this.push(message);
-
-            // Pause reading if consumer is slow
-            if (!pushOk) this._readingPaused = true;
         }
     }
 
