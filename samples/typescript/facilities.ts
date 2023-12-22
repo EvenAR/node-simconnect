@@ -44,6 +44,24 @@ open('SimConnect sample client', Protocol.KittyHawk)
         handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'SECONDARY_ILS_ICAO');
         handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'SECONDARY_ILS_REGION');
         handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'HEADING');
+        handle.addToFacilityDefinition(
+            DefinitionID.FACILITY_AIRPORT,
+            'OPEN PRIMARY_APPROACH_LIGHTS'
+        );
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'SYSTEM');
+        handle.addToFacilityDefinition(
+            DefinitionID.FACILITY_AIRPORT,
+            'CLOSE PRIMARY_APPROACH_LIGHTS'
+        );
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'OPEN PRIMARY_LEFT_VASI');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'TYPE');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'CLOSE PRIMARY_LEFT_VASI');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'OPEN PRIMARY_RIGHT_VASI');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'TYPE');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'CLOSE PRIMARY_RIGHT_VASI');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'OPEN PRIMARY_OVERRUN');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'LENGTH');
+        handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'CLOSE PRIMARY_OVERRUN');
         handle.addToFacilityDefinition(DefinitionID.FACILITY_AIRPORT, 'CLOSE RUNWAY'); // Close
         // VOR
         handle.addToFacilityDefinition(DefinitionID.FACILITY_VOR, 'OPEN VOR'); // Open
@@ -125,6 +143,17 @@ open('SimConnect sample client', Protocol.KittyHawk)
                         frequency,
                         localizer,
                     });
+                    break;
+                // Note that you'll need to keep track of the order of these as they will arrive
+                // in the same order as they were requested
+                case FacilityDataType.VASI:
+                    console.log('VASI', recvFacilityData.data.readInt32());
+                    break;
+                case FacilityDataType.APPROACHLIGHTS:
+                    console.log('APPROACHLIGHTS', recvFacilityData.data.readInt32());
+                    break;
+                case FacilityDataType.PAVEMENT:
+                    console.log('PAVEMENT', recvFacilityData.data.readFloat32());
                     break;
             }
         });

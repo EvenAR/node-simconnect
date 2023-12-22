@@ -22,6 +22,9 @@ export enum FacilityDataType {
     NDB,
     WAYPOINT,
     ROUTE,
+    PAVEMENT,
+    APPROACHLIGHTS,
+    VASI,
 }
 
 module.exports = {
