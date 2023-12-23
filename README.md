@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
 
-A non-official SimConnect client library written in TypeScript. Lets you write Node.js application that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac.
+A non-official SimConnect client library written in TypeScript. Lets you write Node.js applications that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac.
 
 This project is a port of the Java client library
 [jsimconnect](https://github.com/mharj/jsimconnect), originally written by
@@ -80,7 +80,7 @@ A major feature used by C/C++/C# implementation of SimConnect client libraries i
 Example from the official SimConnect SDK (C++):
 
 ```C++
-// C++ code
+// C++ code ////////////////////
 
 struct Struct1
 {
@@ -119,7 +119,7 @@ void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData) {
 The code below demonstrates how the same is achieved using `node-simconnect`:
 
 ```ts
-// TypeScript code
+// TypeScript code ////////////////////
 
 const REQUEST_1 = 0;
 const DEFINITION_1 = 0;
