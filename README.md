@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
 
-A non-official SimConnect client library written in TypeScript. Lets you write Node.js application that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac. Written in TypeScript.
+A non-official SimConnect client library written in TypeScript. Lets you write Node.js application that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac.
 
 This project is a port of the Java client library
 [jsimconnect](https://github.com/mharj/jsimconnect), originally written by
@@ -24,7 +24,7 @@ There are also [auto generated API-docs](https://evenar.github.io/node-simconnec
 You always start by calling [`open(...)`](https://evenar.github.io/node-simconnect/functions/open.html) which will attempt to open a connection with the SimConnect server (your flight simulator). If this succeeds you will get access to:
 
 -   [`recvOpen`](https://evenar.github.io/node-simconnect/classes/RecvOpen.html): contains simulator information
--   [`handle`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html): used for accessing all available SimConnect APIs
+-   [`handle`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html): used for accessing the SimConnect APIs
 
 Example:
 
