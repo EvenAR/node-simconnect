@@ -3,13 +3,11 @@
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
 
-A non-official SimConnect client library for Node.JS, written in TypeScript. Integrates directly with the SimConnect protocol and runs on Windows, Linux and Mac.
+A non-official SimConnect client library written in TypeScript. Lets you write Node.js application that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac. Written in TypeScript.
 
 This project is a port of the Java client library
 [jsimconnect](https://github.com/mharj/jsimconnect), originally written by
 [lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581). Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description). A huge thanks to everyone involved in that project! :pray:
-
----
 
 ## Installation and use
 
@@ -63,8 +61,6 @@ open('My SimConnect client', Protocol.FSX_SP2)
     });
 ```
 
----
-
 ## node-simconnect vs the official API
 
 ### Supported APIs
@@ -84,6 +80,8 @@ A major feature used by C/C++/C# implementation of SimConnect client libraries i
 Example from the official SimConnect SDK (C++):
 
 ```C++
+// C++ code
+
 struct Struct1
 {
     double  kohlsmann;
@@ -118,9 +116,11 @@ void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData) {
 }
 ```
 
-The code below demonstrates how the same is achieved using `node-simconnect`. When the `simObjectData`-callback triggers we get access to `recvSimObjectData.data` which contains the five simulation variables that were requested. The values are stored in a continuous chunk/buffer of 288 bits (64 + 64 + 64 + 64 + 32), or 36 bytes, in the same order as the simulation variables were added to the data definition. To extract the values correctly the values must be read in the correct **order** using the correct **data type** (the different data types have different sizes). After every `read****()` the reading "cursor" (offset) is moved automatically to the beginning of the next value in the buffer (given that the values are read correctly).
+The code below demonstrates how the same is achieved using `node-simconnect`:
 
 ```ts
+// TypeScript code
+
 const REQUEST_1 = 0;
 const DEFINITION_1 = 0;
 // ....
@@ -156,9 +156,15 @@ handle.on('simObjectData', recvSimObjectData => {
 });
 ```
 
----
+When the `simObjectData` callback is triggered, the `recvSimObjectData.data` is used to extract the requested simulation variables. These values are stored as a single continuous binary data chunk/buffer, maintaining the order in which the simulation variables were added to the data definition. In this case, the buffer is 288 bits long (64 + 64 + 64 + 64 + 32), or 36 bytes.
+
+The `read...()` functions are used to extract each value individually. When the correct function is used, the reading "cursor" (offset) automatically moves after each read, positioning it at the beginning of the next value in the buffer. Consequently, it is crucial to ensure that the values are read in the same order and using the same data type as initially requested.
 
 ## Running over network?
+
+If the Node.js application runs on the same computer as the flight simulator you don't need to worry about this part.
+
+To connect from an external computer you must configure SimConnect to accept connections from other hosts. This procedure is also described in the official docs, but here is the short version:
 
 1. Open `SimConnect.xml`.
 
@@ -182,7 +188,7 @@ handle.on('simObjectData', recvSimObjectData => {
     </SimBase.Document>
     ```
 
-1. Provide the IP address of the simulator PC and the port number when calling `open`:
+Connecting from a remote script can be done by providing the IP address of the flight simulator PC and the port number when calling `open`:
 
     ```js
     const options = { remote: { host: 'localhost', port: 5111 } };
@@ -190,9 +196,9 @@ handle.on('simObjectData', recvSimObjectData => {
     open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
     ```
 
-If no connection options are specified, node-simconnect will auto-discover connection details in the following order:
+Note that if no connection options are specified, `node-simconnect` will auto-discover connection details in the following order:
 
 1. Look for a [`SimConnect.cfg`](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_CFG_Definition.htm) in the folder where Node.js is located. If the script is running in Electron, this will be the folder where the Electron executable is installed.
-1. Look for a `SimConnect.cfg` in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
+1. Look for a [`SimConnect.cfg`](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_CFG_Definition.htm) in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
 1. Look for a named pipe in the Windows registry, automatically set by the simulator
 1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
