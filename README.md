@@ -190,11 +190,11 @@ To connect from an external computer you must configure SimConnect to accept con
 
 Connecting from a remote script can be done by providing the IP address of the flight simulator PC and the port number when calling `open`:
 
-    ```js
-    const options = { remote: { host: 'localhost', port: 5111 } };
+```js
+const options = { remote: { host: 'localhost', port: 5111 } };
 
-    open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
-    ```
+open('My SimConnect client', Protocol.FSX_SP2, options).then(/* ... */).catch(/* try again? */);
+```
 
 Note that if no connection options are specified, `node-simconnect` will auto-discover connection details in the following order:
 
