@@ -77,13 +77,12 @@ For a complete list of available API methods, please refer to the [`SimConnectCo
 
 A major feature used by C/C++/C# implementation of SimConnect client libraries is the ability to directly cast a memory block to a user-defined structure. This is technically impossible to do in JavaScript or TypeScript since memory layout of classes and types are not accessible. Consequently, the wrapping/unwrapping steps must be done by the user.
 
-Example from the official SimConnect SDK (C++):
+Example using the official SimConnect SDK (C++):
 
 ```C++
 // C++ code ////////////////////
 
-struct Struct1
-{
+struct Struct1 {
     double  kohlsmann;
     double  altitude;
     double  latitude;
@@ -98,7 +97,7 @@ struct Struct1
     hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "Plane Longitude", "degrees");
     hr = SimConnect_AddToDataDefinition(hSimConnect, DEFINITION_1, "VERTICAL SPEED", "Feet per second", SimConnectDataType.INT32);
 
-    SimConnect_AddToDataDefinition(hSimConnect, REQUEST_1, DEFINITION_1, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SECOND);
+    SimConnect_RequestDataOnSimObject(hSimConnect, REQUEST_1, DEFINITION_1, SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD_SECOND);
 // ....
 
 void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData) {
@@ -116,7 +115,7 @@ void CALLBACK MyDispatchProc(SIMCONNECT_RECV* pData, DWORD cbData) {
 }
 ```
 
-The code below demonstrates how the same is achieved using `node-simconnect`:
+The code below demonstrates how the same is achieved with `node-simconnect`:
 
 ```ts
 // TypeScript code ////////////////////
@@ -128,30 +127,24 @@ handle.addToDataDefinition(DEFINITION_1, 'Kohlsman setting hg', 'inHg', SimConne
 handle.addToDataDefinition(DEFINITION_1, 'Indicated Altitude', 'feet', SimConnectDataType.FLOAT64);
 handle.addToDataDefinition(DEFINITION_1, 'Plane Latitude', 'degrees', SimConnectDataType.FLOAT64);
 handle.addToDataDefinition(DEFINITION_1, 'Plane Longitude', 'degrees', SimConnectDataType.FLOAT64);
-handle.addToDataDefinition(
-    DEFINITION_1,
-    'VERTICAL SPEED',
-    'Feet per second',
-    SimConnectDataType.INT32
-);
+handle.addToDataDefinition(DEFINITION_1, 'VERTICAL SPEED', 'Feet per second', SimConnectDataType.INT32);
 
-handle.requestDataOnSimObject(
-    REQUEST_1,
-    DEFINITION_1,
-    SimConnectConstants.OBJECT_ID_USER,
-    SimConnectPeriod.SIM_FRAME
-);
+handle.requestDataOnSimObject(REQUEST_1, DEFINITION_1, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SIM_FRAME);
+
 // ....
 handle.on('simObjectData', recvSimObjectData => {
-    if (recvSimObjectData.requestID === REQUEST_1) {
-        const receivedData = {
-            // Read order is important!
-            kohlsmann: recvSimObjectData.data.readFloat64(),
-            altitude: recvSimObjectData.data.readFloat64(),
-            latitude: recvSimObjectData.data.readFloat64(),
-            longitude: recvSimObjectData.data.readFloat64(),
-            verticalSpeed: recvSimObjectData.data.readInt32(),
-        };
+    switch (recvSimObjectData.requestID) {
+        case REQUEST_1: {
+            const receivedData = {
+                // Read order is important!
+                kohlsmann: recvSimObjectData.data.readFloat64(),
+                altitude: recvSimObjectData.data.readFloat64(),
+                latitude: recvSimObjectData.data.readFloat64(),
+                longitude: recvSimObjectData.data.readFloat64(),
+                verticalSpeed: recvSimObjectData.data.readInt32(),
+            }
+            break;
+        }
     }
 });
 ```
