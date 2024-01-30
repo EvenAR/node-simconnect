@@ -1413,7 +1413,6 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string): number {
-        console.log(fieldName);
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         return this._buildAndSend(
