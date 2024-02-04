@@ -1,5 +1,5 @@
-import { ApiHelper } from '../../dist/apiHelper';
-import { open, Protocol, SimConnectDataType } from '../../dist';
+import { ApiHelper } from '../../dist/src/apiHelper';
+import { open, Protocol, SimConnectDataType } from '../../dist/src';
 
 open('API-helper example', Protocol.KittyHawk)
     .then(async ({ recvOpen, handle }) => {
@@ -19,53 +19,35 @@ async function doStuff(apiHelper: ApiHelper) {
     });
 
     /** Get a set of simulation variables once */
-    simulationVariables
-        .request({
-            TITLE: {
-                units: null,
-                dataType: SimConnectDataType.STRING128,
-            },
-            CATEGORY: {
-                units: null,
-                dataType: SimConnectDataType.STRING128,
-            },
-            'FUEL TOTAL QUANTITY': {
-                units: 'liters',
-                dataType: SimConnectDataType.INT32,
-            },
-        })
-        .then(data => {
-            console.log(
-                `Current aircraft is '${data.TITLE}'. It has ${data['FUEL TOTAL QUANTITY']} liters of fuel on board`
-            );
-        })
-        .catch(err => console.log(err));
+    const aircraftTitle = await simulationVariables.get('TITLE');
+    const atcMdel = await simulationVariables.get('ATC_MODEL');
+    const fuelOnBoard = await simulationVariables.get('FUEL_TOTAL_QUANTITY');
+    const fuelOnBoardKgs = await simulationVariables.get({
+        name: 'FUEL_TOTAL_QUANTITY',
+        units: 'kilograms',
+        dataType: SimConnectDataType.FLOAT64,
+    });
+
+    console.log(
+        `Current aircraft is '${aircraftTitle}' (${atcMdel}). It has ${fuelOnBoard} gallons (${fuelOnBoardKgs} kgs) of fuel on board`
+    );
 
     /** Get simulation variables whenever they change */
     simulationVariables.monitor(
-        {
-            'AIRSPEED INDICATED': {
-                units: 'knots',
-                dataType: SimConnectDataType.INT32,
-            },
-            'STRUCT LATLONALT': {
-                units: null,
-                dataType: SimConnectDataType.LATLONALT,
-            },
-        },
+        ['AIRSPEED_INDICATED', 'STRUCT_LATLONALT'],
         (err, data) => {
             if (err) {
                 console.log(err);
             } else if (data) {
-                console.log('Airspeed:', data['AIRSPEED INDICATED']);
-                console.log('Altitude:', data['STRUCT LATLONALT'].altitude);
+                console.log('Airspeed:', data.AIRSPEED_INDICATED);
+                console.log('Altitude:', data.STRUCT_LATLONALT.altitude);
             }
         },
         { onlyOnChange: true }
     );
 
     /** Set throttles to 50% */
-    simulationVariables.set(
+    /*simulationVariables.set(
         {
             'GENERAL ENG THROTTLE LEVER POSITION:1': {
                 value: 50,
@@ -79,7 +61,7 @@ async function doStuff(apiHelper: ApiHelper) {
             },
         },
         err => console.log(err)
-    );
+    );*/
 
     /**
      * The property names and corresponding data types are defined here:
