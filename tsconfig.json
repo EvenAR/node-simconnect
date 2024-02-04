@@ -11,5 +11,11 @@
     "inlineSourceMap": true,
     "inlineSources": true
   },
-  "include": ["src/**/*", "tests/**/*", "utils/**/*"]
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "utils/**/*",
+    "scripts/scrapeSimvars.ts",
+    "scripts/packetInspectorProxy.ts"
+  ]
 }
