@@ -47,21 +47,9 @@ async function doStuff(apiHelper: ApiHelper) {
     );
 
     /** Set throttles to 50% */
-    /*simulationVariables.set(
-        {
-            'GENERAL ENG THROTTLE LEVER POSITION:1': {
-                value: 50,
-                units: 'Percent',
-                dataType: SimConnectDataType.INT32,
-            },
-            'GENERAL ENG THROTTLE LEVER POSITION:2': {
-                value: 50,
-                units: 'Percent',
-                dataType: SimConnectDataType.INT32,
-            },
-        },
-        err => console.log(err)
-    );*/
+    simulationVariables.set(['GENERAL ENG THROTTLE LEVER POSITION:1', 50, 'Percent'], err =>
+        console.log(err)
+    );
 
     /**
      * The property names and corresponding data types are defined here:
