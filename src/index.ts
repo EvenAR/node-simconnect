@@ -12,6 +12,7 @@ export * from './datastructures';
 export * from './Types';
 export * from './recv';
 export * from './dto';
+export * from './ApiHelper';
 export { RawBuffer } from './RawBuffer';
 
 /**
