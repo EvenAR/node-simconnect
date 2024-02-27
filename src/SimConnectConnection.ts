@@ -1615,7 +1615,7 @@ class SimConnectConnection extends EventEmitter {
         if (typeof value === 'string') {
             packet.putInt32(value.length).putString(value);
         } else {
-            packet.putInt32(4).putFloat32(value);
+            packet.putInt32(8).putFloat64(value);
         }
 
         return this._buildAndSend(packet);
