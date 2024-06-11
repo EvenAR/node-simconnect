@@ -1,0 +1,33 @@
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                type: choice
+                description: 'Version to bump'
+                required: true
+                options:
+                    - 'patch'
+                    - 'minor'
+                    - 'major'
+            tag:
+                type: choice
+                description: 'Tag'
+                required: true
+                options:
+                    - 'alpha'
+                    - 'beta'
+                    - 'latest'
+
+jobs:
+    release:
+        name: Release new version
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20.x'
+                  registry-url: 'https://registry.npmjs.org'
+            - run: npm ci
+            - run: npm run build
+            - run: npm version ${{ inputs.version }}
