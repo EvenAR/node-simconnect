@@ -2,7 +2,7 @@ import { RawBuffer } from '../RawBuffer';
 import { InputEventType } from '../enums/InputEventType';
 
 export class RecvSubscribeInputEvent {
-    inputEventIdHash: Long;
+    inputEventIdHash: bigint;
 
     type: InputEventType;
 

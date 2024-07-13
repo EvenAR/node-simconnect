@@ -54,7 +54,7 @@ export class SimConnectPacketBuilder {
         return this;
     }
 
-    putUint64(value: Long, offset?: number) {
+    putUint64(value: bigint, offset?: number) {
         this.packetContent.writeUint64(value, offset);
         return this;
     }
