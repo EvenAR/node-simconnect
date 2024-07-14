@@ -9,7 +9,7 @@ open('My app', Protocol.KittyHawk)
 
         let allInputEvents: {
             inputEventName: string;
-            inputEventIdHash: string;
+            inputEventIdHash: bigint;
             params?: string;
         }[] = [];
 
@@ -17,7 +17,7 @@ open('My app', Protocol.KittyHawk)
             recvEnumerateInputEvents.inputEventDescriptors.forEach(e => {
                 allInputEvents.push({
                     inputEventName: e.name,
-                    inputEventIdHash: e.inputEventIdHash.toString(),
+                    inputEventIdHash: e.inputEventIdHash,
                 });
                 handle.enumerateInputEventParams(e.inputEventIdHash);
             });
@@ -27,8 +27,7 @@ open('My app', Protocol.KittyHawk)
             // Update the list with the received value
             allInputEvents = allInputEvents.map(inputEvent => {
                 if (
-                    inputEvent.inputEventIdHash ===
-                    recvEnumerateInputEventParams.inputEventIdHash.toString()
+                    inputEvent.inputEventIdHash === recvEnumerateInputEventParams.inputEventIdHash
                 ) {
                     return { ...inputEvent, params: recvEnumerateInputEventParams.value };
                 } else {

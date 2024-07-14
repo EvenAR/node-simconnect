@@ -4,7 +4,7 @@ import { RawBuffer } from '../RawBuffer';
 export class InputEventDescriptor {
     name: string;
 
-    inputEventIdHash: Long;
+    inputEventIdHash: bigint;
 
     type: InputEventType;
 

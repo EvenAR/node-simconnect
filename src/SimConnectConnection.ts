@@ -1596,7 +1596,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    getInputEvent(dataRequestID: number, inputEventHashID: Long): number {
+    getInputEvent(dataRequestID: number, inputEventHashID: bigint): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID);
@@ -1607,7 +1607,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    setInputEvent(inputEventHashID: Long, value: number | string): number {
+    setInputEvent(inputEventHashID: bigint, value: number | string): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(0x51).putUint64(inputEventHashID);
@@ -1625,7 +1625,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    subscribeInputEvent(inputEventHashID: Long): number {
+    subscribeInputEvent(inputEventHashID: bigint): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         return this._buildAndSend(this._beginPacket(0x52).putUint64(inputEventHashID));
@@ -1635,7 +1635,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    unsubscribeInputEvent(inputEventHashID: Long): number {
+    unsubscribeInputEvent(inputEventHashID: bigint): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         return this._buildAndSend(this._beginPacket(0x53).putUint64(inputEventHashID));
@@ -1645,7 +1645,7 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    enumerateInputEventParams(inputEventHashID: Long): number {
+    enumerateInputEventParams(inputEventHashID: bigint): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         return this._buildAndSend(this._beginPacket(0x54).putUint64(inputEventHashID));

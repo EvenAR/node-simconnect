@@ -71,8 +71,8 @@ class RawBuffer {
         return this.buffer.readInt64().toNumber();
     }
 
-    readUint64(): Long {
-        return this.buffer.readUint64();
+    readUint64(): bigint {
+        return BigInt(this.buffer.readUint64().toString(10));
     }
 
     /** @deprecated use readInt64() instead */
@@ -86,8 +86,10 @@ class RawBuffer {
         this.buffer.writeUint64(value, offset);
     }
 
-    writeUint64(value: Long, offset?: number) {
-        this.buffer.writeUint64(value, offset);
+    writeUint64(value: bigint, offset?: number) {
+        const buffer = Buffer.alloc(8);
+        buffer.writeBigUint64LE(value);
+        this.buffer.append(buffer, undefined, offset);
     }
 
     /** @deprecated use writeInt64() instead */

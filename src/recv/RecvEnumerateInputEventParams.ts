@@ -1,7 +1,7 @@
 import { RawBuffer } from '../RawBuffer';
 
 export class RecvEnumerateInputEventParams {
-    inputEventIdHash: Long;
+    inputEventIdHash: bigint;
 
     value: string;
 
