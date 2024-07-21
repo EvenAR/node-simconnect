@@ -28,14 +28,6 @@ type CustomSimulationVariableRequest = {
 };
 
 /**
- * A callback for when subscription data is received
- */
-export type SimvarCallback<A extends RequestedSimulationVariable> = (
-    err: SimConnectError | null,
-    data: VariablesResponse<A> | null
-) => void;
-
-/**
  * The output object structure when requesting multiple simulation variables
  */
 type VariablesResponse<T extends RequestedSimulationVariable> = {
@@ -181,16 +173,16 @@ class SimulationVariablesHelper extends BaseHelper {
 
     /**
      * Continuously read a set of simulation variables
-     * @param simulationVariables The variables to monitor
-     * @param callback Called when the variables change
+     * @param simulationVariables The variables to watch
+     * @param onData Called when the variables change
      * @param options Additional options
      * @param options.onlyOnChange If the callback should trigger only when a variable changes
      * @param options.simObjectId Defaults to the user's aircraft
      * @param {SimConnectPeriod} options.interval Defaults to SimConnectPeriod.SIM_FRAME
      */
-    monitor<const T extends RequestedSimulationVariable>(
+    watch<const T extends RequestedSimulationVariable>(
         simulationVariables: T[],
-        callback: SimvarCallback<T>,
+        onData: (simvars: VariablesResponse<T>) => void,
         options?: {
             onlyOnChange?: boolean;
             simObjectId?: number;
@@ -210,8 +202,13 @@ class SimulationVariablesHelper extends BaseHelper {
             flags: options?.onlyOnChange ? DataRequestFlag.DATA_REQUEST_FLAG_CHANGED : 0,
             errorHandler: err => {
                 hasFailed = true;
-                callback(err, null);
                 this._handle.clearDataDefinition(sub.defineId);
+
+                const simvarNames = simulationVariableRequests.map(varReq => varReq.name);
+
+                throw new Error(
+                    `SimConnect exception (${SimConnectException[err.exception]}) was thrown when trying to watch the following simvars: ${simvarNames}`
+                );
             },
         });
 
@@ -221,8 +218,7 @@ class SimulationVariablesHelper extends BaseHelper {
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
-                callback(
-                    null,
+                onData(
                     extractVariablesFromBuffer(
                         simulationVariableRequests,
                         recvSimObjectData.data
@@ -234,24 +230,30 @@ class SimulationVariablesHelper extends BaseHelper {
 
     /**
      * Read simulation variables for a certain object type
-     * @param type The type of object to monitor
+     * @param simobjectType The type of object to watch
      * @param radiusMeters Radius from user's aircraft
-     * @param simulationVariables The variables to monitor
-     * @param callback Called when the variables change
+     * @param simulationVariables The variables to watch
+     * @param onData Called when the variables change
      */
-    monitorObjects<const T extends RequestedSimulationVariable>(
-        type: SimObjectType,
+    watchObjects<const T extends RequestedSimulationVariable>(
+        simobjectType: SimObjectType,
         radiusMeters: number,
         simulationVariables: T[],
-        callback: SimvarCallback<T>
+        onData: (simvars: VariablesResponse<T>) => void
     ) {
+        const simulationVariableRequests = simulationVariables.map(
+            toStandardizedSimulationVariableRequest
+        );
         const sub = this._makeSubscriptionByType({
-            simulationVariableRequests: simulationVariables.map(
-                toStandardizedSimulationVariableRequest
-            ),
+            simulationVariableRequests,
             radiusMeters,
-            type,
-            errorHandler: err => callback(err, null),
+            simobjectType,
+            errorHandler: err => {
+                const simvarNames = simulationVariableRequests.map(varReq => varReq.name);
+                throw new Error(
+                    `SimConnect exception (${SimConnectException[err.exception]}) was thrown when trying to watch the following simvars for object type ${SimObjectType[simobjectType]}: ${simvarNames}`
+                );
+            },
         });
 
         this._handle.on('simObjectDataByType', recvSimObjectData => {
@@ -259,10 +261,7 @@ class SimulationVariablesHelper extends BaseHelper {
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
-                callback(
-                    null,
-                    extractVariablesFromBuffer(simulationVariables, recvSimObjectData.data)
-                );
+                onData(extractVariablesFromBuffer(simulationVariables, recvSimObjectData.data));
                 // this._handle.clearDataDefinition(sub.defineId);
             }
         });
@@ -302,7 +301,7 @@ class SimulationVariablesHelper extends BaseHelper {
     private _makeSubscriptionByType(params: {
         simulationVariableRequests: CustomSimulationVariableRequest[];
         radiusMeters: number;
-        type: SimObjectType;
+        simobjectType: SimObjectType;
         errorHandler: (error: SimConnectError) => void;
     }): { defineId: number; requestId: number } {
         const requestId = this._nextDataRequestId++;
@@ -316,7 +315,7 @@ class SimulationVariablesHelper extends BaseHelper {
             requestId,
             defineId,
             params.radiusMeters,
-            params.type
+            params.simobjectType
         );
 
         this._checkForException(sendId, ex =>

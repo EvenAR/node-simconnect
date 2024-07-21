@@ -3,7 +3,7 @@ import { SimulationVariablesHelper } from './SimulationVariablesHelper';
 import { SystemEventsHelper } from './SystemEventsHelper';
 import { FacilitiesHelper } from './FacilitiesHelper';
 
-export class ApiHelper {
+export class FlightSimulatorApi {
     simulationVariables: SimulationVariablesHelper;
 
     systemEvents: SystemEventsHelper;

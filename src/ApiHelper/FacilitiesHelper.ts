@@ -1,12 +1,21 @@
 import { BaseHelper } from './BaseHelper';
 import { SimConnectConnection } from '../SimConnectConnection';
 import { SimConnectDataType } from '../enums/SimConnectDataType';
-import { JavascriptDataType, readSimConnectValue } from './utils';
+import { FacilityReturnType, JavascriptDataType, readSimConnectValue } from './utils';
 import { FacilityDataType } from '../enums/FacilityDataType';
 import { RawBuffer } from '../RawBuffer';
 import { IcaoType } from '../dto';
 import { SimConnectError } from './SimulationVariablesHelper';
 import { SimConnectException } from '../enums/SimConnectException';
+import { FacilityListType } from '../enums';
+import {
+    RecvAirportList,
+    RecvFacilityData,
+    RecvFacilityDataEnd,
+    RecvNDBList,
+    RecvVORList,
+    RecvWaypointList,
+} from '../recv';
 
 export class FacilitiesHelper extends BaseHelper {
     private _nextFacilityDefinition: number;
@@ -17,6 +26,93 @@ export class FacilitiesHelper extends BaseHelper {
         super(handle);
         this._nextFacilityDefinition = 0;
         this._nextRequestId = 0;
+    }
+
+    public async listAll<T extends FacilityListType>(
+        facilityListType: T,
+        closestOnly: boolean = true
+    ): Promise<FacilityReturnType[T][]> {
+        return new Promise((resolve, reject) => {
+            const requestId = this._nextRequestId++;
+            const result: FacilityReturnType[T][] = [];
+
+            const removeListener = this._handle.off;
+
+            const sendId = closestOnly
+                ? this._handle.requestFacilitiesListEx1(facilityListType, requestId)
+                : this._handle.requestFacilitiesList(facilityListType, requestId);
+
+            this._checkForException(sendId, err => {
+                reject(
+                    Error(
+                        `Failed to get facility list for type ${FacilityListType[facilityListType]}: ${SimConnectException[err]}`
+                    )
+                );
+            });
+
+            function processAirportListChunk({
+                requestID,
+                airports,
+                entryNumber,
+                outOf,
+            }: RecvAirportList) {
+                if (requestID === requestId) {
+                    result.push(...(airports as FacilityReturnType[T][]));
+                    if (entryNumber === outOf - 1) {
+                        removeListener('airportList', processAirportListChunk);
+                        resolve(result);
+                    }
+                }
+            }
+
+            function processVorListChunk({ requestID, vors, entryNumber, outOf }: RecvVORList) {
+                if (requestID === requestId) {
+                    result.push(...(vors as FacilityReturnType[T][]));
+                    if (entryNumber === outOf - 1) {
+                        removeListener('vorList', processVorListChunk);
+                        resolve(result);
+                    }
+                }
+            }
+
+            function processNdbListChunk({ requestID, ndbs, entryNumber, outOf }: RecvNDBList) {
+                if (requestID === requestId) {
+                    result.push(...(ndbs as FacilityReturnType[T][]));
+                    if (entryNumber === outOf - 1) {
+                        removeListener('ndbList', processNdbListChunk);
+                        resolve(result);
+                    }
+                }
+            }
+
+            function processWaypointListChunk({
+                requestID,
+                waypoints,
+                entryNumber,
+                outOf,
+            }: RecvWaypointList) {
+                if (requestID === requestId) {
+                    result.push(...(waypoints as FacilityReturnType[T][]));
+                    if (entryNumber === outOf - 1) {
+                        removeListener('waypointList', processWaypointListChunk);
+                        resolve(result);
+                    }
+                }
+            }
+
+            if (facilityListType === FacilityListType.AIRPORT) {
+                this._handle.on('airportList', processAirportListChunk);
+            }
+            if (facilityListType === FacilityListType.VOR) {
+                this._handle.on('vorList', processVorListChunk);
+            }
+            if (facilityListType === FacilityListType.NDB) {
+                this._handle.on('ndbList', processNdbListChunk);
+            }
+            if (facilityListType === FacilityListType.WAYPOINT) {
+                this._handle.on('waypointList', processWaypointListChunk);
+            }
+        });
     }
 
     /**
@@ -96,6 +192,8 @@ export class FacilitiesHelper extends BaseHelper {
         return new Promise<FacilityOutput<T>>((resolve, reject) => {
             const defineId = this._nextFacilityDefinition++;
             const requestId = this._nextRequestId++;
+            const removeListener = this._handle.off;
+
             this._registerFacilityDefinitionRecursively(
                 defineId,
                 {
@@ -126,7 +224,7 @@ export class FacilitiesHelper extends BaseHelper {
 
             let output = {} as FacilityOutput<T>;
 
-            this._handle.on('facilityData', recvFacilityData => {
+            function handleFacilityData(recvFacilityData: RecvFacilityData) {
                 if (recvFacilityData.userRequestId === requestId) {
                     const propName = FacilityDataType[recvFacilityData.type];
 
@@ -147,13 +245,17 @@ export class FacilitiesHelper extends BaseHelper {
                         };
                     }
                 }
-            });
+            }
 
-            this._handle.on('facilityDataEnd', recvFacilityDataEnd => {
+            function handleEndOfFacilityData(recvFacilityDataEnd: RecvFacilityDataEnd) {
                 if (recvFacilityDataEnd.userRequestId === requestId) {
+                    removeListener('facilityData', handleFacilityData);
                     resolve(output);
                 }
-            });
+            }
+
+            this._handle.on('facilityData', handleFacilityData);
+            this._handle.once('facilityDataEnd', handleEndOfFacilityData);
         });
     }
 

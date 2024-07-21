@@ -12,6 +12,8 @@ import {
     Waypoint,
     XYZ,
 } from '../dto';
+import { FacilityListType } from '../enums';
+import { FacilityAirport, FacilityNDB, FacilityVOR, FacilityWaypoint } from '../datastructures';
 
 export function readSimConnectValue<T extends SimConnectDataType>(
     rawBuffer: RawBuffer,
@@ -127,5 +129,15 @@ export type JavascriptDataType = {
         [SimConnectDataType.LATLONALT]: LatLonAlt;
         [SimConnectDataType.XYZ]: XYZ;
         [SimConnectDataType.MAX]: undefined;
+    }[T];
+};
+
+export type FacilityReturnType = {
+    [T in FacilityListType]: {
+        [FacilityListType.NDB]: FacilityNDB;
+        [FacilityListType.VOR]: FacilityVOR;
+        [FacilityListType.AIRPORT]: FacilityAirport;
+        [FacilityListType.WAYPOINT]: FacilityWaypoint;
+        [FacilityListType.COUNT]: undefined;
     }[T];
 };
