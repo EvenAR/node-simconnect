@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import { outdent } from 'outdent'; // TODO: this should be part of dev dependencies
-import { SimConnectDataType } from '../src';
+import { SimConnectDataType } from '../index';
 
 type SimvarSpecs = {
     name: string;
@@ -64,15 +64,14 @@ async function extractTables(url: string): Promise<SimvarSpecs[]> {
         // Process the rows and create arrays per row
         const cells = $(rows[i]).find('td');
         const settable = $(cells).find('span.checkmark_circle_red').length === 0;
-        const rowCells = cells.map((_, cell) => $(cell).text().trim()).get();
 
-        const simvarNames = rowCells[0].split('\n');
+        const simvarNames = $(cells[0]).text().split('\n');
         simvarNames.forEach(name =>
             output.push({
                 name: name.trim(),
-                description: rowCells[1],
-                units: rowCells[2],
-                type: typeFromUnit(rowCells[2]),
+                description: $(cells[1]).html() || '',
+                units: correctUnits($(cells[2]).text()),
+                type: inferTypeFromUnit($(cells[2]).text()),
                 settable,
             })
         );
@@ -81,7 +80,13 @@ async function extractTables(url: string): Promise<SimvarSpecs[]> {
     return output;
 }
 
-function typeFromUnit(type: string): SimConnectDataType {
+function correctUnits(originalValue: string): string {
+    if (originalValue.toUpperCase() === 'STRING') return '';
+    if (originalValue.toUpperCase().includes('STRUCT')) return '';
+    return originalValue;
+}
+
+function inferTypeFromUnit(type: string): SimConnectDataType {
     if (type.includes('Bool')) return SimConnectDataType.INT32;
     if (type.includes('Enum')) return SimConnectDataType.INT32;
     if (type.includes('Mask')) return SimConnectDataType.INT32;
@@ -108,18 +113,26 @@ function createOutputFile(simvars: { [key: string]: SimvarSpecs }) {
                     name: '${simvar.name}',
                     units: '${simvar.units.split('\n')[0]}',
                     dataType: SimConnectDataType.${SimConnectDataType[simvar.type]},
-                    settable: ${simvar.settable}
+                    settable: ${simvar.settable},
                 },
             `;
     });
 
     return outdent`
-        import { SimConnectDataType } from '..';
+        import { SimConnectDataType } from '../dist';
         
-        export const simvarDefinitions = {
+        export type PredefinedVariable = {
+            name: string;
+            units: string;
+            dataType: SimConnectDataType;
+            settable: boolean;
+        };
+        
+        export const simvarPredefinitions = {
         ${output}
-        } as const;
+        } as const satisfies { [key: string]: PredefinedVariable };
+
+        export type SimvarPredefinitions = typeof simvarPredefinitions;
         
-        export type SimvarName = keyof typeof simvarDefinitions;
     `;
 }
