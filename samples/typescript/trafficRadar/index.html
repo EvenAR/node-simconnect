@@ -29,7 +29,6 @@
                         {
                             myLat = receivedData.data.lat;
                             myLng = receivedData.data.lng;
-                            console.log('My pos');
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
                         }
                         break;
@@ -37,11 +36,11 @@
                         {
                             const latDiff = myLat - receivedData.data.lat;
                             const lngDiff = myLng - receivedData.data.lng;
-                            const radarX = lngDiff * (512 / 180) * zoom + 256;
+                            const radarX = -lngDiff * (512 / 180) * zoom + 256;
                             const radarY = latDiff * (512 / 180) * zoom + 256;
                             ctx.fillRect(radarX, radarY, 5, 5);
                             ctx.fillText(
-                                receivedData.data.model,
+                                receivedData.data.title,
                                 radarX,
                                 radarY
                             );

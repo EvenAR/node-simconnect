@@ -57,6 +57,8 @@ open('My app', Protocol.FSX_SP2)
 
         handle.on('simObjectDataByType', recvSimObjectData => {
             if (recvSimObjectData.requestID === RequestID.NEARBY_AIRCRAFT) {
+                if (recvSimObjectData.outOf === 0) return; // There are no sim objects nearby
+
                 const aircraftDetails = readAircraftPosition(recvSimObjectData.data);
                 client?.send(
                     JSON.stringify({
@@ -92,27 +94,9 @@ function registerAircraftDetailsDefinition(handle: ConnectionHandle) {
     );
     handle.addToDataDefinition(
         DefinitionID.AIRCRAFT_DETAILS,
-        'ATC MODEL',
+        'TITLE',
         null,
-        SimConnectDataType.STRING32
-    );
-    handle.addToDataDefinition(
-        DefinitionID.AIRCRAFT_DETAILS,
-        'ATC ID',
-        null,
-        SimConnectDataType.STRING32
-    );
-    handle.addToDataDefinition(
-        DefinitionID.AIRCRAFT_DETAILS,
-        'ATC AIRLINE',
-        null,
-        SimConnectDataType.STRING64
-    );
-    handle.addToDataDefinition(
-        DefinitionID.AIRCRAFT_DETAILS,
-        'ATC FLIGHT NUMBER',
-        null,
-        SimConnectDataType.STRING8
+        SimConnectDataType.STRING128
     );
 }
 
@@ -122,9 +106,6 @@ function readAircraftPosition(rawBuffer: RawBuffer) {
         lat: rawBuffer.readFloat64(),
         lng: rawBuffer.readFloat64(),
         altitude: rawBuffer.readInt32(),
-        model: rawBuffer.readString(32),
-        id: rawBuffer.readString(32),
-        airline: rawBuffer.readString(64),
-        flightNumber: rawBuffer.readString(8),
+        title: rawBuffer.readString(128),
     };
 }
