@@ -61,6 +61,8 @@ import {
     ObjectId,
 } from './Types';
 import Timeout = NodeJS.Timeout;
+import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
+import { RecvFlowEvent } from './recv/RecvFlowEvent';
 
 type OpenPacketData = {
     major: number;
@@ -98,6 +100,13 @@ const openPacketData: { [key in Protocol]: OpenPacketData } = {
         buildMajor: 62651,
         buildMinor: 3,
         alias: 'HK', // "Hawk" + "Kitty"?
+    },
+    [Protocol.SunRise]: {
+        major: 12,
+        minor: 2,
+        buildMajor: 282174,
+        buildMinor: 999,
+        alias: 'SR', // Unverified
     },
 };
 
@@ -143,6 +152,10 @@ interface SimConnectRecvEvents {
     enumerateInputEventParams: (
         recvEnumerateInputEventParams: RecvEnumerateInputEventParams
     ) => void;
+    enumerateSimobjectAndLiveryList: (
+        recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
+    ) => void;
+    flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
 }
 
 type ConnectionOptions =
@@ -1687,6 +1700,149 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(this._beginPacket(0x56).putInt32(dataDefinitionId));
     }
 
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    aICreateParkedATCAircraftEx1(
+        containerTitle: string,
+        livery: string,
+        tailNumber: string,
+        airportID: string,
+        dataRequestId: DataRequestId
+    ): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(
+            this._beginPacket(0x57)
+                .putString256(containerTitle)
+                .putString256(livery)
+                .putString(tailNumber, 12)
+                .putString(airportID, 5)
+                .putInt32(dataRequestId)
+        );
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    aICreateEnrouteATCAircraftEx1(
+        containerTitle: string,
+        livery: string,
+        tailNumber: string,
+        flightNumber: number,
+        flightPlanPath: string,
+        flightPlanPosition: number,
+        touchAndGo: boolean,
+        dataRequestId: DataRequestId
+    ): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        return this._buildAndSend(
+            this._beginPacket(0x58)
+                .putString256(containerTitle)
+                .putString256(livery)
+                .putString(tailNumber, 12)
+                .putInt32(flightNumber)
+                .putString(flightPlanPath, 260)
+                .putFloat64(flightPlanPosition)
+                .putInt32(touchAndGo ? 1 : 0)
+                .putInt32(dataRequestId)
+        );
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    aICreateNonATCAircraftEx1(
+        containerTitle: string,
+        livery: string,
+        tailNumber: string,
+        initPos: InitPosition,
+        dataRequestId: DataRequestId
+    ): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x59)
+            .putString256(containerTitle)
+            .putString256(livery)
+            .putString(tailNumber, 12);
+
+        initPos.writeTo(packet);
+        packet.putInt32(dataRequestId);
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    aICreateSimulatedObjectEx1(
+        containerTitle: string,
+        livery: string,
+        initPos: InitPosition,
+        dataRequestId: DataRequestId
+    ): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5a);
+
+        packet.putString256(containerTitle);
+        packet.putString256(livery);
+        initPos.writeTo(packet);
+        packet.putInt32(dataRequestId);
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateSimObjectsAndLiveries(dataRequestId: DataRequestId, type: SimObjectType): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5b).putInt32(dataRequestId).putInt32(type);
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeToFlowEvent(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5c);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeToFlowEvent(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5d);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    requestAllFacilities(dataRequestId: DataRequestId, type: FacilityListType): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5e).putInt32(dataRequestId).putInt32(type);
+        return this._buildAndSend(packet);
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
@@ -1832,6 +1988,15 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_ENUMERATE_INPUT_EVENT_PARAMS:
                 this.emit('enumerateInputEventParams', new RecvEnumerateInputEventParams(data));
+                break;
+            case RecvID.ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST:
+                this.emit(
+                    'enumerateSimobjectAndLiveryList',
+                    new RecvEnumerateSimobjectAndLiveryList(data)
+                );
+                break;
+            case RecvID.ID_FLOW_EVENT:
+                this.emit('flowEvent', new RecvFlowEvent(data));
                 break;
         }
     }

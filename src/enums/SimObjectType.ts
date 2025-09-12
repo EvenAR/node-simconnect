@@ -11,9 +11,11 @@ export enum SimObjectType {
     BOAT,
     /** Specifies all AI controlled ground vehicles */
     GROUND,
-
-    /** for invalid values */
-    INVALID,
+    /** MSFS 2024 onwards */
+    HOT_AIR_BALLOON,
+    ANIMAL,
+    USER_AVATAR,
+    USER_CURRENT,
 }
 
 module.exports = {
