@@ -1,5 +1,5 @@
-import { VersionBaseType } from '../dto';
 import { RawBuffer } from '../RawBuffer';
+import { VersionBaseType } from './VersionBaseType';
 
 export class ControllerItem {
     deviceName: string;
