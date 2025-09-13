@@ -15,7 +15,7 @@ export class RecvException {
         this.sendId = data.readInt32();
         this.index = data.readInt32();
 
-        this.exceptionName = SimConnectException[this.exception];
+        this.exceptionName = SimConnectException[this.exception] ?? 'Unknown Exception';
     }
 }
 

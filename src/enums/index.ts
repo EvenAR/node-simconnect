@@ -11,4 +11,5 @@ export * from './Protocol';
 export * from './WeatherMode';
 export * from './InputEventType';
 export * from './FacilityDataType';
+export * from './FlowEvent';
 export * from './JetwayStatus';
