@@ -1,3 +1,4 @@
+import iconv = require('iconv-lite');
 import ByteBuffer = require('bytebuffer');
 
 class RawBuffer {
@@ -208,14 +209,15 @@ class RawBuffer {
 }
 
 function makeString(bf: ByteBuffer, expectedLength: number) {
-    const content = bf.readCString(bf.offset);
-    bf.skip(expectedLength);
-    return content.string;
+    const bytes = bf.readBytes(expectedLength).toBuffer();
+    const nullIndex = bytes.indexOf(0);
+    const end = nullIndex === -1 ? expectedLength : nullIndex;
+    return iconv.decode(bytes.subarray(0, end), 'win1252');
 }
 
 function putString(bf: ByteBuffer, s: string | null, fixed: number) {
     const value = s === null ? '' : s;
-    const bytes = Buffer.from(value, 'utf-8');
+    const bytes = iconv.encode(value, 'win1252');
     bf.append(bytes);
     if (bytes.length < fixed) {
         for (let i = 0; i < fixed - bytes.length; i++) {

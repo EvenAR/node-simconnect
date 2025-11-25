@@ -62,6 +62,7 @@
     "@types/node": "*",
     "bytebuffer": "^5.0.1",
     "debug": "^4.3.4",
+    "iconv-lite": "^0.7.0",
     "ini": "^2.0.0",
     "regedit": "^5.1.1"
   },
