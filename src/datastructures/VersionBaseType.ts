@@ -1,18 +1,24 @@
 import { RawBuffer } from '../RawBuffer';
+import { readFields } from '../internal/decode';
 
 export class VersionBaseType {
-    major: number;
+    major!: number;
 
-    minor: number;
+    minor!: number;
 
-    revision: number;
+    revision!: number;
 
-    build: number;
+    build!: number;
 
     constructor(data: RawBuffer) {
-        this.major = data.readInt16();
-        this.minor = data.readInt16();
-        this.revision = data.readInt16();
-        this.build = data.readInt16();
+        Object.assign(
+            this,
+            readFields(data, {
+                major: buffer => buffer.readInt16(),
+                minor: buffer => buffer.readInt16(),
+                revision: buffer => buffer.readInt16(),
+                build: buffer => buffer.readInt16(),
+            })
+        );
     }
 }

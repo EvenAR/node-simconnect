@@ -3,11 +3,16 @@
     "module": "CommonJS",
     "target": "es2020",
     "lib": ["es2020"],
+    "types": ["node", "jest"],
     "outDir": "./dist",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "useUnknownInCatchVariables": true,
     "declaration": true,
     "declarationMap": true,
     "inlineSourceMap": true,
@@ -15,10 +20,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*", "tests/**/*", "utils/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist"]
 }

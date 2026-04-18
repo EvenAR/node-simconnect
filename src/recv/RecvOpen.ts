@@ -1,39 +1,45 @@
 import { RawBuffer } from '../RawBuffer';
+import { readFields } from '../internal/decode';
 
 export class RecvOpen {
-    applicationName: string;
+    applicationName!: string;
 
-    applicationVersionMajor: number;
+    applicationVersionMajor!: number;
 
-    applicationVersionMinor: number;
+    applicationVersionMinor!: number;
 
-    applicationBuildMajor: number;
+    applicationBuildMajor!: number;
 
-    applicationBuildMinor: number;
+    applicationBuildMinor!: number;
 
-    simConnectVersionMajor: number;
+    simConnectVersionMajor!: number;
 
-    simConnectVersionMinor: number;
+    simConnectVersionMinor!: number;
 
-    simConnectBuildMajor: number;
+    simConnectBuildMajor!: number;
 
-    simConnectBuildMinor: number;
+    simConnectBuildMinor!: number;
 
-    reserved1: number;
+    reserved1!: number;
 
-    reserved2: number;
+    reserved2!: number;
 
     constructor(data: RawBuffer) {
-        this.applicationName = data.readString256();
-        this.applicationVersionMajor = data.readInt32();
-        this.applicationVersionMinor = data.readInt32();
-        this.applicationBuildMajor = data.readInt32();
-        this.applicationBuildMinor = data.readInt32();
-        this.simConnectVersionMajor = data.readInt32();
-        this.simConnectVersionMinor = data.readInt32();
-        this.simConnectBuildMajor = data.readInt32();
-        this.simConnectBuildMinor = data.readInt32();
-        this.reserved1 = data.readInt32();
-        this.reserved2 = data.readInt32();
+        Object.assign(
+            this,
+            readFields(data, {
+                applicationName: buffer => buffer.readString256(),
+                applicationVersionMajor: buffer => buffer.readInt32(),
+                applicationVersionMinor: buffer => buffer.readInt32(),
+                applicationBuildMajor: buffer => buffer.readInt32(),
+                applicationBuildMinor: buffer => buffer.readInt32(),
+                simConnectVersionMajor: buffer => buffer.readInt32(),
+                simConnectVersionMinor: buffer => buffer.readInt32(),
+                simConnectBuildMajor: buffer => buffer.readInt32(),
+                simConnectBuildMinor: buffer => buffer.readInt32(),
+                reserved1: buffer => buffer.readInt32(),
+                reserved2: buffer => buffer.readInt32(),
+            })
+        );
     }
 }

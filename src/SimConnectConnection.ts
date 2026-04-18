@@ -1,55 +1,22 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'node:events';
 import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
-import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
+import { autodetectServerAddress } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
 import { IcaoType, InitPosition, SimConnectData } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
 import { Protocol } from './enums/Protocol';
-import { RecvID, SimConnectMessage, SimConnectSocket } from './SimConnectSocket';
+import { RecvID, SimConnectMessage } from './SimConnectSocket';
 import { DataRequestFlag } from './flags/DataRequestFlag';
 import { EventFlag } from './flags/EventFlag';
 import { DataSetFlag } from './flags/DataSetFlag';
 import { ClientDataRequestFlag } from './flags/ClientDataRequestFlag';
 import { SimConnectConstants } from './SimConnectConstants';
 import { SimConnectPacketBuilder } from './SimConnectPacketBuilder';
-import {
-    RecvActionCallback,
-    RecvAirportList,
-    RecvAssignedObjectID,
-    RecvCloudState,
-    RecvControllersList,
-    RecvCustomAction,
-    RecvEnumerateInputEventParams,
-    RecvEnumerateInputEvents,
-    RecvEvent,
-    RecvEventAddRemove,
-    RecvEventEx1,
-    RecvEventFilename,
-    RecvEventFrame,
-    RecvEventRaceEnd,
-    RecvEventRaceLap,
-    RecvEventWeatherMode,
-    RecvException,
-    RecvFacilityData,
-    RecvFacilityDataEnd,
-    RecvFacilityMinimalList,
-    RecvGetInputEvent,
-    RecvJetwayData,
-    RecvNDBList,
-    RecvOpen,
-    RecvReservedKey,
-    RecvSimObjectData,
-    RecvSubscribeInputEvent,
-    RecvSystemState,
-    RecvVORList,
-    RecvWaypointList,
-    RecvWeatherObservation,
-} from './recv';
 import {
     ClientDataDefinitionId,
     ClientDataId,
@@ -60,103 +27,12 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
-import Timeout = NodeJS.Timeout;
-import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
-import { RecvFlowEvent } from './recv/RecvFlowEvent';
-
-type OpenPacketData = {
-    major: number;
-    minor: number;
-    buildMajor: number;
-    buildMinor: number;
-    alias: string;
-};
-
-const openPacketData: { [key in Protocol]: OpenPacketData } = {
-    [Protocol.FSX_RTM]: {
-        major: 0,
-        minor: 0,
-        buildMajor: 60905,
-        buildMinor: 0,
-        alias: 'XSF',
-    },
-    [Protocol.FSX_SP1]: {
-        major: 10,
-        minor: 0,
-        buildMajor: 61355,
-        buildMinor: 0,
-        alias: 'XSF',
-    },
-    [Protocol.FSX_SP2]: {
-        major: 10,
-        minor: 0,
-        buildMajor: 61259,
-        buildMinor: 0,
-        alias: 'XSF',
-    },
-    [Protocol.KittyHawk]: {
-        major: 11,
-        minor: 0,
-        buildMajor: 62651,
-        buildMinor: 3,
-        alias: 'HK', // "Hawk" + "Kitty"?
-    },
-    [Protocol.SunRise]: {
-        major: 12,
-        minor: 2,
-        buildMajor: 282174,
-        buildMinor: 999,
-        alias: 'SR', // Unverified
-    },
-};
-
-interface SimConnectRecvEvents {
-    open: (recvOpen: RecvOpen) => void;
-    close: () => void;
-    error: (error: Error) => void;
-    quit: () => void;
-    exception: (recvException: RecvException) => void;
-    event: (recvEvent: RecvEvent) => void;
-    eventEx1: (recvEvent: RecvEventEx1) => void;
-    airportList: (recvAirportList: RecvAirportList) => void;
-    vorList: (recvVORList: RecvVORList) => void;
-    ndbList: (recvNDBList: RecvNDBList) => void;
-    waypointList: (recvWaypointList: RecvWaypointList) => void;
-    reservedKey: (recvReservedKey: RecvReservedKey) => void;
-    customAction: (recvCustomAction: RecvCustomAction) => void;
-    clientData: (recvSimObjectData: RecvSimObjectData) => void;
-    eventWeatherMode: (recvWeatherMode: RecvEventWeatherMode) => void;
-    assignedObjectID: (recvAssignedObjectID: RecvAssignedObjectID) => void;
-    eventFilename: (recvEventFilename: RecvEventFilename) => void;
-    eventFrame: (recvEventFrame: RecvEventFrame) => void;
-    eventAddRemove: (recvEvent: RecvEventAddRemove) => void;
-    simObjectData: (recvSimObjectData: RecvSimObjectData) => void;
-    simObjectDataByType: (recvSimObjectData: RecvSimObjectData) => void;
-    systemState: (recvSystemState: RecvSystemState) => void;
-    weatherObservation: (recvWeatherObservation: RecvWeatherObservation) => void;
-    cloudState: (recvCloudState: RecvCloudState) => void;
-    eventMultiplayerServerStarted: () => void;
-    eventMultiplayerClientStarted: () => void;
-    eventMultiplayerSessionEnded: () => void;
-    eventRaceEnd: (recvEventRaceEnd: RecvEventRaceEnd) => void;
-    eventRaceLap: (recvEventRaceLap: RecvEventRaceLap) => void;
-    facilityData: (recvFacilityData: RecvFacilityData) => void;
-    facilityDataEnd: (recvFacilityDataEnd: RecvFacilityDataEnd) => void;
-    facilityMinimalList: (recvFacilityMinimalList: RecvFacilityMinimalList) => void;
-    jetwayData: (recvJetwayData: RecvJetwayData) => void;
-    actionCallback: (recvActionCallback: RecvActionCallback) => void;
-    controllersList: (recvControllersList: RecvControllersList) => void;
-    inputEventsList: (recvEnumerateInputEvents: RecvEnumerateInputEvents) => void;
-    getInputEvent: (recvGetInputEvent: RecvGetInputEvent) => void;
-    subscribeInputEvent: (recvSubscribeInputEvent: RecvSubscribeInputEvent) => void;
-    enumerateInputEventParams: (
-        recvEnumerateInputEventParams: RecvEnumerateInputEventParams
-    ) => void;
-    enumerateSimobjectAndLiveryList: (
-        recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
-    ) => void;
-    flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
-}
+import { SimConnectRecvEvents } from './SimConnectRecvEvents';
+import { PacketSender } from './internal/PacketSender';
+import { OpenConnectionFlow } from './internal/OpenConnectionFlow';
+import { SimConnectMessageDispatcher } from './internal/SimConnectMessageDispatcher';
+import { createTransport } from './internal/transport/createTransport';
+import { SimConnectTransport } from './internal/transport/SimConnectTransport';
 
 type ConnectionOptions =
     | { host: string; port: number }
@@ -179,23 +55,30 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _ourProtocol: Protocol;
 
-    _clientSocket: SimConnectSocket;
+    private readonly _messageDispatcher: SimConnectMessageDispatcher;
 
-    private _openTimeout: null | Timeout;
+    private readonly _openConnectionFlow: OpenConnectionFlow;
 
-    private _packetsSent: number;
+    private readonly _packetSender: PacketSender;
 
-    private readonly _packetDataBuffer = new RawBuffer(256);
+    _clientSocket: SimConnectTransport;
 
     constructor(appName: string, protocolVersion: Protocol) {
         super();
         this._appName = appName;
-        this._packetsSent = 0;
         this._ourProtocol = protocolVersion;
-
-        this._openTimeout = null;
-
-        this._clientSocket = new SimConnectSocket();
+        this._clientSocket = createTransport();
+        this._packetSender = new PacketSender(protocolVersion, this._clientSocket);
+        this._messageDispatcher = new SimConnectMessageDispatcher(this.emit.bind(this));
+        this._openConnectionFlow = new OpenConnectionFlow(
+            appName,
+            protocolVersion,
+            this._beginPacket.bind(this),
+            this._buildAndSend.bind(this),
+            this.close.bind(this),
+            error => this.emit('error', error),
+            SimConnectError.InvalidProtocol
+        );
 
         this._clientSocket.on('connect', this._open.bind(this));
         this._clientSocket.on('data', this._handleMessage.bind(this));
@@ -203,36 +86,46 @@ class SimConnectConnection extends EventEmitter {
         this._clientSocket.on('error', (connectError: Error) => this.emit('error', connectError));
     }
 
-    public on<U extends keyof SimConnectRecvEvents>(
+    public override on<U extends keyof SimConnectRecvEvents>(
         event: U,
         listener: SimConnectRecvEvents[U]
     ): this {
         return super.on(event, listener);
     }
 
-    public once<U extends keyof SimConnectRecvEvents>(
+    public override once<U extends keyof SimConnectRecvEvents>(
         event: U,
         listener: SimConnectRecvEvents[U]
     ): this {
         return super.once(event, listener);
     }
 
-    public removeListener<U extends keyof SimConnectRecvEvents>(
+    public override removeListener<U extends keyof SimConnectRecvEvents>(
         event: U,
         listener: SimConnectRecvEvents[U]
     ): this {
         return super.removeListener(event, listener);
     }
 
-    public removeAllListeners<U extends keyof SimConnectRecvEvents>(event: U): this {
+    public override removeAllListeners<U extends keyof SimConnectRecvEvents>(event: U): this {
         return super.removeAllListeners(event);
     }
 
-    public off = this.removeListener;
+    public override off<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return super.off(event, listener);
+    }
 
-    public addListener = this.on;
+    public override addListener<U extends keyof SimConnectRecvEvents>(
+        event: U,
+        listener: SimConnectRecvEvents[U]
+    ): this {
+        return super.addListener(event, listener);
+    }
 
-    public emit<U extends keyof SimConnectRecvEvents>(
+    public override emit<U extends keyof SimConnectRecvEvents>(
         event: U,
         ...args: Parameters<SimConnectRecvEvents[U]>
     ): boolean {
@@ -246,11 +139,13 @@ class SimConnectConnection extends EventEmitter {
             // For backwards-compatibility
             this._clientSocket.connect({ type: 'ipv4', ...options.remote });
         } else {
-            autodetectServerAddress(options?.simConnectCfgIndex).then(
-                (address: ConnectionParameters) => {
+            autodetectServerAddress(options?.simConnectCfgIndex)
+                .then(address => {
                     this._clientSocket.connect(address);
-                }
-            );
+                })
+                .catch((error: unknown) => {
+                    this.emit('error', error instanceof Error ? error : new Error(String(error)));
+                });
         }
     }
 
@@ -1844,187 +1739,33 @@ class SimConnectConnection extends EventEmitter {
     }
 
     close() {
-        if (this._openTimeout !== null) {
-            clearTimeout(this._openTimeout);
-            this._openTimeout = null;
-        }
+        this._openConnectionFlow.dispose();
         this._clientSocket.close();
     }
 
     getLastSentPacketID() {
-        return this._packetsSent - 1;
+        return this._packetSender.getLastSentPacketID();
     }
 
     private _beginPacket(packetId: number): SimConnectPacketBuilder {
-        return new SimConnectPacketBuilder(packetId, this._ourProtocol, this._packetDataBuffer);
+        return this._packetSender.beginPacket(packetId);
     }
 
     private _buildAndSend(builder: SimConnectPacketBuilder): number {
-        const thisPacketId = this._packetsSent;
-        this._clientSocket.write(builder.build(thisPacketId));
-        this._packetsSent++;
-        return thisPacketId;
+        return this._packetSender.send(builder);
     }
 
-    private _handleMessage({ packetTypeId, data }: SimConnectMessage) {
-        if (!(packetTypeId in RecvID)) {
-            console.log('Unknown packet type id', packetTypeId, data);
+    private _handleMessage(message: SimConnectMessage) {
+        if (message.packetTypeId === RecvID.ID_OPEN) {
+            this._openConnectionFlow.complete();
         }
 
-        switch (packetTypeId) {
-            case RecvID.ID_NULL:
-                break;
-            case RecvID.ID_EXCEPTION:
-                this.emit('exception', new RecvException(data));
-                break;
-            case RecvID.ID_OPEN:
-                if (this._openTimeout !== null) {
-                    clearTimeout(this._openTimeout);
-                    this._openTimeout = null;
-                }
-                this.emit('open', new RecvOpen(data));
-                break;
-            case RecvID.ID_QUIT:
-                this.emit('quit');
-                break;
-            case RecvID.ID_EVENT:
-                this.emit('event', new RecvEvent(data));
-                break;
-            case RecvID.ID_EVENT_OBJECT_ADDREMOVE:
-                this.emit('eventAddRemove', new RecvEventAddRemove(data));
-                break;
-            case RecvID.ID_EVENT_FILENAME:
-                this.emit('eventFilename', new RecvEventFilename(data));
-                break;
-            case RecvID.ID_EVENT_FRAME:
-                this.emit('eventFrame', new RecvEventFrame(data));
-                break;
-            case RecvID.ID_SIMOBJECT_DATA:
-                this.emit('simObjectData', new RecvSimObjectData(data));
-                break;
-            case RecvID.ID_SIMOBJECT_DATA_BYTYPE:
-                this.emit('simObjectDataByType', new RecvSimObjectData(data));
-                break;
-            case RecvID.ID_WEATHER_OBSERVATION:
-                this.emit('weatherObservation', new RecvWeatherObservation(data));
-                break;
-            case RecvID.ID_CLOUD_STATE:
-                this.emit('cloudState', new RecvCloudState(data));
-                break;
-            case RecvID.ID_ASSIGNED_OBJECT_ID:
-                this.emit('assignedObjectID', new RecvAssignedObjectID(data));
-                break;
-            case RecvID.ID_RESERVED_KEY:
-                this.emit('reservedKey', new RecvReservedKey(data));
-                break;
-            case RecvID.ID_CUSTOM_ACTION:
-                this.emit('customAction', new RecvCustomAction(data));
-                break;
-            case RecvID.ID_SYSTEM_STATE:
-                this.emit('systemState', new RecvSystemState(data));
-                break;
-            case RecvID.ID_CLIENT_DATA:
-                this.emit('clientData', new RecvSimObjectData(data));
-                break;
-            case RecvID.ID_EVENT_WEATHER_MODE:
-                this.emit('eventWeatherMode', new RecvEventWeatherMode(data));
-                break;
-            case RecvID.ID_AIRPORT_LIST:
-                this.emit('airportList', new RecvAirportList(data));
-                break;
-            case RecvID.ID_VOR_LIST:
-                this.emit('vorList', new RecvVORList(data));
-                break;
-            case RecvID.ID_NDB_LIST:
-                this.emit('ndbList', new RecvNDBList(data));
-                break;
-            case RecvID.ID_WAYPOINT_LIST:
-                this.emit('waypointList', new RecvWaypointList(data));
-                break;
-            case RecvID.ID_EVENT_MULTIPLAYER_SERVER_STARTED:
-                this.emit('eventMultiplayerServerStarted');
-                break;
-            case RecvID.ID_EVENT_MULTIPLAYER_CLIENT_STARTED:
-                this.emit('eventMultiplayerClientStarted');
-                break;
-            case RecvID.ID_EVENT_MULTIPLAYER_SESSION_ENDED:
-                this.emit('eventMultiplayerSessionEnded');
-                break;
-            case RecvID.ID_EVENT_RACE_END:
-                this.emit('eventRaceEnd', new RecvEventRaceEnd(data));
-                break;
-            case RecvID.ID_EVENT_RACE_LAP:
-                this.emit('eventRaceLap', new RecvEventRaceLap(data));
-                break;
-            case RecvID.ID_EVENT_EX1:
-                this.emit('eventEx1', new RecvEventEx1(data));
-                break;
-            case RecvID.ID_FACILITY_DATA:
-                this.emit('facilityData', new RecvFacilityData(data));
-                break;
-            case RecvID.ID_FACILITY_DATA_END:
-                this.emit('facilityDataEnd', new RecvFacilityDataEnd(data));
-                break;
-            case RecvID.ID_FACILITY_MINIMAL_LIST:
-                this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
-                break;
-            case RecvID.ID_JETWAY_DATA:
-                this.emit('jetwayData', new RecvJetwayData(data));
-                break;
-            case RecvID.ID_CONTROLLERS_LIST:
-                this.emit('controllersList', new RecvControllersList(data));
-                break;
-            case RecvID.ID_ACTION_CALLBACK:
-                this.emit('actionCallback', new RecvActionCallback(data));
-                break;
-            case RecvID.ID_ENUMERATE_INPUT_EVENTS:
-                this.emit('inputEventsList', new RecvEnumerateInputEvents(data));
-                break;
-            case RecvID.ID_GET_INPUT_EVENT:
-                this.emit('getInputEvent', new RecvGetInputEvent(data));
-                break;
-            case RecvID.ID_SUBSCRIBE_INPUT_EVENT:
-                this.emit('subscribeInputEvent', new RecvSubscribeInputEvent(data));
-                break;
-            case RecvID.ID_ENUMERATE_INPUT_EVENT_PARAMS:
-                this.emit('enumerateInputEventParams', new RecvEnumerateInputEventParams(data));
-                break;
-            case RecvID.ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST:
-                this.emit(
-                    'enumerateSimobjectAndLiveryList',
-                    new RecvEnumerateSimobjectAndLiveryList(data)
-                );
-                break;
-            case RecvID.ID_FLOW_EVENT:
-                this.emit('flowEvent', new RecvFlowEvent(data));
-                break;
-        }
+        this._messageDispatcher.dispatch(message);
     }
 
     private _open() {
-        this._openTimeout = setTimeout(() => {
-            this.close();
-            this.emit('error', Error('Open timeout'));
-        }, 5000);
-
-        const version = openPacketData[this._ourProtocol];
-        if (!version) {
-            throw Error(SimConnectError.InvalidProtocol);
-        }
-
-        this._buildAndSend(
-            this._beginPacket(0x01)
-                .putString256(this._appName)
-                .putInt32(0)
-                .putByte(0x00)
-                .putString(version.alias, 3)
-                .putInt32(version.major)
-                .putInt32(version.minor)
-                .putInt32(version.buildMajor)
-                .putInt32(version.buildMinor)
-        );
+        this._openConnectionFlow.start();
     }
 }
 
 export { SimConnectConnection, ConnectionOptions, SimConnectRecvEvents };
-module.exports = { SimConnectConnection };

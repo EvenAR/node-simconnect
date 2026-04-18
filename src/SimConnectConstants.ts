@@ -114,7 +114,3 @@ export namespace SimConnectConstants {
     /** @see {@link SimConnectConnection.addToClientDataDefinition} */
     export const CLIENT_DATA_TYPE_FLOAT64 = -6;
 }
-
-module.exports = {
-    SimConnectConstants,
-};

@@ -1,66 +1,17 @@
-import { Socket } from 'net';
-import { Duplex } from 'stream';
+import { Socket } from 'node:net';
+import { Duplex } from 'node:stream';
 import { RawBuffer } from './RawBuffer';
+import { RecvID, SimConnectMessage } from './SimConnectProtocolMessage';
 import { ConnectionParameters } from './connectionParameters';
+import { SimConnectTransport } from './internal/transport/SimConnectTransport';
 
 const HEADER_LENGTH = 4;
-
-enum RecvID {
-    ID_NULL,
-    ID_EXCEPTION,
-    ID_OPEN,
-    ID_QUIT,
-    ID_EVENT,
-    ID_EVENT_OBJECT_ADDREMOVE,
-    ID_EVENT_FILENAME,
-    ID_EVENT_FRAME,
-    ID_SIMOBJECT_DATA,
-    ID_SIMOBJECT_DATA_BYTYPE,
-    ID_WEATHER_OBSERVATION,
-    ID_CLOUD_STATE,
-    ID_ASSIGNED_OBJECT_ID,
-    ID_RESERVED_KEY,
-    ID_CUSTOM_ACTION,
-    ID_SYSTEM_STATE,
-    ID_CLIENT_DATA,
-    ID_EVENT_WEATHER_MODE,
-    ID_AIRPORT_LIST,
-    ID_VOR_LIST,
-    ID_NDB_LIST,
-    ID_WAYPOINT_LIST,
-    ID_EVENT_MULTIPLAYER_SERVER_STARTED,
-    ID_EVENT_MULTIPLAYER_CLIENT_STARTED,
-    ID_EVENT_MULTIPLAYER_SESSION_ENDED,
-    ID_EVENT_RACE_END,
-    ID_EVENT_RACE_LAP,
-    // KittyHawk:
-    ID_EVENT_EX1,
-    ID_FACILITY_DATA,
-    ID_FACILITY_DATA_END,
-    ID_FACILITY_MINIMAL_LIST,
-    ID_JETWAY_DATA,
-    ID_CONTROLLERS_LIST,
-    ID_ACTION_CALLBACK,
-    ID_ENUMERATE_INPUT_EVENTS,
-    ID_GET_INPUT_EVENT,
-    ID_SUBSCRIBE_INPUT_EVENT,
-    ID_ENUMERATE_INPUT_EVENT_PARAMS,
-    ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST,
-    ID_FLOW_EVENT,
-}
-
-interface SimConnectMessage {
-    protocolVersion: number;
-    packetTypeId: RecvID;
-    data: RawBuffer;
-}
-
 /**
  * For connecting, reading and writing to the SimConnect server.
  * The emitted "data"-event contains a SimConnectMessage-object.
  * Inspired by https://www.derpturkey.com/extending-tcp-socket-in-node-js/
  */
-class SimConnectSocket extends Duplex {
+class SimConnectSocket extends Duplex implements SimConnectTransport {
     private readonly _socket: Socket;
 
     private _dataBuffer: Buffer;
@@ -143,12 +94,12 @@ class SimConnectSocket extends Duplex {
         }
     }
 
-    _read() {
+    override _read() {
         this._readingPaused = false;
         setImmediate(this._onReadable.bind(this));
     }
 
-    _write(data: Buffer, encoding: BufferEncoding, cb: (error?: Error | null) => void) {
+    override _write(data: Buffer, encoding: BufferEncoding, cb: (error?: Error | null) => void) {
         this._socket.write(data, encoding, cb);
     }
 }

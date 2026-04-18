@@ -1,19 +1,25 @@
 import { RawBuffer } from '../RawBuffer';
 import { DataRequestId } from '../Types';
+import { readFields } from '../internal/decode';
 
 export class RecvFacilitiesList {
-    requestID: DataRequestId;
+    requestID!: DataRequestId;
 
-    arraySize: number;
+    arraySize!: number;
 
-    entryNumber: number;
+    entryNumber!: number;
 
-    outOf: number;
+    outOf!: number;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32() as DataRequestId;
-        this.arraySize = data.readInt32();
-        this.entryNumber = data.readInt32();
-        this.outOf = data.readInt32();
+        Object.assign(
+            this,
+            readFields(data, {
+                requestID: buffer => buffer.readInt32() as DataRequestId,
+                arraySize: buffer => buffer.readInt32(),
+                entryNumber: buffer => buffer.readInt32(),
+                outOf: buffer => buffer.readInt32(),
+            })
+        );
     }
 }

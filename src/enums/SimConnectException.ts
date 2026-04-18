@@ -44,7 +44,3 @@ export enum SimConnectException {
     GET_INPUT_EVENT_FAILED,
     SET_INPUT_EVENT_FAILED,
 }
-
-module.exports = {
-    SimConnectException,
-};

@@ -17,7 +17,3 @@ export enum SimObjectType {
     USER_AVATAR,
     USER_CURRENT,
 }
-
-module.exports = {
-    SimObjectType,
-};

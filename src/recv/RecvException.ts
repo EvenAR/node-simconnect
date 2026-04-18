@@ -18,5 +18,3 @@ export class RecvException {
         this.exceptionName = SimConnectException[this.exception] ?? 'Unknown Exception';
     }
 }
-
-module.exports = { RecvException };

@@ -1,5 +1,7 @@
 dist
 samples
+scripts
+utils/packetInspectorProxy.ts
 .eslintrc.js
 jest.config.js
 lint-staged.config.js
