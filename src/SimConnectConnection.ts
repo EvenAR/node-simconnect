@@ -31,6 +31,7 @@ import { SimConnectRecvEvents } from './SimConnectRecvEvents';
 import { PacketSender } from './internal/PacketSender';
 import { OpenConnectionFlow } from './internal/OpenConnectionFlow';
 import { SimConnectMessageDispatcher } from './internal/SimConnectMessageDispatcher';
+import { ProtocolCapabilities } from './internal/ProtocolCapabilities';
 import { createTransport } from './internal/transport/createTransport';
 import { SimConnectTransport } from './internal/transport/SimConnectTransport';
 
@@ -55,6 +56,8 @@ class SimConnectConnection extends EventEmitter {
 
     private readonly _ourProtocol: Protocol;
 
+    private readonly _capabilities: ProtocolCapabilities;
+
     private readonly _messageDispatcher: SimConnectMessageDispatcher;
 
     private readonly _openConnectionFlow: OpenConnectionFlow;
@@ -67,6 +70,7 @@ class SimConnectConnection extends EventEmitter {
         super();
         this._appName = appName;
         this._ourProtocol = protocolVersion;
+        this._capabilities = new ProtocolCapabilities(protocolVersion);
         this._clientSocket = createTransport();
         this._packetSender = new PacketSender(protocolVersion, this._clientSocket);
         this._messageDispatcher = new SimConnectMessageDispatcher(this.emit.bind(this));
@@ -158,6 +162,10 @@ class SimConnectConnection extends EventEmitter {
         throw Error(SimConnectError.Unimplemented);
     }
 
+    // ----------------------------------------------------------------------------
+    // Event Mapping & Transmission
+    // ----------------------------------------------------------------------------
+
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
@@ -203,6 +211,10 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    // ----------------------------------------------------------------------------
+    // Notification Groups
+    // ----------------------------------------------------------------------------
+
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
@@ -229,9 +241,7 @@ class SimConnectConnection extends EventEmitter {
         clientEventId: ClientEventId
     ): number {
         return this._buildAndSend(
-            this._beginPacket(0x08) //
-                .putInt32(notificationGroupId)
-                .putInt32(clientEventId)
+            this._beginPacket(0x08).putInt32(notificationGroupId).putInt32(clientEventId)
         );
     }
 
@@ -244,9 +254,7 @@ class SimConnectConnection extends EventEmitter {
         priority: NotificationPriority
     ): number {
         return this._buildAndSend(
-            this._beginPacket(0x09) //
-                .putInt32(notificationGroupId)
-                .putInt32(priority)
+            this._beginPacket(0x09).putInt32(notificationGroupId).putInt32(priority)
         );
     }
 
@@ -255,10 +263,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     clearNotificationGroup(notificationGroupId: NotificationGroupId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x0a) //
-                .putInt32(notificationGroupId)
-        );
+        return this._buildAndSend(this._beginPacket(0x0a).putInt32(notificationGroupId));
     }
 
     /**
@@ -271,12 +276,13 @@ class SimConnectConnection extends EventEmitter {
         flags: number
     ): number {
         return this._buildAndSend(
-            this._beginPacket(0x0b) //
-                .putInt32(notificationGroupId)
-                .putInt32(reserved)
-                .putInt32(flags)
+            this._beginPacket(0x0b).putInt32(notificationGroupId).putInt32(reserved).putInt32(flags)
         );
     }
+
+    // ----------------------------------------------------------------------------
+    // Data Definitions
+    // ----------------------------------------------------------------------------
 
     /**
      *
@@ -306,10 +312,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     clearDataDefinition(dataDefinitionId: DataDefinitionId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x0d) //
-                .putInt32(dataDefinitionId)
-        );
+        return this._buildAndSend(this._beginPacket(0x0d).putInt32(dataDefinitionId));
     }
 
     /**
@@ -337,6 +340,10 @@ class SimConnectConnection extends EventEmitter {
      * });
      * ```
      */
+    // ----------------------------------------------------------------------------
+    // Data Requests
+    // ----------------------------------------------------------------------------
+
     requestDataOnSimObject(
         dataRequestId: DataRequestId,
         dataDefinitionId: DataDefinitionId,
@@ -424,6 +431,10 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    // ----------------------------------------------------------------------------
+    // Input Events & Input Groups
+    // ----------------------------------------------------------------------------
+
     /**
      * @deprecated use mapInputEventToClientEventEx1 instead
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
@@ -457,9 +468,7 @@ class SimConnectConnection extends EventEmitter {
      */
     setInputGroupPriority(inputGroupId: InputGroupId, priority: NotificationPriority): number {
         return this._buildAndSend(
-            this._beginPacket(0x12) //
-                .putInt32(inputGroupId)
-                .putInt32(priority)
+            this._beginPacket(0x12).putInt32(inputGroupId).putInt32(priority)
         );
     }
 
@@ -469,9 +478,7 @@ class SimConnectConnection extends EventEmitter {
      */
     removeInputEvent(inputGroupId: InputGroupId, inputDefinition: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x13) //
-                .putInt32(inputGroupId)
-                .putString256(inputDefinition)
+            this._beginPacket(0x13).putInt32(inputGroupId).putString256(inputDefinition)
         );
     }
 
@@ -480,10 +487,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     clearInputGroup(inputGroupId: InputGroupId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x14) //
-                .putInt32(inputGroupId)
-        );
+        return this._buildAndSend(this._beginPacket(0x14).putInt32(inputGroupId));
     }
 
     /**
@@ -523,9 +527,7 @@ class SimConnectConnection extends EventEmitter {
      */
     subscribeToSystemEvent(clientEventId: ClientEventId, eventName: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x17) //
-                .putInt32(clientEventId)
-                .putString256(eventName)
+            this._beginPacket(0x17).putInt32(clientEventId).putString256(eventName)
         );
     }
 
@@ -534,11 +536,12 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     unsubscribeFromSystemEvent(clientEventId: ClientEventId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x18) //
-                .putInt32(clientEventId)
-        );
+        return this._buildAndSend(this._beginPacket(0x18).putInt32(clientEventId));
     }
+
+    // ----------------------------------------------------------------------------
+    // Weather System (deprecated since MSFS KittyHawk)
+    // ----------------------------------------------------------------------------
 
     /**
      * @deprecated since MSFS (KittyHawk)
@@ -565,9 +568,7 @@ class SimConnectConnection extends EventEmitter {
      */
     weatherRequestObservationAtStation(dataRequestId: DataRequestId, ICAO: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x1a) //
-                .putInt32(dataRequestId)
-                .putString(ICAO, 5)
+            this._beginPacket(0x1a).putInt32(dataRequestId).putString(ICAO, 5)
         );
     }
 
@@ -581,10 +582,7 @@ class SimConnectConnection extends EventEmitter {
         lon: number
     ): number {
         return this._buildAndSend(
-            this._beginPacket(0x1b) //
-                .putInt32(dataRequestId)
-                .putFloat32(lat)
-                .putFloat32(lon)
+            this._beginPacket(0x1b).putInt32(dataRequestId).putFloat32(lat).putFloat32(lon)
         );
     }
 
@@ -617,9 +615,7 @@ class SimConnectConnection extends EventEmitter {
      */
     weatherRemoveStation(dataRequestId: DataRequestId, ICAO: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x1d) //
-                .putInt32(dataRequestId)
-                .putString(ICAO, 5)
+            this._beginPacket(0x1d).putInt32(dataRequestId).putString(ICAO, 5)
         );
     }
 
@@ -629,10 +625,7 @@ class SimConnectConnection extends EventEmitter {
      */
     weatherSetObservation(seconds: number, metar: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x1e) //
-                .putInt32(seconds)
-                .putString(metar)
-                .putByte(0)
+            this._beginPacket(0x1e).putInt32(seconds).putString(metar).putByte(0)
         );
     }
 
@@ -641,11 +634,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeServer(port: number, seconds: number): number {
-        return this._buildAndSend(
-            this._beginPacket(0x1f) //
-                .putInt32(port)
-                .putInt32(seconds)
-        );
+        return this._buildAndSend(this._beginPacket(0x1f).putInt32(port).putInt32(seconds));
     }
 
     /**
@@ -653,10 +642,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetModeTheme(themeName: string): number {
-        return this._buildAndSend(
-            this._beginPacket(0x20) //
-                .putString256(themeName)
-        );
+        return this._buildAndSend(this._beginPacket(0x20).putString256(themeName));
     }
 
     /**
@@ -680,10 +666,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherSetDynamicUpdateRate(rate: number): number {
-        return this._buildAndSend(
-            this._beginPacket(0x23) //
-                .putInt32(rate)
-        );
+        return this._buildAndSend(this._beginPacket(0x23).putInt32(rate));
     }
 
     /**
@@ -757,11 +740,12 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     weatherRemoveThermal(objectId: ObjectId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x26) //
-                .putInt32(objectId)
-        );
+        return this._buildAndSend(this._beginPacket(0x26).putInt32(objectId));
     }
+
+    // ----------------------------------------------------------------------------
+    // AI Traffic Objects
+    // ----------------------------------------------------------------------------
 
     /**
      *
@@ -851,9 +835,7 @@ class SimConnectConnection extends EventEmitter {
      */
     aIReleaseControl(objectId: ObjectId, dataRequestId: DataRequestId): number {
         return this._buildAndSend(
-            this._beginPacket(0x2b) //
-                .putInt32(objectId)
-                .putInt32(dataRequestId)
+            this._beginPacket(0x2b).putInt32(objectId).putInt32(dataRequestId)
         );
     }
 
@@ -863,9 +845,7 @@ class SimConnectConnection extends EventEmitter {
      */
     aIRemoveObject(objectId: ObjectId, dataRequestId: DataRequestId): number {
         return this._buildAndSend(
-            this._beginPacket(0x2c) //
-                .putInt32(objectId)
-                .putInt32(dataRequestId)
+            this._beginPacket(0x2c).putInt32(objectId).putInt32(dataRequestId)
         );
     }
 
@@ -892,11 +872,7 @@ class SimConnectConnection extends EventEmitter {
      */
     executeMissionAction(guidInstanceId: Buffer): number {
         if (guidInstanceId.length !== 16) throw Error(SimConnectError.GuidInvalidSize);
-
-        return this._buildAndSend(
-            this._beginPacket(0x2e) //
-                .putBytes(guidInstanceId)
-        );
+        return this._buildAndSend(this._beginPacket(0x2e).putBytes(guidInstanceId));
     }
 
     /**
@@ -904,12 +880,8 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     completeCustomMissionAction(guidInstanceId: Buffer): number {
-        if (guidInstanceId.length !== 16) throw Error(SimConnectError.GuidInvalidSize); // $NON-NLS-1$
-
-        return this._buildAndSend(
-            this._beginPacket(0x2f) //
-                .putBytes(guidInstanceId)
-        );
+        if (guidInstanceId.length !== 16) throw Error(SimConnectError.GuidInvalidSize);
+        return this._buildAndSend(this._beginPacket(0x2f).putBytes(guidInstanceId));
     }
 
     /**
@@ -935,16 +907,17 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    // ----------------------------------------------------------------------------
+    // Menu System (deprecated since MSFS KittyHawk)
+    // ----------------------------------------------------------------------------
+
     /**
      * @deprecated since MSFS (KittyHawk)
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuAddItem(menuItem: string, menuEventId: ClientEventId, data: number): number {
         return this._buildAndSend(
-            this._beginPacket(0x31) //
-                .putString256(menuItem)
-                .putInt32(menuEventId)
-                .putInt32(data)
+            this._beginPacket(0x31).putString256(menuItem).putInt32(menuEventId).putInt32(data)
         );
     }
 
@@ -953,10 +926,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     menuDeleteItem(menuEventId: ClientEventId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x32) //
-                .putInt32(menuEventId)
-        );
+        return this._buildAndSend(this._beginPacket(0x32).putInt32(menuEventId));
     }
 
     /**
@@ -984,11 +954,13 @@ class SimConnectConnection extends EventEmitter {
      */
     menuDeleteSubItem(menuEventId: ClientEventId, subMenuEventId: ClientEventId): number {
         return this._buildAndSend(
-            this._beginPacket(0x34) //
-                .putInt32(menuEventId)
-                .putInt32(subMenuEventId)
+            this._beginPacket(0x34).putInt32(menuEventId).putInt32(subMenuEventId)
         );
     }
+
+    // ----------------------------------------------------------------------------
+    // System State
+    // ----------------------------------------------------------------------------
 
     /**
      *
@@ -996,9 +968,7 @@ class SimConnectConnection extends EventEmitter {
      */
     requestSystemState(dataRequestId: DataRequestId, state: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x35) //
-                .putInt32(dataRequestId)
-                .putString256(state)
+            this._beginPacket(0x35).putInt32(dataRequestId).putString256(state)
         );
     }
 
@@ -1022,15 +992,17 @@ class SimConnectConnection extends EventEmitter {
         );
     }
 
+    // ----------------------------------------------------------------------------
+    // Client Data Area
+    // ----------------------------------------------------------------------------
+
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     mapClientDataNameToID(clientDataName: string, clientDataId: ClientDataId): number {
         return this._buildAndSend(
-            this._beginPacket(0x37) //
-                .putString256(clientDataName)
-                .putInt32(clientDataId)
+            this._beginPacket(0x37).putString256(clientDataName).putInt32(clientDataId)
         );
     }
 
@@ -1058,7 +1030,7 @@ class SimConnectConnection extends EventEmitter {
         epsilon?: number,
         datumId?: number
     ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'addToClientDataDefinition');
 
         return this._buildAndSend(
             this._beginPacket(0x39)
@@ -1075,10 +1047,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     clearClientDataDefinition(dataDefinitionId: DataDefinitionId): number {
-        return this._buildAndSend(
-            this._beginPacket(0x3a) //
-                .putInt32(dataDefinitionId)
-        );
+        return this._buildAndSend(this._beginPacket(0x3a).putInt32(dataDefinitionId));
     }
 
     /**
@@ -1095,7 +1064,7 @@ class SimConnectConnection extends EventEmitter {
         interval?: I,
         limit?: L
     ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'requestClientData');
 
         return this._buildAndSend(
             this._beginPacket(0x3b)
@@ -1140,8 +1109,7 @@ class SimConnectConnection extends EventEmitter {
      */
     flightLoad(fileName: string) {
         this._buildAndSend(
-            this._beginPacket(0x3d) //
-                .putString(fileName, SimConnectConstants.MAX_PATH)
+            this._beginPacket(0x3d).putString(fileName, SimConnectConstants.MAX_PATH)
         );
     }
 
@@ -1176,8 +1144,7 @@ class SimConnectConnection extends EventEmitter {
      */
     flightPlanLoad(fileName: string): number {
         return this._buildAndSend(
-            this._beginPacket(0x3f) //
-                .putString(fileName, SimConnectConstants.MAX_PATH)
+            this._beginPacket(0x3f).putString(fileName, SimConnectConstants.MAX_PATH)
         );
     }
 
@@ -1191,7 +1158,7 @@ class SimConnectConnection extends EventEmitter {
         clientEventId: ClientEventId,
         message: string
     ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'text');
 
         const packet = this._beginPacket(0x40)
             .putInt32(type)
@@ -1219,7 +1186,7 @@ class SimConnectConnection extends EventEmitter {
         prompt?: string,
         ...items: string[]
     ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'menu');
 
         const packet = this._beginPacket(0x40)
             .putInt32(TextType.MENU)
@@ -1246,18 +1213,18 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    // ----------------------------------------------------------------------------
+    // Facilities (Airports, Waypoints, VORs, NDBs)
+    // ----------------------------------------------------------------------------
+
     /**
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     subscribeToFacilities(type: FacilityListType, clientEventId: ClientEventId): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'subscribeToFacilities');
 
-        return this._buildAndSend(
-            this._beginPacket(0x41) //
-                .putInt32(type)
-                .putInt32(clientEventId)
-        );
+        return this._buildAndSend(this._beginPacket(0x41).putInt32(type).putInt32(clientEventId));
     }
 
     /**
@@ -1265,12 +1232,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     unSubscribeToFacilities(type: FacilityListType): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'unSubscribeToFacilities');
 
-        return this._buildAndSend(
-            this._beginPacket(0x42) //
-                .putInt32(type)
-        );
+        return this._buildAndSend(this._beginPacket(0x42).putInt32(type));
     }
 
     /**
@@ -1278,13 +1242,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     requestFacilitiesList(type: FacilityListType, clientEventId: ClientEventId): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'requestFacilitiesList');
 
-        return this._buildAndSend(
-            this._beginPacket(0x43) //
-                .putInt32(type)
-                .putInt32(clientEventId)
-        );
+        return this._buildAndSend(this._beginPacket(0x43).putInt32(type).putInt32(clientEventId));
     }
 
     /**
@@ -1321,12 +1281,10 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     addToFacilityDefinition(dataDefinitionId: DataDefinitionId, fieldName: string): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'addToFacilityDefinition');
 
         return this._buildAndSend(
-            this._beginPacket(0x45) //
-                .putInt32(dataDefinitionId)
-                .putString256(fieldName)
+            this._beginPacket(0x45).putInt32(dataDefinitionId).putString256(fieldName)
         );
     }
 
@@ -1341,7 +1299,7 @@ class SimConnectConnection extends EventEmitter {
         region?: string,
         type?: IcaoType
     ): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'requestFacilityData');
 
         const packet = this._beginPacket(type === undefined ? 0x46 : 0x4a)
             .putInt32(dataDefinitionId)
@@ -1366,10 +1324,10 @@ class SimConnectConnection extends EventEmitter {
         newElemInRangeRequestID: DataRequestId,
         oldElemOutRangeRequestID: DataRequestId
     ): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'subscribeToFacilitiesEx1');
 
         return this._buildAndSend(
-            this._beginPacket(0x47) //
+            this._beginPacket(0x47)
                 .putInt32(type)
                 .putInt32(newElemInRangeRequestID)
                 .putInt32(oldElemOutRangeRequestID)
@@ -1385,10 +1343,10 @@ class SimConnectConnection extends EventEmitter {
         unsubscribeNewInRange: boolean,
         unsubscribeOldOutRange: boolean
     ): number {
-        if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.FSX_SP1, 'unSubscribeToFacilitiesEx1');
 
         return this._buildAndSend(
-            this._beginPacket(0x48) //
+            this._beginPacket(0x48)
                 .putInt32(type)
                 .putByte(unsubscribeNewInRange ? 1 : 0)
                 .putByte(unsubscribeOldOutRange ? 1 : 0)
@@ -1400,13 +1358,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     requestFacilitiesListEx1(type: FacilityListType, clientEventId: ClientEventId): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'requestFacilitiesListEx1');
 
-        return this._buildAndSend(
-            this._beginPacket(0x49) //
-                .putInt32(type)
-                .putInt32(clientEventId)
-        );
+        return this._buildAndSend(this._beginPacket(0x49).putInt32(type).putInt32(clientEventId));
     }
 
     /**
@@ -1414,7 +1368,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     requestJetwayData(airportIcao: string, parkingIndices?: number[]): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'requestJetwayData');
 
         const packet = this._beginPacket(0x4b)
             .putString(airportIcao, 16)
@@ -1436,10 +1390,8 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     enumerateControllers(): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
-
-        const packet = this._beginPacket(0x4c);
-        return this._buildAndSend(packet);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'enumerateControllers');
+        return this._buildAndSend(this._beginPacket(0x4c));
     }
 
     /**
@@ -1455,7 +1407,7 @@ class SimConnectConnection extends EventEmitter {
         upValue?: number, // 0,
         maskable?: boolean // false
     ): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'mapInputEventToClientEventEx1');
 
         return this._buildAndSend(
             this._beginPacket(0x4d)
@@ -1477,7 +1429,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     executeAction(dataRequestID: number, actionID: string, values: RawBuffer) {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'executeAction');
 
         const paramValues = values.getBuffer();
 
@@ -1494,10 +1446,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     enumerateInputEvents(dataRequestID: number): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'enumerateInputEvents');
 
-        const packet = this._beginPacket(0x4f).putInt32(dataRequestID);
-        return this._buildAndSend(packet);
+        return this._buildAndSend(this._beginPacket(0x4f).putInt32(dataRequestID));
     }
 
     /**
@@ -1505,10 +1456,11 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     getInputEvent(dataRequestID: number, inputEventHashID: bigint): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'getInputEvent');
 
-        const packet = this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID);
-        return this._buildAndSend(packet);
+        return this._buildAndSend(
+            this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID)
+        );
     }
 
     /**
@@ -1516,7 +1468,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     setInputEvent(inputEventHashID: bigint, value: number | string): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'setInputEvent');
 
         const packet = this._beginPacket(0x51).putUint64(inputEventHashID);
 
@@ -1534,7 +1486,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     subscribeInputEvent(inputEventHashID: bigint): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'subscribeInputEvent');
 
         return this._buildAndSend(this._beginPacket(0x52).putUint64(inputEventHashID));
     }
@@ -1544,7 +1496,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     unsubscribeInputEvent(inputEventHashID: bigint): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'unsubscribeInputEvent');
 
         return this._buildAndSend(this._beginPacket(0x53).putUint64(inputEventHashID));
     }
@@ -1554,7 +1506,7 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     enumerateInputEventParams(inputEventHashID: bigint): number {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'enumerateInputEventParams');
 
         return this._buildAndSend(this._beginPacket(0x54).putUint64(inputEventHashID));
     }
@@ -1572,7 +1524,7 @@ class SimConnectConnection extends EventEmitter {
         filterPath: string,
         filterData: RawBuffer | null
     ) {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.KittyHawk, 'addFacilityDataDefinitionFilter');
 
         const packet = this._beginPacket(0x55).putInt32(dataDefinitionId).putString256(filterPath);
 
@@ -1591,9 +1543,17 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     clearAllFacilityDataDefinitionFilters(dataDefinitionId: DataDefinitionId) {
-        if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(
+            Protocol.KittyHawk,
+            'clearAllFacilityDataDefinitionFilters'
+        );
+
         return this._buildAndSend(this._beginPacket(0x56).putInt32(dataDefinitionId));
     }
+
+    // ----------------------------------------------------------------------------
+    // MSFS 2024 (SunRise Protocol) Features
+    // ----------------------------------------------------------------------------
 
     /**
      *
@@ -1606,7 +1566,7 @@ class SimConnectConnection extends EventEmitter {
         airportID: string,
         dataRequestId: DataRequestId
     ): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'aICreateParkedATCAircraftEx1');
 
         return this._buildAndSend(
             this._beginPacket(0x57)
@@ -1632,7 +1592,7 @@ class SimConnectConnection extends EventEmitter {
         touchAndGo: boolean,
         dataRequestId: DataRequestId
     ): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'aICreateEnrouteATCAircraftEx1');
 
         return this._buildAndSend(
             this._beginPacket(0x58)
@@ -1658,7 +1618,7 @@ class SimConnectConnection extends EventEmitter {
         initPos: InitPosition,
         dataRequestId: DataRequestId
     ): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'aICreateNonATCAircraftEx1');
 
         const packet = this._beginPacket(0x59)
             .putString256(containerTitle)
@@ -1681,7 +1641,7 @@ class SimConnectConnection extends EventEmitter {
         initPos: InitPosition,
         dataRequestId: DataRequestId
     ): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'aICreateSimulatedObjectEx1');
 
         const packet = this._beginPacket(0x5a);
 
@@ -1698,11 +1658,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     enumerateSimObjectsAndLiveries(dataRequestId: DataRequestId, type: SimObjectType): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'enumerateSimObjectsAndLiveries');
 
-        const packet = this._beginPacket(0x5b).putInt32(dataRequestId).putInt32(type);
-
-        return this._buildAndSend(packet);
+        return this._buildAndSend(this._beginPacket(0x5b).putInt32(dataRequestId).putInt32(type));
     }
 
     /**
@@ -1710,10 +1668,8 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     subscribeToFlowEvent(): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
-
-        const packet = this._beginPacket(0x5c);
-        return this._buildAndSend(packet);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'subscribeToFlowEvent');
+        return this._buildAndSend(this._beginPacket(0x5c));
     }
 
     /**
@@ -1721,10 +1677,8 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     unsubscribeToFlowEvent(): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
-
-        const packet = this._beginPacket(0x5d);
-        return this._buildAndSend(packet);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'unsubscribeToFlowEvent');
+        return this._buildAndSend(this._beginPacket(0x5d));
     }
 
     /**
@@ -1732,10 +1686,9 @@ class SimConnectConnection extends EventEmitter {
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
     requestAllFacilities(dataRequestId: DataRequestId, type: FacilityListType): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+        this._capabilities.requiresProtocol(Protocol.SunRise, 'requestAllFacilities');
 
-        const packet = this._beginPacket(0x5e).putInt32(dataRequestId).putInt32(type);
-        return this._buildAndSend(packet);
+        return this._buildAndSend(this._beginPacket(0x5e).putInt32(dataRequestId).putInt32(type));
     }
 
     close() {

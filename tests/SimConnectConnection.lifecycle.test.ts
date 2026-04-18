@@ -150,7 +150,7 @@ describe('SimConnectConnection lifecycle and dispatch', () => {
         const legacyConnection = new SimConnectConnection('Legacy', Protocol.FSX_SP2);
 
         expect(() => legacyConnection.enumerateInputEvents(1)).toThrow(
-            'Unsupported protocol version'
+            /requires protocol KittyHawk.*but current protocol is FSX_SP2/
         );
     });
 });
