@@ -31,3 +31,5 @@ export * from './RecvSubscribeInputEvent';
 export * from './RecvEnumerateInputEventParams';
 export * from './RecvActionCallback';
 export * from './RecvListTemplate';
+export * from './RecvFlowEvent';
+export * from './RecvEnumerateSimobjectAndLiveryList';

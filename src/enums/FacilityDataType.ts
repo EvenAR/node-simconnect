@@ -25,6 +25,9 @@ export enum FacilityDataType {
     PAVEMENT,
     APPROACHLIGHTS,
     VASI,
+    VDGS,
+    HOLDING_PATTERN,
+    TAXI_PARKING_AIRLINE,
 }
 
 module.exports = {

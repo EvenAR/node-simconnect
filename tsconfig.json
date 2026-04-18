@@ -1,15 +1,24 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
-    "target": "es2015",
+    "target": "es2020",
+    "lib": ["es2020"],
     "outDir": "./dist",
     "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,
     "inlineSourceMap": true,
-    "inlineSources": true
+    "inlineSources": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
   },
-  "include": ["src/**/*", "tests/**/*", "utils/**/*"]
+  "include": ["src/**/*", "tests/**/*", "utils/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
