@@ -349,7 +349,7 @@ class SimConnectConnection extends EventEmitter {
         dataDefinitionId: DataDefinitionId,
         objectId: ObjectId,
         period: SimConnectPeriod,
-        flags?: DataRequestFlag,
+        flags?: DataRequestFlag | number,
         origin?: number,
         interval?: number,
         limit?: number
@@ -1721,4 +1721,5 @@ class SimConnectConnection extends EventEmitter {
     }
 }
 
-export { SimConnectConnection, ConnectionOptions, SimConnectRecvEvents };
+export { SimConnectConnection };
+export type { ConnectionOptions, SimConnectRecvEvents };

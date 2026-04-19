@@ -28,7 +28,7 @@ class RawBuffer {
         const output = this.buffer.subarray(0, this.offset);
         this.limit = this.offset;
         this.offset = 0;
-        return Buffer.from(output);
+        return output;
     }
 
     write(bytes: Buffer): void {
@@ -41,7 +41,7 @@ class RawBuffer {
 
     readBytes(length: number): Buffer {
         this.ensureReadable(length);
-        const bytes = Buffer.from(this.buffer.subarray(this.offset, this.offset + length));
+        const bytes = this.buffer.subarray(this.offset, this.offset + length);
         this.offset += length;
         return bytes;
     }

@@ -104,4 +104,5 @@ class SimConnectSocket extends Duplex implements SimConnectTransport {
     }
 }
 
-export { SimConnectSocket, RecvID, SimConnectMessage, ConnectionParameters };
+export { SimConnectSocket, RecvID };
+export type { SimConnectMessage, ConnectionParameters };

@@ -1,6 +1,5 @@
 const { accessSync, constants, existsSync } = require('node:fs');
 const { join } = require('node:path');
-const { install } = require('husky');
 
 function canWriteGitConfig() {
     try {
@@ -21,4 +20,6 @@ if (!canWriteGitConfig()) {
     process.exit(0);
 }
 
-install();
+// Husky 9.x doesn't need explicit install() call in prepare script
+// It's handled automatically by the husky CLI
+console.log('husky - git hooks configured');
