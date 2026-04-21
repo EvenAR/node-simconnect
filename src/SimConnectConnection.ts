@@ -106,7 +106,7 @@ const openPacketData: { [key in Protocol]: OpenPacketData } = {
         minor: 2,
         buildMajor: 282174,
         buildMinor: 999,
-        alias: 'SR', // Unverified
+        alias: 'RS',
     },
 };
 
@@ -1930,16 +1930,16 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('eventWeatherMode', new RecvEventWeatherMode(data));
                 break;
             case RecvID.ID_AIRPORT_LIST:
-                this.emit('airportList', new RecvAirportList(data));
+                this.emit('airportList', new RecvAirportList(data, this._ourProtocol));
                 break;
             case RecvID.ID_VOR_LIST:
-                this.emit('vorList', new RecvVORList(data));
+                this.emit('vorList', new RecvVORList(data, this._ourProtocol));
                 break;
             case RecvID.ID_NDB_LIST:
-                this.emit('ndbList', new RecvNDBList(data));
+                this.emit('ndbList', new RecvNDBList(data, this._ourProtocol));
                 break;
             case RecvID.ID_WAYPOINT_LIST:
-                this.emit('waypointList', new RecvWaypointList(data));
+                this.emit('waypointList', new RecvWaypointList(data, this._ourProtocol));
                 break;
             case RecvID.ID_EVENT_MULTIPLAYER_SERVER_STARTED:
                 this.emit('eventMultiplayerServerStarted');
@@ -1966,7 +1966,10 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('facilityDataEnd', new RecvFacilityDataEnd(data));
                 break;
             case RecvID.ID_FACILITY_MINIMAL_LIST:
-                this.emit('facilityMinimalList', new RecvFacilityMinimalList(data));
+                this.emit(
+                    'facilityMinimalList',
+                    new RecvFacilityMinimalList(data, this._ourProtocol)
+                );
                 break;
             case RecvID.ID_JETWAY_DATA:
                 this.emit('jetwayData', new RecvJetwayData(data));

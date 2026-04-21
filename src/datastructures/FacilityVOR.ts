@@ -1,4 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
+import { Protocol } from '../enums/Protocol';
 import { FacilityNDB } from './FacilityNDB';
 
 export class FacilityVOR extends FacilityNDB {
@@ -22,8 +23,8 @@ export class FacilityVOR extends FacilityNDB {
 
     glideSlipeAngle: number;
 
-    constructor(data: RawBuffer) {
-        super(data);
+    constructor(data: RawBuffer, protocol: Protocol) {
+        super(data, protocol);
         this.flags = data.readInt32();
         this.localizer = data.readFloat32();
         this.glideLat = data.readFloat64();
