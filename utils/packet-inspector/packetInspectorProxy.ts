@@ -5,29 +5,6 @@
  * the SimConnect server and a client application. Inspired by
  * https://github.com/Dragonlaird/SimConnect_Proxy
  *
- * Requires SimConnect network setup. Create a SimConnect.xml in the following directory:
- * X:\Users\<USER>\AppData\Local\Packages\Microsoft.FlightSimulator_**********\LocalCache
- *
- *          <?xml version="1.0" encoding="Windows-1252"?>
- *          <SimBase.Document Type="SimConnect" version="1,0">
- *              <Filename>SimConnect.xml</Filename>
- *              <SimConnect.Comm>
- *                  <Protocol>IPv4</Protocol>
- *                  <Scope>local</Scope>
- *                  <Port>500</Port>
- *                  <MaxClients>64</MaxClients>
- *                  <MaxRecvSize>41088</MaxRecvSize>
- *                  <Address>0.0.0.0</Address>
- *              </SimConnect.Comm>
- *          </SimBase.Document>
- *
- *
- * Create a SimConnect.cfg file next to the client application .exe:
- *
- *          [SimConnect]
- *          Protocol=Ipv4
- *          Port=1337            # Must match the proxy server's port number
- *          Address=127.0.0.1
  */
 
 import * as net from 'net';
