@@ -10,7 +10,7 @@ export class RecvGetInputEvent {
     value: number | string;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32();
+        this.requestID = data.readUint32();
         this.type = data.readUint32();
 
         switch (this.type) {

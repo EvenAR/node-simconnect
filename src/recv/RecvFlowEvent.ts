@@ -6,7 +6,7 @@ export class RecvFlowEvent {
     fltPath: string;
 
     constructor(data: RawBuffer) {
-        this.flowEventID = data.readInt32();
+        this.flowEventID = data.readUint32();
         this.fltPath = data.readString256();
     }
 }

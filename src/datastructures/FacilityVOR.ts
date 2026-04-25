@@ -25,7 +25,7 @@ export class FacilityVOR extends FacilityNDB {
 
     constructor(data: RawBuffer, protocol: Protocol) {
         super(data, protocol);
-        this.flags = data.readInt32();
+        this.flags = data.readUint32();
         this.localizer = data.readFloat32();
         this.glideLat = data.readFloat64();
         this.glideLon = data.readFloat64();

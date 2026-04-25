@@ -12,8 +12,8 @@ export class RecvSystemState {
     dataString: string;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32() as DataRequestId;
-        this.dataInteger = data.readInt32();
+        this.requestID = data.readUint32() as DataRequestId;
+        this.dataInteger = data.readUint32();
         this.dataFloat = data.readFloat32();
         this.dataString = data.readString(SimConnectConstants.MAX_PATH);
     }

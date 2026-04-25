@@ -6,6 +6,6 @@ export class RecvFacilityDataEnd {
     userRequestId: DataRequestId;
 
     constructor(data: RawBuffer) {
-        this.userRequestId = data.readInt32();
+        this.userRequestId = data.readUint32();
     }
 }

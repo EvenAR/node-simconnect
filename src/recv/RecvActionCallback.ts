@@ -10,6 +10,6 @@ export class RecvActionCallback extends RecvEvent {
     constructor(data: RawBuffer) {
         super(data);
         this.actionID = data.readString260();
-        this.requestID = data.readInt32();
+        this.requestID = data.readUint32();
     }
 }

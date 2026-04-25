@@ -7,6 +7,6 @@ export class FacilityNDB extends FacilityWaypoint {
 
     constructor(data: RawBuffer, protocol: Protocol) {
         super(data, protocol);
-        this.frequency = data.readInt32();
+        this.frequency = data.readUint32();
     }
 }
