@@ -83,7 +83,7 @@ class RawBuffer {
     }
 
     writeUint32(value: number, offset?: number) {
-        this.buffer.writeUint64(value, offset);
+        this.buffer.writeUint32(value, offset);
     }
 
     writeUint64(value: bigint, offset?: number) {
