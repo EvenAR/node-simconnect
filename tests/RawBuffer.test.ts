@@ -52,9 +52,9 @@ describe('RawBuffer', () => {
         const raw = buffer.getBuffer();
 
         expect(raw.subarray(0, 8)).toEqual(Buffer.from([0x61, 0x62, 0x63, 0, 0, 0, 0, 0]));
-        expect(raw.subarray(8, 40)).toEqual(
-            Buffer.concat([Buffer.from('hello', 'utf-8'), Buffer.alloc(27)])
-        );
+        const expectedString32 = Buffer.alloc(32);
+        expectedString32.write('hello', 0, 'latin1');
+        expect(raw.subarray(8, 40)).toEqual(expectedString32);
         expect(raw.subarray(40, 296)).toEqual(Buffer.alloc(256));
 
         const reader = new RawBuffer(raw);
