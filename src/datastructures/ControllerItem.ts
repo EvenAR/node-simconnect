@@ -14,9 +14,9 @@ export class ControllerItem {
 
     constructor(data: RawBuffer) {
         this.deviceName = data.readString256();
-        this.deviceId = data.readInt32();
-        this.productId = data.readInt32();
-        this.compositeId = data.readInt32();
+        this.deviceId = data.readUint32();
+        this.productId = data.readUint32();
+        this.compositeId = data.readUint32();
         this.hardwareVersion = new VersionBaseType(data);
     }
 }

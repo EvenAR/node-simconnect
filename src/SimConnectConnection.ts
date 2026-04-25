@@ -3,14 +3,14 @@ import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
-import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
+import { autodetectServerAddress } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { IcaoType, InitPosition, SimConnectData } from './dto';
+import { IcaoType, InitPosition } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
 import { Protocol } from './enums/Protocol';
-import { RecvID, SimConnectMessage, SimConnectSocket } from './SimConnectSocket';
+import { RecvID, SimConnectSocket } from './SimConnectSocket';
 import { DataRequestFlag } from './flags/DataRequestFlag';
 import { EventFlag } from './flags/EventFlag';
 import { DataSetFlag } from './flags/DataSetFlag';
@@ -60,6 +60,9 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import type { ConnectionParameters } from './connectionParameters';
+import type { SimConnectData } from './dto';
+import type { SimConnectMessage } from './SimConnectSocket';
 import Timeout = NodeJS.Timeout;
 import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
 import { RecvFlowEvent } from './recv/RecvFlowEvent';
@@ -270,7 +273,7 @@ class SimConnectConnection extends EventEmitter {
     mapClientEventToSimEvent(clientEventId: ClientEventId, eventName?: string): number {
         return this._buildAndSend(
             this._beginPacket(0x04)
-                .putInt32(clientEventId)
+                .putUint32(clientEventId)
                 .putString256(eventName || '')
         );
     }
@@ -288,11 +291,11 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x05)
-                .putInt32(objectId)
-                .putInt32(clientEventId)
-                .putInt32(data)
-                .putInt32(notificationGroupId)
-                .putInt32(flags)
+                .putUint32(objectId)
+                .putUint32(clientEventId)
+                .putUint32(data)
+                .putUint32(notificationGroupId)
+                .putUint32(flags)
         );
     }
 
@@ -303,8 +306,8 @@ class SimConnectConnection extends EventEmitter {
     setSystemEventState(clientEventId: ClientEventId, state: boolean): number {
         return this._buildAndSend(
             this._beginPacket(0x06)
-                .putInt32(clientEventId)
-                .putInt32(state ? 1 : 0)
+                .putUint32(clientEventId)
+                .putUint32(state ? 1 : 0)
         );
     }
 
@@ -319,9 +322,9 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x07)
-                .putInt32(notificationGroupId)
-                .putInt32(clientEventId)
-                .putInt32(maskable ? 1 : 0)
+                .putUint32(notificationGroupId)
+                .putUint32(clientEventId)
+                .putUint32(maskable ? 1 : 0)
         );
     }
 
@@ -335,8 +338,8 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x08) //
-                .putInt32(notificationGroupId)
-                .putInt32(clientEventId)
+                .putUint32(notificationGroupId)
+                .putUint32(clientEventId)
         );
     }
 
@@ -350,8 +353,8 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x09) //
-                .putInt32(notificationGroupId)
-                .putInt32(priority)
+                .putUint32(notificationGroupId)
+                .putUint32(priority)
         );
     }
 
@@ -362,7 +365,7 @@ class SimConnectConnection extends EventEmitter {
     clearNotificationGroup(notificationGroupId: NotificationGroupId): number {
         return this._buildAndSend(
             this._beginPacket(0x0a) //
-                .putInt32(notificationGroupId)
+                .putUint32(notificationGroupId)
         );
     }
 
@@ -377,9 +380,9 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x0b) //
-                .putInt32(notificationGroupId)
-                .putInt32(reserved)
-                .putInt32(flags)
+                .putUint32(notificationGroupId)
+                .putUint32(reserved)
+                .putUint32(flags)
         );
     }
 
@@ -397,12 +400,12 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x0c)
-                .putInt32(dataDefinitionId)
+                .putUint32(dataDefinitionId)
                 .putString256(datumName)
                 .putString256(unitsName)
-                .putInt32(dataType === undefined ? SimConnectDataType.FLOAT64 : dataType)
+                .putUint32(dataType === undefined ? SimConnectDataType.FLOAT64 : dataType)
                 .putFloat32(epsilon || 0)
-                .putInt32(datumId === undefined ? SimConnectConstants.UNUSED : datumId)
+                .putUint32(datumId === undefined ? SimConnectConstants.UNUSED : datumId)
         );
     }
 
@@ -413,7 +416,7 @@ class SimConnectConnection extends EventEmitter {
     clearDataDefinition(dataDefinitionId: DataDefinitionId): number {
         return this._buildAndSend(
             this._beginPacket(0x0d) //
-                .putInt32(dataDefinitionId)
+                .putUint32(dataDefinitionId)
         );
     }
 
@@ -454,14 +457,14 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x0e)
-                .putInt32(dataRequestId)
-                .putInt32(dataDefinitionId)
-                .putInt32(objectId)
-                .putInt32(period)
-                .putInt32(flags || 0)
-                .putInt32(origin || 0)
-                .putInt32(interval || 0)
-                .putInt32(limit || 0)
+                .putUint32(dataRequestId)
+                .putUint32(dataDefinitionId)
+                .putUint32(objectId)
+                .putUint32(period)
+                .putUint32(flags || 0)
+                .putUint32(origin || 0)
+                .putUint32(interval || 0)
+                .putUint32(limit || 0)
         );
     }
 
@@ -481,10 +484,10 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x0f)
-                .putInt32(dataRequestId)
-                .putInt32(dataDefinitionId)
-                .putInt32(radiusMeters)
-                .putInt32(type)
+                .putUint32(dataRequestId)
+                .putUint32(dataDefinitionId)
+                .putUint32(radiusMeters)
+                .putUint32(type)
         );
     }
 
@@ -498,14 +501,14 @@ class SimConnectConnection extends EventEmitter {
         data: { buffer: RawBuffer; arrayCount: number; tagged: boolean } | SimConnectData[]
     ): number {
         const packet = this._beginPacket(0x10) //
-            .putInt32(dataDefinitionId)
-            .putInt32(objectId);
+            .putUint32(dataDefinitionId)
+            .putUint32(objectId);
 
         if (data instanceof Array) {
             packet
-                .putInt32(DataSetFlag.DEFAULT) //
-                .putInt32(data.length) //
-                .putInt32(0); // Just a placeholder for array unit size
+                .putUint32(DataSetFlag.DEFAULT) //
+                .putUint32(data.length) //
+                .putUint32(0); // Just a placeholder for array unit size
 
             const arrayStartPos = packet.getRawBuffer().getOffset();
 
@@ -515,14 +518,14 @@ class SimConnectConnection extends EventEmitter {
 
             const arrayTotalSize = packet.getRawBuffer().getOffset() - arrayStartPos;
             const unitSize = arrayTotalSize / data.length;
-            packet.putInt32(unitSize, arrayStartPos - 4); // Replace placeholder
+            packet.putUint32(unitSize, arrayStartPos - 4); // Replace placeholder
         } else {
             const { tagged, arrayCount, buffer } = data;
             const bytes = buffer.getBuffer();
             packet
-                .putInt32(tagged ? DataSetFlag.TAGGED : DataSetFlag.DEFAULT)
-                .putInt32(arrayCount === 0 ? 1 : arrayCount)
-                .putInt32(bytes.length)
+                .putUint32(tagged ? DataSetFlag.TAGGED : DataSetFlag.DEFAULT)
+                .putUint32(arrayCount === 0 ? 1 : arrayCount)
+                .putUint32(bytes.length)
                 .putBytes(bytes);
         }
 
@@ -544,15 +547,15 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x11)
-                .putInt32(inputGroupId)
+                .putUint32(inputGroupId)
                 .putString256(inputDefinition)
-                .putInt32(clientEventDownID)
-                .putInt32(downValue || 0)
-                .putInt32(
+                .putUint32(clientEventDownID)
+                .putUint32(downValue || 0)
+                .putUint32(
                     clientEventUpID === undefined ? SimConnectConstants.UNUSED : clientEventUpID
                 )
-                .putInt32(upValue || 0)
-                .putInt32(maskable ? 1 : 0)
+                .putUint32(upValue || 0)
+                .putUint32(maskable ? 1 : 0)
         );
     }
 
@@ -563,8 +566,8 @@ class SimConnectConnection extends EventEmitter {
     setInputGroupPriority(inputGroupId: InputGroupId, priority: NotificationPriority): number {
         return this._buildAndSend(
             this._beginPacket(0x12) //
-                .putInt32(inputGroupId)
-                .putInt32(priority)
+                .putUint32(inputGroupId)
+                .putUint32(priority)
         );
     }
 
@@ -575,7 +578,7 @@ class SimConnectConnection extends EventEmitter {
     removeInputEvent(inputGroupId: InputGroupId, inputDefinition: string): number {
         return this._buildAndSend(
             this._beginPacket(0x13) //
-                .putInt32(inputGroupId)
+                .putUint32(inputGroupId)
                 .putString256(inputDefinition)
         );
     }
@@ -587,7 +590,7 @@ class SimConnectConnection extends EventEmitter {
     clearInputGroup(inputGroupId: InputGroupId): number {
         return this._buildAndSend(
             this._beginPacket(0x14) //
-                .putInt32(inputGroupId)
+                .putUint32(inputGroupId)
         );
     }
 
@@ -598,8 +601,8 @@ class SimConnectConnection extends EventEmitter {
     setInputGroupState(inputGroupId: InputGroupId, state: boolean): number {
         return this._buildAndSend(
             this._beginPacket(0x15)
-                .putInt32(inputGroupId)
-                .putInt32(state ? 1 : 0)
+                .putUint32(inputGroupId)
+                .putUint32(state ? 1 : 0)
         );
     }
 
@@ -615,7 +618,7 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x16)
-                .putInt32(clientEventId)
+                .putUint32(clientEventId)
                 .putString(keyChoice1 || '', 30)
                 .putString(keyChoice2 || '', 30)
                 .putString(keyChoice3 || '', 30)
@@ -629,7 +632,7 @@ class SimConnectConnection extends EventEmitter {
     subscribeToSystemEvent(clientEventId: ClientEventId, eventName: string): number {
         return this._buildAndSend(
             this._beginPacket(0x17) //
-                .putInt32(clientEventId)
+                .putUint32(clientEventId)
                 .putString256(eventName)
         );
     }
@@ -641,7 +644,7 @@ class SimConnectConnection extends EventEmitter {
     unsubscribeFromSystemEvent(clientEventId: ClientEventId): number {
         return this._buildAndSend(
             this._beginPacket(0x18) //
-                .putInt32(clientEventId)
+                .putUint32(clientEventId)
         );
     }
 
@@ -657,7 +660,7 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x19)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putFloat32(lat)
                 .putFloat32(lon)
                 .putFloat32(alt)
@@ -671,7 +674,7 @@ class SimConnectConnection extends EventEmitter {
     weatherRequestObservationAtStation(dataRequestId: DataRequestId, ICAO: string): number {
         return this._buildAndSend(
             this._beginPacket(0x1a) //
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putString(ICAO, 5)
         );
     }
@@ -687,7 +690,7 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x1b) //
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putFloat32(lat)
                 .putFloat32(lon)
         );
@@ -707,7 +710,7 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x1c)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putString(ICAO, 5)
                 .putString256(name)
                 .putFloat32(lat)
@@ -723,7 +726,7 @@ class SimConnectConnection extends EventEmitter {
     weatherRemoveStation(dataRequestId: DataRequestId, ICAO: string): number {
         return this._buildAndSend(
             this._beginPacket(0x1d) //
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putString(ICAO, 5)
         );
     }
@@ -735,7 +738,7 @@ class SimConnectConnection extends EventEmitter {
     weatherSetObservation(seconds: number, metar: string): number {
         return this._buildAndSend(
             this._beginPacket(0x1e) //
-                .putInt32(seconds)
+                .putUint32(seconds)
                 .putString(metar)
                 .putByte(0)
         );
@@ -748,8 +751,8 @@ class SimConnectConnection extends EventEmitter {
     weatherSetModeServer(port: number, seconds: number): number {
         return this._buildAndSend(
             this._beginPacket(0x1f) //
-                .putInt32(port)
-                .putInt32(seconds)
+                .putUint32(port)
+                .putUint32(seconds)
         );
     }
 
@@ -787,7 +790,7 @@ class SimConnectConnection extends EventEmitter {
     weatherSetDynamicUpdateRate(rate: number): number {
         return this._buildAndSend(
             this._beginPacket(0x23) //
-                .putInt32(rate)
+                .putUint32(rate)
         );
     }
 
@@ -807,14 +810,14 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x24)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putFloat32(minLat)
                 .putFloat32(minLon)
                 .putFloat32(minAlt)
                 .putFloat32(maxLat)
                 .putFloat32(maxLon)
                 .putFloat32(maxAlt)
-                .putInt32(flags || 0)
+                .putUint32(flags || 0)
         );
     }
 
@@ -840,7 +843,7 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x25)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putFloat32(lat)
                 .putFloat32(lon)
                 .putFloat32(alt)
@@ -864,7 +867,7 @@ class SimConnectConnection extends EventEmitter {
     weatherRemoveThermal(objectId: ObjectId): number {
         return this._buildAndSend(
             this._beginPacket(0x26) //
-                .putInt32(objectId)
+                .putUint32(objectId)
         );
     }
 
@@ -883,7 +886,7 @@ class SimConnectConnection extends EventEmitter {
                 .putString256(containerTitle)
                 .putString(tailNumber, 12)
                 .putString(airportID, 5)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -907,8 +910,8 @@ class SimConnectConnection extends EventEmitter {
                 .putInt32(flightNumber)
                 .putString(flightPlanPath, 260)
                 .putFloat64(flightPlanPosition)
-                .putInt32(touchAndGo ? 1 : 0)
-                .putInt32(dataRequestId)
+                .putUint32(touchAndGo ? 1 : 0)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -927,7 +930,7 @@ class SimConnectConnection extends EventEmitter {
             .putString(tailNumber, 12);
 
         initPos.writeTo(packet);
-        packet.putInt32(dataRequestId);
+        packet.putUint32(dataRequestId);
 
         return this._buildAndSend(packet);
     }
@@ -945,7 +948,7 @@ class SimConnectConnection extends EventEmitter {
 
         packet.putString256(containerTitle);
         initPos.writeTo(packet);
-        packet.putInt32(dataRequestId);
+        packet.putUint32(dataRequestId);
 
         return this._buildAndSend(packet);
     }
@@ -957,8 +960,8 @@ class SimConnectConnection extends EventEmitter {
     aIReleaseControl(objectId: ObjectId, dataRequestId: DataRequestId): number {
         return this._buildAndSend(
             this._beginPacket(0x2b) //
-                .putInt32(objectId)
-                .putInt32(dataRequestId)
+                .putUint32(objectId)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -969,8 +972,8 @@ class SimConnectConnection extends EventEmitter {
     aIRemoveObject(objectId: ObjectId, dataRequestId: DataRequestId): number {
         return this._buildAndSend(
             this._beginPacket(0x2c) //
-                .putInt32(objectId)
-                .putInt32(dataRequestId)
+                .putUint32(objectId)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -985,9 +988,9 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x2d)
-                .putInt32(objectId)
+                .putUint32(objectId)
                 .putString(flightPlanPath, 260)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -1048,8 +1051,8 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x31) //
                 .putString256(menuItem)
-                .putInt32(menuEventId)
-                .putInt32(data)
+                .putUint32(menuEventId)
+                .putUint32(data)
         );
     }
 
@@ -1060,7 +1063,7 @@ class SimConnectConnection extends EventEmitter {
     menuDeleteItem(menuEventId: ClientEventId): number {
         return this._buildAndSend(
             this._beginPacket(0x32) //
-                .putInt32(menuEventId)
+                .putUint32(menuEventId)
         );
     }
 
@@ -1076,10 +1079,10 @@ class SimConnectConnection extends EventEmitter {
     ) {
         return this._buildAndSend(
             this._beginPacket(0x33)
-                .putInt32(menuEventId)
+                .putUint32(menuEventId)
                 .putString256(menuItem)
-                .putInt32(subMenuEventId)
-                .putInt32(data)
+                .putUint32(subMenuEventId)
+                .putUint32(data)
         );
     }
 
@@ -1090,8 +1093,8 @@ class SimConnectConnection extends EventEmitter {
     menuDeleteSubItem(menuEventId: ClientEventId, subMenuEventId: ClientEventId): number {
         return this._buildAndSend(
             this._beginPacket(0x34) //
-                .putInt32(menuEventId)
-                .putInt32(subMenuEventId)
+                .putUint32(menuEventId)
+                .putUint32(subMenuEventId)
         );
     }
 
@@ -1102,7 +1105,7 @@ class SimConnectConnection extends EventEmitter {
     requestSystemState(dataRequestId: DataRequestId, state: string): number {
         return this._buildAndSend(
             this._beginPacket(0x35) //
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
                 .putString256(state)
         );
     }
@@ -1120,10 +1123,10 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x36)
                 .putString256(state)
-                .putInt32(paramInt)
+                .putUint32(paramInt)
                 .putFloat32(paramFloat)
                 .putString256(paramString)
-                .putInt32(0)
+                .putUint32(0)
         );
     }
 
@@ -1135,7 +1138,7 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(
             this._beginPacket(0x37) //
                 .putString256(clientDataName)
-                .putInt32(clientDataId)
+                .putUint32(clientDataId)
         );
     }
 
@@ -1146,9 +1149,9 @@ class SimConnectConnection extends EventEmitter {
     createClientData(clientDataId: ClientDataId, size: number, readOnly: boolean): number {
         return this._buildAndSend(
             this._beginPacket(0x38)
-                .putInt32(clientDataId)
-                .putInt32(size)
-                .putInt32(readOnly ? 1 : 0)
+                .putUint32(clientDataId)
+                .putUint32(size)
+                .putUint32(readOnly ? 1 : 0)
         );
     }
 
@@ -1167,11 +1170,11 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x39)
-                .putInt32(dataDefinitionId)
-                .putInt32(offset)
-                .putInt32(sizeOrType)
+                .putUint32(dataDefinitionId)
+                .putUint32(offset)
+                .putUint32(sizeOrType)
                 .putFloat32(epsilon || 0)
-                .putInt32(datumId || 0)
+                .putUint32(datumId || 0)
         );
     }
 
@@ -1182,7 +1185,7 @@ class SimConnectConnection extends EventEmitter {
     clearClientDataDefinition(dataDefinitionId: DataDefinitionId): number {
         return this._buildAndSend(
             this._beginPacket(0x3a) //
-                .putInt32(dataDefinitionId)
+                .putUint32(dataDefinitionId)
         );
     }
 
@@ -1204,14 +1207,14 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x3b)
-                .putInt32(clientDataId)
-                .putInt32(dataRequestId)
-                .putInt32(clientDataDefineID)
-                .putInt32(period)
-                .putInt32(flags)
-                .putInt32(origin || 0)
-                .putInt32(interval || 0)
-                .putInt32(limit || 0)
+                .putUint32(clientDataId)
+                .putUint32(dataRequestId)
+                .putUint32(clientDataDefineID)
+                .putUint32(period)
+                .putUint32(flags)
+                .putUint32(origin || 0)
+                .putUint32(interval || 0)
+                .putUint32(limit || 0)
         );
     }
 
@@ -1229,12 +1232,12 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x3c)
-                .putInt32(clientDataId)
-                .putInt32(clientDataDefineID)
-                .putInt32(0) // do not use arg
-                .putInt32(1) // do not use arg
+                .putUint32(clientDataId)
+                .putUint32(clientDataDefineID)
+                .putUint32(0) // do not use arg
+                .putUint32(1) // do not use arg
                 // TODO: add support for arrays https://github.com/mharj/jsimconnect/blob/master/src/flightsim/simconnect/SimConnect.java#L3803
-                .putInt32(unitSize)
+                .putUint32(unitSize)
                 .putBytes(data)
         );
     }
@@ -1270,7 +1273,7 @@ class SimConnectConnection extends EventEmitter {
         }
 
         packet.putString(description, 2048);
-        packet.putInt32(SimConnectConstants.UNUSED);
+        packet.putUint32(SimConnectConstants.UNUSED);
 
         return this._buildAndSend(packet);
     }
@@ -1299,15 +1302,15 @@ class SimConnectConnection extends EventEmitter {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         const packet = this._beginPacket(0x40)
-            .putInt32(type)
+            .putUint32(type)
             .putFloat32(timeSeconds)
-            .putInt32(clientEventId);
+            .putUint32(clientEventId);
 
         if (message !== null && message.length > 0) {
-            packet.putInt32(message.length + 1);
+            packet.putUint32(message.length + 1);
             packet.putString(message);
         } else {
-            packet.putInt32(1);
+            packet.putUint32(1);
         }
         packet.putByte(0);
         return this._buildAndSend(packet);
@@ -1327,10 +1330,10 @@ class SimConnectConnection extends EventEmitter {
         if (this._ourProtocol < Protocol.FSX_SP1) throw Error(SimConnectError.BadVersion); // $NON-NLS-1$
 
         const packet = this._beginPacket(0x40)
-            .putInt32(TextType.MENU)
+            .putUint32(TextType.MENU)
             .putFloat32(timeSeconds)
-            .putInt32(clientEventId)
-            .putInt32(0); // size, will be set later
+            .putUint32(clientEventId)
+            .putUint32(0); // size, will be set later
 
         if (!title && !prompt && items.length === 0) {
             packet.putByte(0);
@@ -1360,8 +1363,8 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x41) //
-                .putInt32(type)
-                .putInt32(clientEventId)
+                .putUint32(type)
+                .putUint32(clientEventId)
         );
     }
 
@@ -1374,7 +1377,7 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x42) //
-                .putInt32(type)
+                .putUint32(type)
         );
     }
 
@@ -1387,8 +1390,8 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x43) //
-                .putInt32(type)
-                .putInt32(clientEventId)
+                .putUint32(type)
+                .putUint32(clientEventId)
         );
     }
 
@@ -1409,15 +1412,15 @@ class SimConnectConnection extends EventEmitter {
     ): number {
         return this._buildAndSend(
             this._beginPacket(0x44)
-                .putInt32(objectId)
-                .putInt32(clientEventId)
-                .putInt32(notificationGroupId)
-                .putInt32(flags)
-                .putInt32(data0)
-                .putInt32(data1)
-                .putInt32(data2)
-                .putInt32(data3)
-                .putInt32(data4)
+                .putUint32(objectId)
+                .putUint32(clientEventId)
+                .putUint32(notificationGroupId)
+                .putUint32(flags)
+                .putUint32(data0)
+                .putUint32(data1)
+                .putUint32(data2)
+                .putUint32(data3)
+                .putUint32(data4)
         );
     }
 
@@ -1430,7 +1433,7 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x45) //
-                .putInt32(dataDefinitionId)
+                .putUint32(dataDefinitionId)
                 .putString256(fieldName)
         );
     }
@@ -1449,8 +1452,8 @@ class SimConnectConnection extends EventEmitter {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(type === undefined ? 0x46 : 0x4a)
-            .putInt32(dataDefinitionId)
-            .putInt32(dataRequestId)
+            .putUint32(dataDefinitionId)
+            .putUint32(dataRequestId)
             .putString(icao, 16)
             .putString(region || '', 4);
 
@@ -1475,9 +1478,9 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x47) //
-                .putInt32(type)
-                .putInt32(newElemInRangeRequestID)
-                .putInt32(oldElemOutRangeRequestID)
+                .putUint32(type)
+                .putUint32(newElemInRangeRequestID)
+                .putUint32(oldElemOutRangeRequestID)
         );
     }
 
@@ -1494,7 +1497,7 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x48) //
-                .putInt32(type)
+                .putUint32(type)
                 .putByte(unsubscribeNewInRange ? 1 : 0)
                 .putByte(unsubscribeOldOutRange ? 1 : 0)
         );
@@ -1509,8 +1512,8 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x49) //
-                .putInt32(type)
-                .putInt32(clientEventId)
+                .putUint32(type)
+                .putUint32(clientEventId)
         );
     }
 
@@ -1523,13 +1526,13 @@ class SimConnectConnection extends EventEmitter {
 
         const packet = this._beginPacket(0x4b)
             .putString(airportIcao, 16)
-            .putInt32(parkingIndices?.length || 0);
+            .putUint32(parkingIndices?.length || 0);
 
         if (parkingIndices === undefined || parkingIndices.length === 0) {
-            packet.putInt32(0);
+            packet.putUint32(0);
         } else {
             parkingIndices.forEach(parkingIndex => {
-                packet.putInt32(parkingIndex);
+                packet.putUint32(parkingIndex);
             });
         }
 
@@ -1564,15 +1567,15 @@ class SimConnectConnection extends EventEmitter {
 
         return this._buildAndSend(
             this._beginPacket(0x4d)
-                .putInt32(inputGroupId)
+                .putUint32(inputGroupId)
                 .putString256(inputDefinition)
-                .putInt32(clientEventDownID)
-                .putInt32(downValue || 0)
-                .putInt32(
+                .putUint32(clientEventDownID)
+                .putUint32(downValue || 0)
+                .putUint32(
                     clientEventUpID === undefined ? SimConnectConstants.UNUSED : clientEventUpID
                 )
-                .putInt32(upValue || 0)
-                .putInt32(maskable ? 1 : 0)
+                .putUint32(upValue || 0)
+                .putUint32(maskable ? 1 : 0)
         );
     }
 
@@ -1587,9 +1590,9 @@ class SimConnectConnection extends EventEmitter {
         const paramValues = values.getBuffer();
 
         const packet = this._beginPacket(0x4e)
-            .putInt32(dataRequestID)
+            .putUint32(dataRequestID)
             .putString256(actionID)
-            .putInt32(paramValues.length)
+            .putUint32(paramValues.length)
             .putBytes(paramValues);
         return this._buildAndSend(packet);
     }
@@ -1601,7 +1604,7 @@ class SimConnectConnection extends EventEmitter {
     enumerateInputEvents(dataRequestID: number): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x4f).putInt32(dataRequestID);
+        const packet = this._beginPacket(0x4f).putUint32(dataRequestID);
         return this._buildAndSend(packet);
     }
 
@@ -1612,7 +1615,7 @@ class SimConnectConnection extends EventEmitter {
     getInputEvent(dataRequestID: number, inputEventHashID: bigint): number {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x50).putInt32(dataRequestID).putUint64(inputEventHashID);
+        const packet = this._beginPacket(0x50).putUint32(dataRequestID).putUint64(inputEventHashID);
         return this._buildAndSend(packet);
     }
 
@@ -1626,9 +1629,9 @@ class SimConnectConnection extends EventEmitter {
         const packet = this._beginPacket(0x51).putUint64(inputEventHashID);
 
         if (typeof value === 'string') {
-            packet.putInt32(value.length).putString(value);
+            packet.putUint32(value.length).putString(value);
         } else {
-            packet.putInt32(8).putFloat64(value);
+            packet.putUint32(8).putFloat64(value);
         }
 
         return this._buildAndSend(packet);
@@ -1679,13 +1682,13 @@ class SimConnectConnection extends EventEmitter {
     ) {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x55).putInt32(dataDefinitionId).putString256(filterPath);
+        const packet = this._beginPacket(0x55).putUint32(dataDefinitionId).putString256(filterPath);
 
         if (filterData === null) {
-            packet.putInt32(0);
+            packet.putUint32(0);
         } else {
             const filterDataBuffer = filterData.getBuffer();
-            packet.putInt32(filterDataBuffer.length).putBytes(filterDataBuffer);
+            packet.putUint32(filterDataBuffer.length).putBytes(filterDataBuffer);
         }
 
         return this._buildAndSend(packet);
@@ -1697,7 +1700,7 @@ class SimConnectConnection extends EventEmitter {
      */
     clearAllFacilityDataDefinitionFilters(dataDefinitionId: DataDefinitionId) {
         if (this._ourProtocol < Protocol.KittyHawk) throw Error(SimConnectError.BadVersion);
-        return this._buildAndSend(this._beginPacket(0x56).putInt32(dataDefinitionId));
+        return this._buildAndSend(this._beginPacket(0x56).putUint32(dataDefinitionId));
     }
 
     /**
@@ -1719,7 +1722,7 @@ class SimConnectConnection extends EventEmitter {
                 .putString256(livery)
                 .putString(tailNumber, 12)
                 .putString(airportID, 5)
-                .putInt32(dataRequestId)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -1747,8 +1750,8 @@ class SimConnectConnection extends EventEmitter {
                 .putInt32(flightNumber)
                 .putString(flightPlanPath, 260)
                 .putFloat64(flightPlanPosition)
-                .putInt32(touchAndGo ? 1 : 0)
-                .putInt32(dataRequestId)
+                .putUint32(touchAndGo ? 1 : 0)
+                .putUint32(dataRequestId)
         );
     }
 
@@ -1771,7 +1774,7 @@ class SimConnectConnection extends EventEmitter {
             .putString(tailNumber, 12);
 
         initPos.writeTo(packet);
-        packet.putInt32(dataRequestId);
+        packet.putUint32(dataRequestId);
 
         return this._buildAndSend(packet);
     }
@@ -1793,7 +1796,7 @@ class SimConnectConnection extends EventEmitter {
         packet.putString256(containerTitle);
         packet.putString256(livery);
         initPos.writeTo(packet);
-        packet.putInt32(dataRequestId);
+        packet.putUint32(dataRequestId);
 
         return this._buildAndSend(packet);
     }
@@ -1805,7 +1808,7 @@ class SimConnectConnection extends EventEmitter {
     enumerateSimObjectsAndLiveries(dataRequestId: DataRequestId, type: SimObjectType): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x5b).putInt32(dataRequestId).putInt32(type);
+        const packet = this._beginPacket(0x5b).putUint32(dataRequestId).putUint32(type);
 
         return this._buildAndSend(packet);
     }
@@ -1839,7 +1842,7 @@ class SimConnectConnection extends EventEmitter {
     requestAllFacilities(dataRequestId: DataRequestId, type: FacilityListType): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x5e).putInt32(dataRequestId).putInt32(type);
+        const packet = this._beginPacket(0x5e).putUint32(dataRequestId).putUint32(type);
         return this._buildAndSend(packet);
     }
 
@@ -2018,16 +2021,16 @@ class SimConnectConnection extends EventEmitter {
         this._buildAndSend(
             this._beginPacket(0x01)
                 .putString256(this._appName)
-                .putInt32(0)
+                .putUint32(0)
                 .putByte(0x00)
                 .putString(version.alias, 3)
-                .putInt32(version.major)
-                .putInt32(version.minor)
-                .putInt32(version.buildMajor)
-                .putInt32(version.buildMinor)
+                .putUint32(version.major)
+                .putUint32(version.minor)
+                .putUint32(version.buildMajor)
+                .putUint32(version.buildMinor)
         );
     }
 }
 
-export { SimConnectConnection, ConnectionOptions, SimConnectRecvEvents };
-module.exports = { SimConnectConnection };
+export { SimConnectConnection };
+export type { ConnectionOptions, SimConnectRecvEvents };

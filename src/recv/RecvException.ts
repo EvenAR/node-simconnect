@@ -11,12 +11,10 @@ export class RecvException {
     exceptionName: string;
 
     constructor(data: RawBuffer) {
-        this.exception = data.readInt32();
-        this.sendId = data.readInt32();
-        this.index = data.readInt32();
+        this.exception = data.readUint32();
+        this.sendId = data.readUint32();
+        this.index = data.readUint32();
 
         this.exceptionName = SimConnectException[this.exception] ?? 'Unknown Exception';
     }
 }
-
-module.exports = { RecvException };

@@ -25,8 +25,8 @@ const server = net.createServer(clientSocket => {
             );
             const hexString = formatAndPrint(data);
 
-            targetSocket.write(data);
-            targetSocket.write(Buffer.from(hexString, 'hex')); // Forwarding the data to the target server
+            targetSocket.write(Uint8Array.from(data));
+            targetSocket.write(Uint8Array.from(Buffer.from(hexString, 'hex'))); // Forwarding the data to the target server
         });
 
         targetSocket.on('data', data => {
@@ -35,8 +35,8 @@ const server = net.createServer(clientSocket => {
             );
             const hexString = formatAndPrint(data);
 
-            clientSocket.write(data);
-            clientSocket.write(Buffer.from(hexString, 'hex')); // Forwarding the data to the client
+            clientSocket.write(Uint8Array.from(data));
+            clientSocket.write(Uint8Array.from(Buffer.from(hexString, 'hex'))); // Forwarding the data to the client
         });
 
         clientSocket.on('end', () => {
@@ -66,12 +66,18 @@ server.listen(proxyPort, proxyHost, () => {
 });
 
 function formatAndPrint(data: Buffer): string {
-    const hexString = data.toString('hex');
-    for (let i = 0; i < hexString.length; i += 32) {
-        const slice = hexString.slice(i, i + 32);
-        const utf8String = Buffer.from(slice, 'hex').toString('utf-8');
-        console.log(`${slice.match(/.{1,8}/g)?.join(' ')}\t\t${utf8String}`);
+    const lines: string[] = [];
+    for (let i = 0; i < data.length; i += 8) {
+        const chunk = data.subarray(i, i + 8);
+        const hex = Array.from(chunk)
+            .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+            .join(' ')
+            .padEnd(23, ' ');
+        const text = Array.from(chunk)
+            .map(b => (b >= 0x20 ? Buffer.from([b]).toString('latin1') : '.'))
+            .join('');
+        lines.push(`${hex}  ${text}`);
     }
-    console.log('\n\n');
-    return hexString; // Return the original hex string for forwarding
+    console.log(`${lines.join('\n')}\n`);
+    return data.toString('hex'); // Return the original hex string for forwarding
 }

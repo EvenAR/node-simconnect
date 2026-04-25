@@ -17,7 +17,3 @@ export enum FlowEvent {
     FLIGHT_END,
     PLANE_CRASH,
 }
-
-module.exports = {
-    FlowEvent,
-};
