@@ -10,7 +10,8 @@ class RawBuffer {
             this.buffer = Buffer.alloc(b);
             this.limit = b;
         } else {
-            this.buffer = Buffer.from(b);
+            this.buffer = Buffer.alloc(b.length);
+            this.buffer.set(b);
             this.limit = b.length;
         }
     }
@@ -30,7 +31,9 @@ class RawBuffer {
     }
 
     getBuffer(): Buffer {
-        return Buffer.from(this.buffer.subarray(0, this.offset));
+        const copy = Buffer.alloc(this.offset);
+        copy.set(this.buffer.subarray(0, this.offset));
+        return copy;
     }
 
     write(bytes: Buffer) {
@@ -47,7 +50,9 @@ class RawBuffer {
         const start = this.offset;
         this.assertReadable(length);
         this.offset += length;
-        return Buffer.from(this.buffer.subarray(start, start + length));
+        const copy = Buffer.alloc(length);
+        copy.set(this.buffer.subarray(start, start + length));
+        return copy;
     }
 
     readInt16(): number {
@@ -267,7 +272,7 @@ class RawBuffer {
 
     private writeBuffer(bytes: Buffer) {
         this.writeAtCurrentOffset(bytes.length, currentOffset => {
-            bytes.copy(this.buffer, currentOffset);
+            this.buffer.set(bytes, currentOffset);
         });
     }
 
@@ -298,7 +303,7 @@ class RawBuffer {
         }
 
         const nextBuffer = Buffer.alloc(nextLength);
-        this.buffer.copy(nextBuffer, 0, 0, this.limit);
+        nextBuffer.set(this.buffer.subarray(0, this.limit));
         this.buffer = nextBuffer;
         this.limit = nextLength;
     }

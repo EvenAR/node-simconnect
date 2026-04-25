@@ -3,14 +3,14 @@ import { SimConnectDataType } from './enums/SimConnectDataType';
 import { SimConnectPeriod } from './enums/SimConnectPeriod';
 import { SimObjectType } from './enums/SimObjectType';
 import { RawBuffer } from './RawBuffer';
-import { autodetectServerAddress, ConnectionParameters } from './connectionParameters';
+import { autodetectServerAddress } from './connectionParameters';
 import { NotificationPriority } from './enums/NotificationPriority';
-import { IcaoType, InitPosition, SimConnectData } from './dto';
+import { IcaoType, InitPosition } from './dto';
 import { TextType } from './enums/TextType';
 import { FacilityListType } from './enums/FacilityListType';
 import { ClientDataPeriod } from './enums/ClientDataPeriod';
 import { Protocol } from './enums/Protocol';
-import { RecvID, SimConnectMessage, SimConnectSocket } from './SimConnectSocket';
+import { RecvID, SimConnectSocket } from './SimConnectSocket';
 import { DataRequestFlag } from './flags/DataRequestFlag';
 import { EventFlag } from './flags/EventFlag';
 import { DataSetFlag } from './flags/DataSetFlag';
@@ -60,6 +60,9 @@ import {
     NotificationGroupId,
     ObjectId,
 } from './Types';
+import type { ConnectionParameters } from './connectionParameters';
+import type { SimConnectData } from './dto';
+import type { SimConnectMessage } from './SimConnectSocket';
 import Timeout = NodeJS.Timeout;
 import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
 import { RecvFlowEvent } from './recv/RecvFlowEvent';
@@ -2029,5 +2032,5 @@ class SimConnectConnection extends EventEmitter {
     }
 }
 
-export { SimConnectConnection, ConnectionOptions, SimConnectRecvEvents };
-module.exports = { SimConnectConnection };
+export { SimConnectConnection };
+export type { ConnectionOptions, SimConnectRecvEvents };

@@ -2,9 +2,17 @@
   "name": "node-simconnect",
   "version": "4.1.0",
   "description": "A SimConnect client library for Node.JS.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "npx rimraf dist && tsc -p tsconfig.build.json",
     "build:watch": "tsc --watch",
@@ -42,6 +50,7 @@
   },
   "homepage": "https://github.com/EvenAR/node-simconnect#readme",
   "devDependencies": {
+    "@types/node": "*",
     "@types/debug": "^4.1.7",
     "@types/ini": "^1.3.30",
     "@types/jest": "^29.2.4",
@@ -60,12 +69,11 @@
     "lint-staged": "^16.4.0",
     "prettier": "^2.6.2",
     "pretty-quick": "^3.1.0",
-    "ts-jest": "^29.0.3",
-    "typedoc": "^0.25.4",
-    "typescript": "^4.9.4"
+    "ts-jest": "^29.4.1",
+    "typedoc": "^0.28.13",
+    "typescript": "^6.0.0"
   },
   "dependencies": {
-    "@types/node": "*",
     "debug": "^4.3.4",
     "ini": "^2.0.0",
     "regedit": "^5.1.1"
@@ -78,7 +86,6 @@
     "/dist",
     "/samples",
     "./package.json",
-    "./package-lock.json",
     "./README.md",
     "./LICENSE"
   ]

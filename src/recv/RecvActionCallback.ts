@@ -1,6 +1,6 @@
 import { RawBuffer } from '../RawBuffer';
 import { RecvEvent } from './RecvEvent';
-import { DataRequestId } from '../Types';
+import type { DataRequestId } from '../Types';
 
 export class RecvActionCallback extends RecvEvent {
     requestID: DataRequestId;

@@ -20,7 +20,3 @@ export enum Protocol {
      */
     SunRise = 0x6,
 }
-
-module.exports = {
-    Protocol,
-};

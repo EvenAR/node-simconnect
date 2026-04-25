@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId } from '../Types';
+import type { DataRequestId } from '../Types';
 import { InputEventType } from '../enums/InputEventType';
 
 export class RecvGetInputEvent {

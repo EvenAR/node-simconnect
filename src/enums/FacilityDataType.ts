@@ -29,7 +29,3 @@ export enum FacilityDataType {
     HOLDING_PATTERN,
     TAXI_PARKING_AIRLINE,
 }
-
-module.exports = {
-    FacilityDataType,
-};

@@ -25,8 +25,8 @@ const server = net.createServer(clientSocket => {
             );
             const hexString = formatAndPrint(data);
 
-            targetSocket.write(data);
-            targetSocket.write(Buffer.from(hexString, 'hex')); // Forwarding the data to the target server
+            targetSocket.write(Uint8Array.from(data));
+            targetSocket.write(Uint8Array.from(Buffer.from(hexString, 'hex'))); // Forwarding the data to the target server
         });
 
         targetSocket.on('data', data => {
@@ -35,8 +35,8 @@ const server = net.createServer(clientSocket => {
             );
             const hexString = formatAndPrint(data);
 
-            clientSocket.write(data);
-            clientSocket.write(Buffer.from(hexString, 'hex')); // Forwarding the data to the client
+            clientSocket.write(Uint8Array.from(data));
+            clientSocket.write(Uint8Array.from(Buffer.from(hexString, 'hex'))); // Forwarding the data to the client
         });
 
         clientSocket.on('end', () => {
