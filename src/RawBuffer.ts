@@ -1,226 +1,324 @@
-import ByteBuffer = require('bytebuffer');
-
 class RawBuffer {
-    private readonly buffer: ByteBuffer;
+    private buffer: Buffer;
+
+    private offset = 0;
+
+    private limit: number;
 
     constructor(b: Buffer | number) {
         if (typeof b === 'number') {
-            this.buffer = ByteBuffer.allocate(b).LE(true);
+            this.buffer = Buffer.alloc(b);
+            this.limit = b;
         } else {
-            this.buffer = ByteBuffer.wrap(b).LE(true);
+            this.buffer = Buffer.from(b);
+            this.limit = b.length;
         }
     }
 
     clear() {
-        this.buffer.clear();
+        this.offset = 0;
+        this.limit = this.buffer.length;
     }
 
     setOffset(offset: number) {
-        this.buffer.offset = offset;
+        this.assertBounds(offset, 0);
+        this.offset = offset;
     }
 
     getOffset(): number {
-        return this.buffer.offset;
+        return this.offset;
     }
 
     getBuffer(): Buffer {
-        this.buffer.flip();
-        return this.buffer.toBuffer(true);
+        return Buffer.from(this.buffer.subarray(0, this.offset));
     }
 
     write(bytes: Buffer) {
-        this.buffer.append(bytes);
+        this.writeBuffer(bytes);
     }
 
     writeByte(byte: number) {
-        this.buffer.writeByte(byte);
+        this.writeAtCurrentOffset(1, currentOffset => {
+            this.buffer.writeUInt8(byte & 0xff, currentOffset);
+        });
     }
 
     readBytes(length: number): Buffer {
-        const bytes = this.buffer.readBytes(length).copy();
-        return bytes.toBuffer();
+        const start = this.offset;
+        this.assertReadable(length);
+        this.offset += length;
+        return Buffer.from(this.buffer.subarray(start, start + length));
     }
 
     readInt16(): number {
-        return this.buffer.readInt16();
+        return this.readNumber(2, currentOffset => this.buffer.readInt16LE(currentOffset));
     }
 
     readInt32(): number {
-        return this.buffer.readInt32();
+        return this.readNumber(4, currentOffset => this.buffer.readInt32LE(currentOffset));
     }
 
     readUint32(): number {
-        return this.buffer.readUint32();
+        return this.readNumber(4, currentOffset => this.buffer.readUInt32LE(currentOffset));
     }
 
     writeInt16(value: number, offset?: number) {
-        this.buffer.writeInt16(value, offset);
+        this.writeNumber(
+            2,
+            currentOffset => this.buffer.writeInt16LE(value, currentOffset),
+            offset
+        );
     }
 
     /** @deprecated use readInt32() instead */
     readInt = this.readInt32;
 
     writeInt32(value: number, offset?: number) {
-        this.buffer.writeInt32(value, offset);
+        this.writeNumber(
+            4,
+            currentOffset => this.buffer.writeInt32LE(value, currentOffset),
+            offset
+        );
     }
 
     /** @deprecated use writeInt32() instead */
     writeInt = this.writeInt32;
 
     readInt64(): number {
-        return this.buffer.readInt64().toNumber();
+        return this.readNumber(8, currentOffset =>
+            Number(this.buffer.readBigInt64LE(currentOffset))
+        );
     }
 
     readUint64(): bigint {
-        return BigInt(this.buffer.readUint64().toString(10));
+        return this.readNumber(8, currentOffset => this.buffer.readBigUInt64LE(currentOffset));
     }
 
     /** @deprecated use readInt64() instead */
     readLong = this.readInt64;
 
     writeInt64(value: number) {
-        this.buffer.writeInt64(value);
+        this.writeAtCurrentOffset(8, currentOffset => {
+            this.buffer.writeBigInt64LE(BigInt(value), currentOffset);
+        });
     }
 
     writeUint32(value: number, offset?: number) {
-        this.buffer.writeUint32(value, offset);
+        this.writeNumber(
+            4,
+            currentOffset => this.buffer.writeUInt32LE(value, currentOffset),
+            offset
+        );
     }
 
     writeUint64(value: bigint, offset?: number) {
-        const buffer = Buffer.alloc(8);
-        buffer.writeBigUint64LE(value);
-        this.buffer.append(buffer, undefined, offset);
+        this.writeNumber(
+            8,
+            currentOffset => this.buffer.writeBigUInt64LE(value, currentOffset),
+            offset
+        );
     }
 
     /** @deprecated use writeInt64() instead */
     writeLong = this.writeInt64;
 
     readFloat32(): number {
-        return this.buffer.readFloat32();
+        return this.readNumber(4, currentOffset => this.buffer.readFloatLE(currentOffset));
     }
 
     /** @deprecated use readFloat32() instead */
     readFloat = this.readFloat32;
 
     writeFloat32(value: number) {
-        this.buffer.writeFloat32(value);
+        this.writeAtCurrentOffset(4, currentOffset => {
+            this.buffer.writeFloatLE(value, currentOffset);
+        });
     }
 
     /** @deprecated use writeFloat32() instead */
     writeFloat = this.writeFloat32;
 
-    readFloat64() {
-        return this.buffer.readFloat64();
+    readFloat64(): number {
+        return this.readNumber(8, currentOffset => this.buffer.readDoubleLE(currentOffset));
     }
 
     /** @deprecated use readFloat64() instead */
     readDouble = this.readFloat64;
 
     writeFloat64(value: number) {
-        this.buffer.writeFloat64(value);
+        this.writeAtCurrentOffset(8, currentOffset => {
+            this.buffer.writeDoubleLE(value, currentOffset);
+        });
     }
 
     /** @deprecated use writeFloat64() instead */
     writeDouble = this.writeFloat64;
 
     writeString(value: string, fixedLength?: number) {
-        putString(this.buffer, value, fixedLength || value.length);
+        putString(this, value, fixedLength || value.length);
     }
 
     readString8() {
-        return makeString(this.buffer, 8);
+        return makeString(this, 8);
     }
 
     writeString8(value: string) {
-        putString(this.buffer, value, 8);
+        putString(this, value, 8);
     }
 
     writeString30(value: string) {
-        putString(this.buffer, value, 30);
+        putString(this, value, 30);
     }
 
     readString32() {
-        return makeString(this.buffer, 32);
+        return makeString(this, 32);
     }
 
     writeString32(value: string) {
-        putString(this.buffer, value, 32);
+        putString(this, value, 32);
     }
 
     readString64() {
-        return makeString(this.buffer, 64);
+        return makeString(this, 64);
     }
 
     writeString64(value: string) {
-        putString(this.buffer, value, 64);
+        putString(this, value, 64);
     }
 
     readString128() {
-        return makeString(this.buffer, 128);
+        return makeString(this, 128);
     }
 
     writeString128(value: string) {
-        putString(this.buffer, value, 128);
+        putString(this, value, 128);
     }
 
     readString256() {
-        return makeString(this.buffer, 256);
+        return makeString(this, 256);
     }
 
     writeString256(value: string | null) {
-        putString(this.buffer, value, 256);
+        putString(this, value, 256);
     }
 
     readString260() {
-        return makeString(this.buffer, 260);
+        return makeString(this, 260);
     }
 
     writeString260(value: string) {
-        putString(this.buffer, value, 260);
+        putString(this, value, 260);
     }
 
     readStringV() {
         let bytesRead = 0;
         let strLen = 0;
         let endFound = false;
-        while (this.buffer.offset < this.buffer.limit) {
-            const currentByte = this.buffer.readByte();
+
+        while (this.offset < this.limit) {
+            const currentByte = this.buffer.readUInt8(this.offset);
+            this.offset++;
             bytesRead++;
+
             if (endFound && currentByte !== 0) {
-                break; // Reached beginning of new value
+                break;
             } else if (currentByte === 0) {
                 endFound = true;
             }
+
             strLen++;
         }
-        // Reset offset so we can read the same bytes later
-        this.buffer.offset -= bytesRead;
-        return makeString(this.buffer, strLen);
+
+        this.offset -= bytesRead;
+        return makeString(this, strLen);
     }
 
     readString(length: number) {
-        return makeString(this.buffer, length);
+        return makeString(this, length);
     }
 
     remaining() {
-        return this.buffer.remaining();
+        return this.limit - this.offset;
+    }
+
+    private readNumber<T>(byteLength: number, reader: (offset: number) => T): T {
+        const currentOffset = this.offset;
+        this.assertReadable(byteLength);
+        this.offset += byteLength;
+        return reader(currentOffset);
+    }
+
+    private writeNumber(byteLength: number, writer: (offset: number) => void, offset?: number) {
+        if (offset === undefined) {
+            this.writeAtCurrentOffset(byteLength, writer);
+            return;
+        }
+
+        this.ensureCapacity(offset + byteLength);
+        writer(offset);
+    }
+
+    private writeAtCurrentOffset(byteLength: number, writer: (offset: number) => void) {
+        const currentOffset = this.offset;
+        this.ensureCapacity(currentOffset + byteLength);
+        writer(currentOffset);
+        this.offset += byteLength;
+    }
+
+    private writeBuffer(bytes: Buffer) {
+        this.writeAtCurrentOffset(bytes.length, currentOffset => {
+            bytes.copy(this.buffer, currentOffset);
+        });
+    }
+
+    private assertReadable(byteLength: number) {
+        if (this.offset < 0 || this.offset + byteLength > this.limit) {
+            throw new RangeError(
+                `Illegal offset: 0 <= ${this.offset} (+${byteLength}) <= ${this.limit}`
+            );
+        }
+    }
+
+    private assertBounds(offset: number, byteLength: number) {
+        if (offset < 0 || offset + byteLength > this.limit) {
+            throw new RangeError(
+                `Illegal offset: 0 <= ${offset} (+${byteLength}) <= ${this.limit}`
+            );
+        }
+    }
+
+    private ensureCapacity(requiredLength: number) {
+        if (requiredLength <= this.buffer.length) {
+            return;
+        }
+
+        let nextLength = this.buffer.length === 0 ? 1 : this.buffer.length;
+        while (nextLength < requiredLength) {
+            nextLength *= 2;
+        }
+
+        const nextBuffer = Buffer.alloc(nextLength);
+        this.buffer.copy(nextBuffer, 0, 0, this.limit);
+        this.buffer = nextBuffer;
+        this.limit = nextLength;
     }
 }
 
-function makeString(bf: ByteBuffer, expectedLength: number) {
-    const content = bf.readCString(bf.offset);
-    bf.skip(expectedLength);
-    return content.string;
+function makeString(buffer: RawBuffer, expectedLength: number) {
+    const contentBytes = buffer.readBytes(expectedLength);
+    const endIndex = contentBytes.indexOf(0x00);
+    const stringBytes = endIndex === -1 ? contentBytes : contentBytes.subarray(0, endIndex);
+    return stringBytes.toString('utf-8');
 }
 
-function putString(bf: ByteBuffer, s: string | null, fixed: number) {
-    const value = s === null ? '' : s;
-    const bytes = Buffer.from(value, 'utf-8');
-    bf.append(bytes);
+function putString(buffer: RawBuffer, value: string | null, fixed: number) {
+    const content = value === null ? '' : value;
+    const bytes = Buffer.from(content, 'utf-8');
+
+    buffer.write(bytes);
+
     if (bytes.length < fixed) {
-        for (let i = 0; i < fixed - bytes.length; i++) {
-            bf.writeByte(0x00);
-        }
+        buffer.write(Buffer.alloc(fixed - bytes.length));
     }
 }
 
