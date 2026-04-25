@@ -313,12 +313,12 @@ function makeString(buffer: RawBuffer, expectedLength: number) {
     const contentBytes = buffer.readBytes(expectedLength);
     const endIndex = contentBytes.indexOf(0x00);
     const stringBytes = endIndex === -1 ? contentBytes : contentBytes.subarray(0, endIndex);
-    return stringBytes.toString('utf-8');
+    return stringBytes.toString('latin1');
 }
 
 function putString(buffer: RawBuffer, value: string | null, fixed: number) {
     const content = value === null ? '' : value;
-    const bytes = Buffer.from(content, 'utf-8');
+    const bytes = Buffer.from(content, 'latin1');
 
     buffer.write(bytes);
 

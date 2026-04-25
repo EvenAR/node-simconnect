@@ -66,12 +66,18 @@ server.listen(proxyPort, proxyHost, () => {
 });
 
 function formatAndPrint(data: Buffer): string {
-    const hexString = data.toString('hex');
-    for (let i = 0; i < hexString.length; i += 32) {
-        const slice = hexString.slice(i, i + 32);
-        const utf8String = Buffer.from(slice, 'hex').toString('utf-8');
-        console.log(`${slice.match(/.{1,8}/g)?.join(' ')}\t\t${utf8String}`);
+    const lines: string[] = [];
+    for (let i = 0; i < data.length; i += 8) {
+        const chunk = data.subarray(i, i + 8);
+        const hex = Array.from(chunk)
+            .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+            .join(' ')
+            .padEnd(23, ' ');
+        const text = Array.from(chunk)
+            .map(b => (b >= 0x20 ? Buffer.from([b]).toString('latin1') : '.'))
+            .join('');
+        lines.push(`${hex}  ${text}`);
     }
-    console.log('\n\n');
-    return hexString; // Return the original hex string for forwarding
+    console.log(`${lines.join('\n')}\n`);
+    return data.toString('hex'); // Return the original hex string for forwarding
 }
