@@ -1853,18 +1853,25 @@ class SimConnectConnection extends EventEmitter {
      * Used to call a communication (CommBus) event
      *
      * @param eventName - The name of the CommBus event to call
-     * @param data - The data payload to send with the event
+     * @param payload - The data payload to send with the event (string or object serialized to JSON)
      * @param flags - Determines who the event is broadcast to
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    callCommBusEvent(eventName: string, data: Buffer, flags: CommBusBroadcastTo): number {
+    callCommBusEvent(
+        eventName: string,
+        payload: string | object,
+        flags: CommBusBroadcastTo
+    ): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
+        const payloadBuffer = Buffer.from(payloadString, 'utf8');
 
         const packet = this._beginPacket(0x5f)
             .putString(eventName, SimConnectConstants.MAX_PATH)
             .putUint32(flags)
-            .putUint32(data.length)
-            .putBytes(data);
+            .putUint32(payloadBuffer.length)
+            .putBytes(payloadBuffer);
         return this._buildAndSend(packet);
     }
 
