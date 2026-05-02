@@ -47,6 +47,8 @@ enum RecvID {
     ID_ENUMERATE_INPUT_EVENT_PARAMS,
     ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST,
     ID_FLOW_EVENT,
+    // MSFS 2024 (SunRise) - CommBus:
+    ID_COMM_BUS,
 }
 
 interface SimConnectMessage {

@@ -33,3 +33,4 @@ export * from './RecvActionCallback';
 export * from './RecvListTemplate';
 export * from './RecvFlowEvent';
 export * from './RecvEnumerateSimobjectAndLiveryList';
+export * from './RecvCommBus';

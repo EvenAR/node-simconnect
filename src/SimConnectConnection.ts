@@ -66,6 +66,8 @@ import type { SimConnectMessage } from './SimConnectSocket';
 import Timeout = NodeJS.Timeout;
 import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
 import { RecvFlowEvent } from './recv/RecvFlowEvent';
+import { RecvCommBus } from './recv/RecvCommBus';
+import { CommBusBroadcastTo } from './enums/CommBusBroadcastTo';
 
 type OpenPacketData = {
     major: number;
@@ -159,6 +161,7 @@ interface SimConnectRecvEvents {
         recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
     ) => void;
     flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
+    commBusEvent: (recvCommBus: RecvCommBus) => void;
 }
 
 type ConnectionOptions =
@@ -1846,6 +1849,51 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    /**
+     * Used to call a communication (CommBus) event
+     *
+     * @param eventName - The name of the CommBus event to call
+     * @param data - The data payload to send with the event
+     * @param flags - Determines who the event is broadcast to
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    callCommBusEvent(eventName: string, data: Buffer, flags: CommBusBroadcastTo): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5f)
+            .putString(eventName, SimConnectConstants.MAX_PATH)
+            .putUint32(flags)
+            .putUint32(data.length)
+            .putBytes(data);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     * Used to subscribe the client to a communication (CommBus) event
+     *
+     * @param eventName - The name of the CommBus event to subscribe to
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeToCommBusEvent(eventName: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x60).putString(eventName, SimConnectConstants.MAX_PATH);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     * Used to unsubscribe the client from a communication (CommBus) event
+     *
+     * @param eventName - The name of the CommBus event to unsubscribe from
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeToCommBusEvent(eventName: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x61).putString(eventName, SimConnectConstants.MAX_PATH);
+        return this._buildAndSend(packet);
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
@@ -2003,6 +2051,9 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_FLOW_EVENT:
                 this.emit('flowEvent', new RecvFlowEvent(data));
+                break;
+            case RecvID.ID_COMM_BUS:
+                this.emit('commBusEvent', new RecvCommBus(data));
                 break;
         }
     }
