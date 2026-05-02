@@ -4,27 +4,10 @@
 
 `node-simconnect` is a TypeScript/Node.js library that implements the SimConnect binary protocol used by Microsoft Flight Simulator (FSX through MSFS 2024). It communicates with the simulator over a TCP socket using little-endian binary packets.
 
-## Repository structure
-
-```
-src/
-  SimConnectConnection.ts    # Main class – all public API methods live here
-  SimConnectSocket.ts        # Low-level socket + packet framing; houses RecvID enum
-  SimConnectPacketBuilder.ts # Fluent builder for outbound packets
-  RawBuffer.ts               # Binary read/write helper used by all Recv* classes
-  SimConnectConstants.ts     # Shared constants (e.g. MAX_PATH = 260)
-  enums/                     # One file per TypeScript enum, exported via index.ts
-  recv/                      # One file per inbound packet type, exported via index.ts
-  flags/                     # Bit-flag enums
-  datastructures/            # Composite data types
-  dto/                       # Data-transfer objects
-tests/                       # Jest test suite
-```
-
 ## Encoding conventions
 
 -   **All strings** (both reading and writing) use **`latin1`** encoding — the same encoding used by `RawBuffer.readString()` / `writeString()`. Never use `utf8`.
--   Fixed-length string fields are written/read with `SimConnectConstants.MAX_PATH` (260 bytes).
+-   Fixed-length string field lengths vary per field — always check the SDK documentation for the exact size.
 -   Numbers are little-endian — handled automatically by `RawBuffer` helpers.
 -   Variable-length text payloads sent as bytes: `Buffer.from(str, 'latin1')`.
 -   Variable-length text payloads received as bytes: `data.readBytes(n).toString('latin1')`.
