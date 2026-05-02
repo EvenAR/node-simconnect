@@ -1865,7 +1865,7 @@ class SimConnectConnection extends EventEmitter {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
         const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-        const payloadBuffer = Buffer.from(payloadString, 'utf8');
+        const payloadBuffer = Buffer.from(payloadString, 'latin1');
 
         const packet = this._beginPacket(0x5f)
             .putString(eventName, SimConnectConstants.MAX_PATH)

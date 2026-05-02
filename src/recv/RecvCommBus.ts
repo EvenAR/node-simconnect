@@ -10,6 +10,6 @@ export class RecvCommBus {
 
     constructor(data: RawBuffer) {
         this.eventName = data.readString(SimConnectConstants.MAX_PATH);
-        this.data = data.readBytes(data.remaining()).toString('utf8');
+        this.data = data.readBytes(data.remaining()).toString('latin1');
     }
 }
