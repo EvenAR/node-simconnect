@@ -47,10 +47,14 @@ export { RecvXxx } from './RecvXxx';
 
 ### 2. RecvID (only if step 1 applies)
 
-Add the new value to the `RecvID` enum in `src/SimConnectSocket.ts`. Values must follow the packet-ID order from the SimConnect header — do not guess; use the provided SDK information.
+**Always look up the official SDK enum before adding a new value.**
+The authoritative reference is the MSFS 2024 SDK documentation:
+<https://docs.flightsimulator.com/msfs2024/html/6_Programming_APIs/SimConnect/API_Reference/Structures_And_Enumerations/SIMCONNECT_RECV_ID.htm>
+
+Add the new value to the `RecvID` enum in `src/SimConnectSocket.ts` at the exact position it occupies in the SDK `SIMCONNECT_RECV_ID` enum — do **not** guess or append blindly to the end.
 
 ```ts
-ID_XXX = <packet_id>,
+ID_XXX, // position must match SDK enum order
 ```
 
 ### 3. New enum (only if the method needs one)
