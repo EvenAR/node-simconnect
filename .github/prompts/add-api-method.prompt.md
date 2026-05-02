@@ -10,6 +10,8 @@ tools:
 
 Add a new SimConnect API method following the steps below. Ask for the method name, packet IDs, and SDK struct/enum definitions before starting if they are not already provided.
 
+**Before writing any code, look up the method in the official MSFS SDK documentation** to understand the exact function signature, parameter types, string field lengths, and any notes about JSON payloads. The authoritative reference is: <https://docs.flightsimulator.com/msfs2024/html/6_Programming_APIs/SimConnect/API_Reference/>
+
 ## Checklist
 
 ### 1. Recv struct (only if the server sends a response packet)
