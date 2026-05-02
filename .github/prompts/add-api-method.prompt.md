@@ -35,7 +35,7 @@ Rules:
 
 -   Constructor takes a single `RawBuffer` argument.
 -   Read fields in the exact order they appear in the C++ struct.
--   Fixed-length string fields: `data.readString(SimConnectConstants.MAX_PATH)`.
+-   Fixed-length string fields: `data.readString(N)` where **N is the exact byte length documented for that field in the SDK struct** — do not default to `SimConnectConstants.MAX_PATH` unless the SDK explicitly uses `MAX_PATH` for that field.
 -   Variable-length text payloads: `data.readBytes(data.remaining()).toString('latin1')` typed as `string`.
 -   Raw byte blobs that are not text: `data.readBytes(n)` typed as `Buffer`.
 
@@ -97,7 +97,7 @@ methodName(foo: string): number {
     if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
     const packet = this._beginPacket(0xNN)
-        .putString(foo, SimConnectConstants.MAX_PATH)
+        .putString(foo, N) // N = exact byte length from SDK docs
         .putUint32(someFlag);
     return this._buildAndSend(packet);
 }
@@ -106,8 +106,8 @@ methodName(foo: string): number {
 Payload encoding rules:
 
 -   All strings use **`latin1`**. Never use `utf8`.
--   Methods that send user-supplied text accept `string | object`; objects are serialized with `JSON.stringify` first, then encoded with `Buffer.from(str, 'latin1')`.
--   Fixed-length strings: `.putString(value, SimConnectConstants.MAX_PATH)`.
+-   Fixed-length strings: `.putString(value, N)` where **N is the exact byte length documented for that field in the SDK** — look it up in the official docs, do not default to `SimConnectConstants.MAX_PATH` unless the SDK says so.
+-   If the SDK documentation explicitly states the string field carries **JSON**, accept `string | object`; objects are serialized with `JSON.stringify` before encoding. Otherwise the parameter type is plain `string`.
 -   Variable-length bytes: `.putUint32(buf.length).putBytes(buf)`.
 
 ### 5. Event handler (only if step 1 applies)
