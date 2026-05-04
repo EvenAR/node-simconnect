@@ -4,6 +4,9 @@
 
 `node-simconnect` is a TypeScript/Node.js library that implements the SimConnect binary protocol used by Microsoft Flight Simulator (FSX through MSFS 2024). It communicates with the simulator over a TCP socket using little-endian binary packets.
 
+Official MSFS docs home:
+<https://docs.flightsimulator.com/>
+
 ## Encoding conventions
 
 -   **All strings** (both reading and writing) use **`latin1`** encoding — the same encoding used by `RawBuffer.readString()` / `writeString()`. Never use `utf8`.

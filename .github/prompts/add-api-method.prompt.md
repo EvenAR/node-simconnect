@@ -16,9 +16,20 @@ Add a new SimConnect API method following the steps below.
 2. The contents of (or path to) their local `SimConnect.h` — this is the single authoritative source for function signatures, packet opcodes, struct field layouts, enum orderings, and string field sizes. Do **not** rely solely on the online docs, which may be outdated or incomplete.
 
 The online SDK docs are a useful supplement but must never override what `SimConnect.h` says:
+<https://docs.flightsimulator.com/>
 <https://docs.flightsimulator.com/msfs2024/html/6_Programming_APIs/SimConnect/API_Reference/>
 
+Before implementing, always determine whether the new request has a receive packet in `SIMCONNECT_RECV_ID` and capture the exact mapping in your plan.
+Example: `SimConnect_CameraGet` maps to `SIMCONNECT_RECV_ID_CAMERA_DATA`.
+
 ## Checklist
+
+### 0. Request → Recv mapping (always)
+
+-   Identify the request function in `SimConnect.h` and verify whether it has a corresponding `SIMCONNECT_RECV_ID_*` response.
+-   Use the online SDK API docs to verify whether the function produces recv messages, while keeping `SimConnect.h` as the authoritative source if docs and header disagree.
+-   If a response exists, implement both request and receive paths in the same change.
+-   Do not stop after adding only the request method when the SDK defines a recv packet for it.
 
 ### 1. Recv struct (only if the server sends a response packet)
 
