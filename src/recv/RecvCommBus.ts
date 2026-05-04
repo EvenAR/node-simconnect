@@ -1,15 +1,14 @@
-import { SimConnectConstants } from '../SimConnectConstants';
 import { RawBuffer } from '../RawBuffer';
+import { RecvListTemplate } from './RecvListTemplate';
 
-export class RecvCommBus {
-    /** The name of the CommBus event */
-    eventName: string;
+export class RecvCommBus extends RecvListTemplate {
+    eventId: number;
 
-    /** The data payload associated with the CommBus event, decoded as a string */
     data: string;
 
     constructor(data: RawBuffer) {
-        this.eventName = data.readString(SimConnectConstants.MAX_PATH);
-        this.data = data.readBytes(data.remaining()).toString('latin1');
+        super(data);
+        this.eventId = data.readUint32();
+        this.data = data.readStringV();
     }
 }

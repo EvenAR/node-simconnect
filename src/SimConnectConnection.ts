@@ -1850,54 +1850,57 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     * Used to call a communication (CommBus) event
+     * TODO: implement new camera APIs here
      *
-     * @param eventName - The name of the CommBus event to call
-     * @param payload - The data payload to send with the event (string or object serialized to JSON)
-     * @param flags - Determines who the event is broadcast to
+     * SimConnect_CameraAcquire: 0x5f
+     * SimConnect_CameraRelease: 0x60
+     * SimConnect_CameraGetStatus: 0x61
+     * SimConnect_CameraSet: 0x62
+     * SimConnect_CameraGet: 0x63
+     * SimConnect_CameraEnableFlag: 0x64
+     * SimConnect_CameraDisableFlag: 0x65
+     * SimConnect_SubscribeToCameraStatusUpdate: 0x66
+     * SimConnect_UnsubscribeToCameraStatusUpdate: 0x67
+     * SimConnect_EnumerateCameraDefinitions: 0x68
+     * SimConnect_CameraSetUsingCameraDefinition: 0x69
+     */
+
+    /**
+     *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    callCommBusEvent(
-        eventName: string,
-        payload: string | object,
-        flags: CommBusBroadcastTo
-    ): number {
+    subscribeToCommBusEvent(eventId: number, eventName: string): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
-        const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-        const payloadBuffer = Buffer.from(payloadString, 'latin1');
+        const packet = this._beginPacket(0x6a).putUint32(eventId).putString256(eventName);
 
-        const packet = this._beginPacket(0x5f)
-            .putString(eventName, SimConnectConstants.MAX_PATH)
-            .putUint32(flags)
-            .putUint32(payloadBuffer.length)
-            .putBytes(payloadBuffer);
         return this._buildAndSend(packet);
     }
 
     /**
-     * Used to subscribe the client to a communication (CommBus) event
      *
-     * @param eventName - The name of the CommBus event to subscribe to
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    subscribeToCommBusEvent(eventName: string): number {
+    unsubscribeToCommBusEvent(eventId: number): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x60).putString(eventName, SimConnectConstants.MAX_PATH);
+        const packet = this._beginPacket(0x6b).putUint32(eventId);
+
         return this._buildAndSend(packet);
     }
 
     /**
-     * Used to unsubscribe the client from a communication (CommBus) event
      *
-     * @param eventName - The name of the CommBus event to unsubscribe from
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    unsubscribeToCommBusEvent(eventName: string): number {
+    callCommBusEvent(eventName: string, broadcastTo: CommBusBroadcastTo, payload: string): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
-        const packet = this._beginPacket(0x61).putString(eventName, SimConnectConstants.MAX_PATH);
+        const packet = this._beginPacket(0x6c)
+            .putString256(eventName)
+            .putUint32(broadcastTo)
+            .putUint32(payload.length)
+            .putString(payload);
         return this._buildAndSend(packet);
     }
 
@@ -2059,8 +2062,20 @@ class SimConnectConnection extends EventEmitter {
             case RecvID.ID_FLOW_EVENT:
                 this.emit('flowEvent', new RecvFlowEvent(data));
                 break;
+            case RecvID.ID_CAMERA_DATA:
+                // TODO
+                break;
+            case RecvID.ID_CAMERA_STATUS:
+                // TODO
+                break;
+            case RecvID.ID_CAMERA_DEFINITION_LIST:
+                // TODO
+                break;
             case RecvID.ID_COMM_BUS:
                 this.emit('commBusEvent', new RecvCommBus(data));
+                break;
+            case RecvID.ID_CAMERA_WORLD_LOCKER:
+                // TODO
                 break;
         }
     }
