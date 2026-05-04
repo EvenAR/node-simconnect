@@ -22,6 +22,7 @@ import {
     RecvAirportList,
     RecvAssignedObjectID,
     RecvCloudState,
+    RecvCameraDefinitionList,
     RecvControllersList,
     RecvCustomAction,
     RecvEnumerateInputEventParams,
@@ -161,6 +162,7 @@ interface SimConnectRecvEvents {
         recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
     ) => void;
     flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
+    cameraDefinitionList: (recvCameraDefinitionList: RecvCameraDefinitionList) => void;
     commBusEvent: (recvCommBus: RecvCommBus) => void;
 }
 
@@ -1869,6 +1871,17 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
+    enumerateCameraDefinitions(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x68);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     subscribeToCommBusEvent(eventId: number, eventName: string): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
@@ -2069,7 +2082,7 @@ class SimConnectConnection extends EventEmitter {
                 // TODO
                 break;
             case RecvID.ID_CAMERA_DEFINITION_LIST:
-                // TODO
+                this.emit('cameraDefinitionList', new RecvCameraDefinitionList(data));
                 break;
             case RecvID.ID_COMM_BUS:
                 this.emit('commBusEvent', new RecvCommBus(data));
