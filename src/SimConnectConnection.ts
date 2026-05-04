@@ -66,6 +66,8 @@ import type { SimConnectMessage } from './SimConnectSocket';
 import Timeout = NodeJS.Timeout;
 import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobjectAndLiveryList';
 import { RecvFlowEvent } from './recv/RecvFlowEvent';
+import { RecvCommBus } from './recv/RecvCommBus';
+import { CommBusBroadcastTo } from './enums/CommBusBroadcastTo';
 
 type OpenPacketData = {
     major: number;
@@ -159,6 +161,7 @@ interface SimConnectRecvEvents {
         recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
     ) => void;
     flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
+    commBusEvent: (recvCommBus: RecvCommBus) => void;
 }
 
 type ConnectionOptions =
@@ -1846,6 +1849,61 @@ class SimConnectConnection extends EventEmitter {
         return this._buildAndSend(packet);
     }
 
+    /**
+     * TODO: implement new camera APIs here
+     *
+     * SimConnect_CameraAcquire: 0x5f
+     * SimConnect_CameraRelease: 0x60
+     * SimConnect_CameraGetStatus: 0x61
+     * SimConnect_CameraSet: 0x62
+     * SimConnect_CameraGet: 0x63
+     * SimConnect_CameraEnableFlag: 0x64
+     * SimConnect_CameraDisableFlag: 0x65
+     * SimConnect_SubscribeToCameraStatusUpdate: 0x66
+     * SimConnect_UnsubscribeToCameraStatusUpdate: 0x67
+     * SimConnect_EnumerateCameraDefinitions: 0x68
+     * SimConnect_CameraSetUsingCameraDefinition: 0x69
+     */
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeToCommBusEvent(eventId: number, eventName: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x6a).putUint32(eventId).putString256(eventName);
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeToCommBusEvent(eventId: number): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x6b).putUint32(eventId);
+
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    callCommBusEvent(eventName: string, broadcastTo: CommBusBroadcastTo, payload: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x6c)
+            .putString256(eventName)
+            .putUint32(broadcastTo)
+            .putUint32(payload.length)
+            .putString(payload);
+        return this._buildAndSend(packet);
+    }
+
     close() {
         if (this._openTimeout !== null) {
             clearTimeout(this._openTimeout);
@@ -2003,6 +2061,21 @@ class SimConnectConnection extends EventEmitter {
                 break;
             case RecvID.ID_FLOW_EVENT:
                 this.emit('flowEvent', new RecvFlowEvent(data));
+                break;
+            case RecvID.ID_CAMERA_DATA:
+                // TODO
+                break;
+            case RecvID.ID_CAMERA_STATUS:
+                // TODO
+                break;
+            case RecvID.ID_CAMERA_DEFINITION_LIST:
+                // TODO
+                break;
+            case RecvID.ID_COMM_BUS:
+                this.emit('commBusEvent', new RecvCommBus(data));
+                break;
+            case RecvID.ID_CAMERA_WORLD_LOCKER:
+                // TODO
                 break;
         }
     }
