@@ -17,3 +17,4 @@ export * from './CommBusBroadcastTo';
 export * from './CameraAvailability';
 export * from './PositionReferential';
 export * from './CameraDataMask';
+export * from './CameraFlag';

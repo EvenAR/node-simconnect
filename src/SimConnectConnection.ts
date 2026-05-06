@@ -73,6 +73,7 @@ import { RecvCommBus } from './recv/RecvCommBus';
 import { CommBusBroadcastTo } from './enums/CommBusBroadcastTo';
 import { CameraData } from './dto/CameraData';
 import { CameraDataMask } from './enums/CameraDataMask';
+import { CameraFlag } from './enums/CameraFlag';
 import { PositionReferential } from './enums';
 
 type OpenPacketData = {
@@ -1892,11 +1893,26 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     * TODO: implement new camera APIs here
      *
-     * SimConnect_CameraEnableFlag: 0x64
-     * SimConnect_CameraDisableFlag: 0x65
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
+    cameraEnableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x64).putUint32(flag);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraDisableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x65).putUint32(flag);
+        return this._buildAndSend(packet);
+    }
 
     /**
      *
