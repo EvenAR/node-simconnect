@@ -18,7 +18,7 @@ Official MSFS docs home:
 ## Enum conventions
 
 -   File names: `PascalCase.ts` (e.g. `CommBusBroadcastTo.ts`), exported from `src/enums/index.ts`.
--   Member names: short `PascalCase` stripping the repetitive C++ prefix (e.g. `SIMCONNECT_COMM_BUS_BROADCAST_TO_JS` → `JS`).
+-   Member names: `SCREAMING_SNAKE_CASE` stripping the repetitive C++ prefix (e.g. `SIMCONNECT_COMM_BUS_BROADCAST_TO_JS` → `JS`, `SIMCONNECT_CAMERA_AVAILABILITY_NOT_ACQUIRED` → `NOT_ACQUIRED`).
 -   Values must exactly match the SDK C++ definitions — use bit-shift literals (`1 << 0`) for flags and composite expressions for combined values.
 
 ## Build & test
