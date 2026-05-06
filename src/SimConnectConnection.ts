@@ -1906,6 +1906,17 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
+    cameraSetUsingCameraDefinition(cameraDefinition: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x69).putString(cameraDefinition, 2048);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
     subscribeToCommBusEvent(eventId: number, eventName: string): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
