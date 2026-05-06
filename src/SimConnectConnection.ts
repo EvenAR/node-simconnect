@@ -23,6 +23,7 @@ import {
     RecvAssignedObjectID,
     RecvCloudState,
     RecvCameraDefinitionList,
+    RecvCameraStatus,
     RecvControllersList,
     RecvCustomAction,
     RecvEnumerateInputEventParams,
@@ -163,6 +164,7 @@ interface SimConnectRecvEvents {
     ) => void;
     flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
     cameraDefinitionList: (recvCameraDefinitionList: RecvCameraDefinitionList) => void;
+    cameraStatus: (recvCameraStatus: RecvCameraStatus) => void;
     commBusEvent: (recvCommBus: RecvCommBus) => void;
 }
 
@@ -1852,6 +1854,28 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraAcquire(clientId: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5f).putString(clientId, 2048);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraRelease(cameraDefName: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x60).putString(cameraDefName, 2048);
+        return this._buildAndSend(packet);
+    }
+
+    /**
      * TODO: implement new camera APIs here
      *
      * SimConnect_CameraAcquire: 0x5f
@@ -2079,7 +2103,7 @@ class SimConnectConnection extends EventEmitter {
                 // TODO
                 break;
             case RecvID.ID_CAMERA_STATUS:
-                // TODO
+                this.emit('cameraStatus', new RecvCameraStatus(data));
                 break;
             case RecvID.ID_CAMERA_DEFINITION_LIST:
                 this.emit('cameraDefinitionList', new RecvCameraDefinitionList(data));

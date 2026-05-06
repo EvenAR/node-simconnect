@@ -35,3 +35,4 @@ export * from './RecvFlowEvent';
 export * from './RecvEnumerateSimobjectAndLiveryList';
 export * from './RecvCommBus';
 export * from './RecvCameraDefinitionList';
+export * from './RecvCameraStatus';
