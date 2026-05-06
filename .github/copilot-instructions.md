@@ -32,6 +32,6 @@ npm run lint    # ESLint + Prettier
 
 -   Pre-commit hook runs `lint-staged` (ESLint fix → Prettier → `tsc --noEmit`).
 
-## Skills / prompt files
+## Skills
 
-See [`.github/prompts/`](.github/prompts/) for reusable Copilot prompt files (skills).
+See [`.github/skills/`](.github/skills/) for reusable Copilot skills.
