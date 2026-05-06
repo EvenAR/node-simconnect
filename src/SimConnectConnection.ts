@@ -1876,19 +1876,25 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraGetStatus(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x61);
+        return this._buildAndSend(packet);
+    }
+
+    /**
      * TODO: implement new camera APIs here
      *
-     * SimConnect_CameraAcquire: 0x5f
-     * SimConnect_CameraRelease: 0x60
-     * SimConnect_CameraGetStatus: 0x61
      * SimConnect_CameraSet: 0x62
      * SimConnect_CameraGet: 0x63
      * SimConnect_CameraEnableFlag: 0x64
      * SimConnect_CameraDisableFlag: 0x65
      * SimConnect_SubscribeToCameraStatusUpdate: 0x66
      * SimConnect_UnsubscribeToCameraStatusUpdate: 0x67
-     * SimConnect_EnumerateCameraDefinitions: 0x68
-     * SimConnect_CameraSetUsingCameraDefinition: 0x69
      */
 
     /**
