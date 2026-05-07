@@ -1896,28 +1896,6 @@ class SimConnectConnection extends EventEmitter {
      *
      * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
-    cameraEnableFlag(flag: CameraFlag): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
-
-        const packet = this._beginPacket(0x64).putUint32(flag);
-        return this._buildAndSend(packet);
-    }
-
-    /**
-     *
-     * @returns sendId of packet (can be used to identify packet when exception event occurs)
-     */
-    cameraDisableFlag(flag: CameraFlag): number {
-        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
-
-        const packet = this._beginPacket(0x65).putUint32(flag);
-        return this._buildAndSend(packet);
-    }
-
-    /**
-     *
-     * @returns sendId of packet (can be used to identify packet when exception event occurs)
-     */
     cameraSet(cameraData: CameraData, dataMask: CameraDataMask): number {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
@@ -1935,6 +1913,28 @@ class SimConnectConnection extends EventEmitter {
         if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
 
         const packet = this._beginPacket(0x63).putUint32(positionReferential);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraEnableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x64).putUint32(flag);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraDisableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x65).putUint32(flag);
         return this._buildAndSend(packet);
     }
 
