@@ -14,3 +14,7 @@ export * from './FacilityDataType';
 export * from './FlowEvent';
 export * from './JetwayStatus';
 export * from './CommBusBroadcastTo';
+export * from './CameraAvailability';
+export * from './PositionReferential';
+export * from './CameraDataMask';
+export * from './CameraFlag';

@@ -5,6 +5,6 @@
     "isolatedModules": true,
     "types": ["node", "jest"]
   },
-  "include": ["src/**/*", "tests/**/*", "utils/**/*"],
+  "include": ["src/**/*", "tests/**/*", "utils/**/*", "samples/**/*"],
   "exclude": ["node_modules", "dist"]
 }

@@ -22,6 +22,9 @@ import {
     RecvAirportList,
     RecvAssignedObjectID,
     RecvCloudState,
+    RecvCameraData,
+    RecvCameraDefinitionList,
+    RecvCameraStatus,
     RecvControllersList,
     RecvCustomAction,
     RecvEnumerateInputEventParams,
@@ -68,6 +71,10 @@ import { RecvEnumerateSimobjectAndLiveryList } from './recv/RecvEnumerateSimobje
 import { RecvFlowEvent } from './recv/RecvFlowEvent';
 import { RecvCommBus } from './recv/RecvCommBus';
 import { CommBusBroadcastTo } from './enums/CommBusBroadcastTo';
+import { CameraData } from './dto/CameraData';
+import { CameraDataMask } from './enums/CameraDataMask';
+import { CameraFlag } from './enums/CameraFlag';
+import { PositionReferential } from './enums';
 
 type OpenPacketData = {
     major: number;
@@ -161,6 +168,9 @@ interface SimConnectRecvEvents {
         recvEnumerateSimobjectAndLiveryList: RecvEnumerateSimobjectAndLiveryList
     ) => void;
     flowEvent: (recvFlowEvent: RecvFlowEvent) => void;
+    cameraData: (recvCameraData: RecvCameraData) => void;
+    cameraDefinitionList: (recvCameraDefinitionList: RecvCameraDefinitionList) => void;
+    cameraStatus: (recvCameraStatus: RecvCameraStatus) => void;
     commBusEvent: (recvCommBus: RecvCommBus) => void;
 }
 
@@ -1850,20 +1860,127 @@ class SimConnectConnection extends EventEmitter {
     }
 
     /**
-     * TODO: implement new camera APIs here
      *
-     * SimConnect_CameraAcquire: 0x5f
-     * SimConnect_CameraRelease: 0x60
-     * SimConnect_CameraGetStatus: 0x61
-     * SimConnect_CameraSet: 0x62
-     * SimConnect_CameraGet: 0x63
-     * SimConnect_CameraEnableFlag: 0x64
-     * SimConnect_CameraDisableFlag: 0x65
-     * SimConnect_SubscribeToCameraStatusUpdate: 0x66
-     * SimConnect_UnsubscribeToCameraStatusUpdate: 0x67
-     * SimConnect_EnumerateCameraDefinitions: 0x68
-     * SimConnect_CameraSetUsingCameraDefinition: 0x69
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
      */
+    cameraAcquire(clientId: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x5f).putString(clientId, 2048);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraRelease(cameraDefName: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x60).putString(cameraDefName, 2048);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraGetStatus(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x61);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraEnableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x64).putUint32(flag);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraDisableFlag(flag: CameraFlag): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x65).putUint32(flag);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraSet(cameraData: CameraData, dataMask: CameraDataMask): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x62);
+        cameraData.writeTo(packet);
+        packet.putUint32(dataMask);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraGet(positionReferential: PositionReferential): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x63).putUint32(positionReferential);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    subscribeToCameraStatusUpdate(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x66);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    unsubscribeToCameraStatusUpdate(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x67);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    enumerateCameraDefinitions(): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x68);
+        return this._buildAndSend(packet);
+    }
+
+    /**
+     *
+     * @returns sendId of packet (can be used to identify packet when exception event occurs)
+     */
+    cameraSetUsingCameraDefinition(cameraDefinition: string): number {
+        if (this._ourProtocol < Protocol.SunRise) throw Error(SimConnectError.BadVersion);
+
+        const packet = this._beginPacket(0x69).putString(cameraDefinition, 2048);
+        return this._buildAndSend(packet);
+    }
 
     /**
      *
@@ -2063,13 +2180,13 @@ class SimConnectConnection extends EventEmitter {
                 this.emit('flowEvent', new RecvFlowEvent(data));
                 break;
             case RecvID.ID_CAMERA_DATA:
-                // TODO
+                this.emit('cameraData', new RecvCameraData(data));
                 break;
             case RecvID.ID_CAMERA_STATUS:
-                // TODO
+                this.emit('cameraStatus', new RecvCameraStatus(data));
                 break;
             case RecvID.ID_CAMERA_DEFINITION_LIST:
-                // TODO
+                this.emit('cameraDefinitionList', new RecvCameraDefinitionList(data));
                 break;
             case RecvID.ID_COMM_BUS:
                 this.emit('commBusEvent', new RecvCommBus(data));
