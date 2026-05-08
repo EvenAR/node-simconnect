@@ -1,5 +1,4 @@
-// Import the necessary type
-import { ObjectId } from './Types';
+import type { ObjectId } from './Types';
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace SimConnectConstants {
@@ -114,7 +113,3 @@ export namespace SimConnectConstants {
     /** @see {@link SimConnectConnection.addToClientDataDefinition} */
     export const CLIENT_DATA_TYPE_FLOAT64 = -6;
 }
-
-module.exports = {
-    SimConnectConstants,
-};

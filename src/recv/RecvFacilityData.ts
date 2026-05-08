@@ -1,6 +1,6 @@
 import { FacilityDataType } from '../enums/FacilityDataType';
 import { RawBuffer } from '../RawBuffer';
-import { DataDefinitionId, DataRequestId } from '../Types';
+import type { DataDefinitionId, DataRequestId } from '../Types';
 
 export class RecvFacilityData {
     userRequestId: DataRequestId;
@@ -20,13 +20,13 @@ export class RecvFacilityData {
     data: RawBuffer;
 
     constructor(data: RawBuffer) {
-        this.userRequestId = data.readInt32();
-        this.uniqueRequestId = data.readInt32();
-        this.parentUniqueRequestId = data.readInt32();
-        this.type = data.readInt32();
-        this.isListItem = data.readInt32() === 1;
-        this.itemIndex = data.readInt32();
-        this.listSize = data.readInt32();
+        this.userRequestId = data.readUint32();
+        this.uniqueRequestId = data.readUint32();
+        this.parentUniqueRequestId = data.readUint32();
+        this.type = data.readUint32();
+        this.isListItem = data.readUint32() === 1;
+        this.itemIndex = data.readUint32();
+        this.listSize = data.readUint32();
         this.data = data;
     }
 }

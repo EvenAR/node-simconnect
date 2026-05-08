@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { ClientEventId, InputGroupId, NotificationGroupId } from '../Types';
+import type { ClientEventId, InputGroupId, NotificationGroupId } from '../Types';
 
 export class RecvEventEx1 {
     groupID: NotificationGroupId | InputGroupId;
@@ -10,14 +10,14 @@ export class RecvEventEx1 {
     data: [number, number, number, number, number];
 
     constructor(data: RawBuffer) {
-        this.groupID = data.readInt32() as NotificationGroupId;
-        this.clientEventId = data.readInt32() as ClientEventId;
+        this.groupID = data.readUint32() as NotificationGroupId;
+        this.clientEventId = data.readUint32() as ClientEventId;
         this.data = [
-            data.readInt32(),
-            data.readInt32(),
-            data.readInt32(),
-            data.readInt32(),
-            data.readInt32(),
+            data.readUint32(),
+            data.readUint32(),
+            data.readUint32(),
+            data.readUint32(),
+            data.readUint32(),
         ];
     }
 }

@@ -10,8 +10,8 @@ export class BaseHelper {
         this._handle = handle;
 
         this._handle.on('exception', recvException => {
-            if (recvException.sendId in this._exceptionHandlers) {
-                const handler = this._exceptionHandlers[recvException.sendId];
+            const handler = this._exceptionHandlers[recvException.sendId];
+            if (handler !== undefined) {
                 handler(recvException.exception);
             }
         });

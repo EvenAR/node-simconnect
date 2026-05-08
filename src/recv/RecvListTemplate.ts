@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId } from '../Types';
+import type { DataRequestId } from '../Types';
 
 export class RecvListTemplate {
     requestID: DataRequestId;
@@ -11,9 +11,9 @@ export class RecvListTemplate {
     outOf: number;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32() as DataRequestId;
-        this.arraySize = data.readInt32();
-        this.entryNumber = data.readInt32();
-        this.outOf = data.readInt32();
+        this.requestID = data.readUint32() as DataRequestId;
+        this.arraySize = data.readUint32();
+        this.entryNumber = data.readUint32();
+        this.outOf = data.readUint32();
     }
 }

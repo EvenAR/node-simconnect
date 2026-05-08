@@ -2,7 +2,7 @@ import { LatLonAlt } from '../dto/LatLonAlt';
 import { PBH } from '../dto/PBH';
 import { JetwayStatus } from '../enums/JetwayStatus';
 import { XYZ } from '../dto/XYZ';
-import { ObjectId } from '../Types';
+import type { ObjectId } from '../Types';
 import { RawBuffer } from '../RawBuffer';
 import { readLatLonAlt, readPBH, readXYZ } from '../dto/bufferHelpers';
 

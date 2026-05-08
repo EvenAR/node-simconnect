@@ -33,7 +33,7 @@ class Waypoint implements SimConnectData {
         this.latitude = buffer.readFloat64();
         this.longitude = buffer.readFloat64();
         this.altitude = buffer.readFloat64();
-        this.flags = buffer.readInt32();
+        this.flags = buffer.readUint32();
         this.speed = buffer.readFloat64();
         this.throttle = buffer.readFloat64();
     }
@@ -43,7 +43,7 @@ class Waypoint implements SimConnectData {
             .putFloat64(this.latitude)
             .putFloat64(this.longitude)
             .putFloat64(this.altitude)
-            .putInt32(this.flags)
+            .putUint32(this.flags)
             .putFloat64(this.speed)
             .putFloat64(this.throttle);
     }

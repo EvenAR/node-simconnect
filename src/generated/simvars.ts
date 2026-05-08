@@ -1,4 +1,4 @@
-import { SimConnectDataType } from '../dist';
+import { SimConnectDataType } from '../enums/SimConnectDataType';
 
 export type PredefinedVariable = {
     name: string;

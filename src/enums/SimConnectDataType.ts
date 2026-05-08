@@ -37,7 +37,3 @@ export enum SimConnectDataType {
     /** enum limit */
     MAX,
 }
-
-module.exports = {
-    SimConnectDataType,
-};

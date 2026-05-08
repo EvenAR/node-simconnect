@@ -1,7 +1,7 @@
 import { Socket } from 'net';
 import { Duplex } from 'stream';
 import { RawBuffer } from './RawBuffer';
-import { ConnectionParameters } from './connectionParameters';
+import type { ConnectionParameters } from './connectionParameters';
 
 const HEADER_LENGTH = 4;
 
@@ -45,6 +45,13 @@ enum RecvID {
     ID_GET_INPUT_EVENT,
     ID_SUBSCRIBE_INPUT_EVENT,
     ID_ENUMERATE_INPUT_EVENT_PARAMS,
+    ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST,
+    ID_FLOW_EVENT,
+    ID_CAMERA_DATA,
+    ID_CAMERA_STATUS,
+    ID_CAMERA_DEFINITION_LIST,
+    ID_COMM_BUS,
+    ID_CAMERA_WORLD_LOCKER,
 }
 
 interface SimConnectMessage {
@@ -109,7 +116,7 @@ class SimConnectSocket extends Duplex {
             const chunk: Buffer | null = this._socket.read();
             if (chunk === null) break;
 
-            this._dataBuffer = Buffer.concat([this._dataBuffer, chunk]);
+            this._dataBuffer = concatBuffers(this._dataBuffer, chunk);
 
             while (this._dataBuffer.length >= HEADER_LENGTH) {
                 const totalMessageSize: number = this._dataBuffer.readInt32LE(0);
@@ -147,8 +154,16 @@ class SimConnectSocket extends Duplex {
     }
 
     _write(data: Buffer, encoding: BufferEncoding, cb: (error?: Error | null) => void) {
-        this._socket.write(data, encoding, cb);
+        this._socket.write(Uint8Array.from(data), encoding, cb);
     }
 }
 
-export { SimConnectSocket, RecvID, SimConnectMessage, ConnectionParameters };
+function concatBuffers(a: Buffer, b: Buffer): Buffer {
+    const combined = Buffer.alloc(a.length + b.length);
+    combined.set(a);
+    combined.set(b, a.length);
+    return combined;
+}
+
+export { SimConnectSocket, RecvID };
+export type { SimConnectMessage, ConnectionParameters };

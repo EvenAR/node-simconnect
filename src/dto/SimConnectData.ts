@@ -6,4 +6,4 @@ interface SimConnectData {
     readonly writeTo: (packetBuilder: SimConnectPacketBuilder) => void;
 }
 
-export { SimConnectData };
+export type { SimConnectData };

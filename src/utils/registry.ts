@@ -9,9 +9,9 @@ export function readRegistryValue(key: string, subKey: string): Promise<string |
             if (err) {
                 reject(new Error(`Failed to read registry value ${key} (${err})`));
             } else {
-                const values = result[key]?.values;
+                const values = result[key]?.values ?? {};
                 if (subKey in values) {
-                    resolve(values[subKey].value as string);
+                    resolve(values[subKey]!.value as string);
                 } else {
                     resolve(undefined);
                 }

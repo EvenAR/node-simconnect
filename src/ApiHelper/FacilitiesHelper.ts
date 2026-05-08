@@ -316,7 +316,7 @@ function readObject<T extends FacilityRequest>(
     let output = {};
     Object.keys(facilityDefinition).forEach((propName: keyof T) => {
         const valueType = facilityDefinition[propName];
-        if (typeof valueType !== 'object') {
+        if (valueType && typeof valueType !== 'object') {
             output = {
                 ...output,
                 [propName]: readSimConnectValue(rawBuffer, valueType),

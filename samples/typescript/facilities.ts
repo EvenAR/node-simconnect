@@ -108,10 +108,10 @@ open('SimConnect sample client', Protocol.KittyHawk)
                     console.log({
                         runway:
                             number1 +
-                            DESIGNATOR_VALUE[designator1] +
+                            DESIGNATOR_VALUE[designator1]!! +
                             '/' +
                             number2 +
-                            DESIGNATOR_VALUE[designator2],
+                            DESIGNATOR_VALUE[designator2]!!,
                         heading,
                         ilsIcao1,
                         ilsIcao2,

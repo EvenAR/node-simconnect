@@ -1,6 +1,7 @@
-import { SimConnectConnection, ConnectionOptions } from './SimConnectConnection';
+import { SimConnectConnection } from './SimConnectConnection';
 import { Protocol } from './enums/Protocol';
-import { RecvOpen } from './recv';
+import type { ConnectionOptions } from './SimConnectConnection';
+import type { RecvOpen } from './recv';
 
 export * from './SimConnectConstants';
 export * from './SimConnectPacketBuilder';
@@ -15,12 +16,11 @@ export * from './dto';
 export * from './ApiHelper';
 export { RawBuffer } from './RawBuffer';
 
-/**
- * @member recvOpen - Information about the flight simulator
- * @member handle - The object used to interact with SimConnect
- */
 export interface OpenEvent {
+    /** Information about the flight simulator. */
     recvOpen: RecvOpen;
+
+    /** The object used to interact with SimConnect. */
     handle: SimConnectConnection;
 }
 

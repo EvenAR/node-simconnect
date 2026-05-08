@@ -1,15 +1,10 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "target": "es2015",
-    "outDir": "./dist",
-    "strict": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "declarationMap": true,
-    "inlineSourceMap": true,
-    "inlineSources": true
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["node", "jest"]
   },
-  "include": ["src/**/*", "tests/**/*", "utils/**/*", "scripts/packetInspectorProxy.ts"]
+  "include": ["src/**/*", "tests/**/*", "utils/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

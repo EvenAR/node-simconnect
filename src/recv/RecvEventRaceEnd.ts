@@ -34,8 +34,8 @@ export class RecvEventRaceEnd extends RecvEvent {
 
     constructor(data: RawBuffer) {
         super(data);
-        this.racerNumber = data.readInt32();
-        this.numberRacers = data.readInt32();
+        this.racerNumber = data.readUint32();
+        this.numberRacers = data.readUint32();
         this.missionGUID = data.readBytes(16);
         this.playerName = data.readString(260);
         this.sessionType = data.readString(260);
@@ -43,6 +43,6 @@ export class RecvEventRaceEnd extends RecvEvent {
         this.playerRole = data.readString(260);
         this.totalTime = data.readFloat64();
         this.penaltyTime = data.readFloat64();
-        this.disqualified = data.readInt32() === 1;
+        this.disqualified = data.readUint32() === 1;
     }
 }

@@ -8,7 +8,7 @@ import { SimObjectType } from '../enums/SimObjectType';
 import { SimConnectException } from '../enums/SimConnectException';
 import { BaseHelper } from './BaseHelper';
 import { JavascriptDataType, readSimConnectValue, writeSimConnectValue } from './utils';
-import { simvarPredefinitions, SimvarPredefinitions } from '../../generated/simvars';
+import { simvarPredefinitions, SimvarPredefinitions } from '../generated/simvars';
 
 export type SimConnectError = {
     message: string;
@@ -150,6 +150,9 @@ class SimulationVariablesHelper extends BaseHelper {
         const rawBuffer = new RawBuffer(0);
 
         vars.forEach((simvar, index) => {
+            if (values[index] == undefined) {
+                throw new Error(`Value for simvar '${simvar.name}' is undefined`);
+            }
             writeSimConnectValue(rawBuffer, values[index], simvar.dataType);
         });
 

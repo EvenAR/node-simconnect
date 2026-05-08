@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId } from '../Types';
+import type { DataRequestId } from '../Types';
 
 export class RecvWeatherObservation {
     requestID: DataRequestId;
@@ -7,7 +7,7 @@ export class RecvWeatherObservation {
     metar: string;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32() as DataRequestId;
+        this.requestID = data.readUint32() as DataRequestId;
         this.metar = data.readStringV();
     }
 }

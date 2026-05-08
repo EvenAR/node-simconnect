@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<SimBase.Document Type="SimConnect" version="1,0">
+    <Filename>SimConnect.xml</Filename>
+    <SimConnect.Comm>
+        <Protocol>IPv4</Protocol>
+        <Scope>local</Scope>
+        <Port>500</Port>
+        <MaxClients>64</MaxClients>
+        <MaxRecvSize>41088</MaxRecvSize>
+        <Address>0.0.0.0</Address>
+    </SimConnect.Comm>
+</SimBase.Document>

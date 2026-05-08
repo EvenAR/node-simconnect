@@ -1,16 +1,16 @@
-import { ApiHelper } from '../../dist/src/apiHelper';
-import { open, Protocol, SimConnectDataType } from '../../dist/src';
+import { FlightSimulatorApi } from '../../dist/ApiHelper';
+import { open, Protocol, SimConnectDataType } from '../../dist';
 
 open('API-helper example', Protocol.KittyHawk)
     .then(async ({ recvOpen, handle }) => {
         console.log('Yay, connected!', recvOpen);
-        await doStuff(new ApiHelper(handle));
+        await doStuff(new FlightSimulatorApi(handle));
     })
     .catch(e => {
         console.log('Unhandled error', e);
     });
 
-async function doStuff(apiHelper: ApiHelper) {
+async function doStuff(apiHelper: FlightSimulatorApi) {
     const { systemEvents, simulationVariables, facilities } = apiHelper;
 
     /** Subscribe to a system event */
@@ -20,10 +20,10 @@ async function doStuff(apiHelper: ApiHelper) {
 
     /** Get a set of simulation variables once */
     const aircraftTitle = await simulationVariables.get('TITLE');
-    const atcMdel = await simulationVariables.get('ATC_MODEL');
-    const fuelOnBoard = await simulationVariables.get('FUEL_TOTAL_QUANTITY');
+    const atcMdel = await simulationVariables.get('ATC MODEL');
+    const fuelOnBoard = await simulationVariables.get('FUEL TOTAL QUANTITY');
     const fuelOnBoardKgs = await simulationVariables.get({
-        name: 'FUEL_TOTAL_QUANTITY',
+        name: 'FUEL TOTAL QUANTITY',
         units: 'kilograms',
         dataType: SimConnectDataType.FLOAT64,
     });
@@ -33,22 +33,21 @@ async function doStuff(apiHelper: ApiHelper) {
     );
 
     /** Get simulation variables whenever they change */
-    simulationVariables.monitor(
-        ['AIRSPEED_INDICATED', 'STRUCT_LATLONALT'],
-        (err, data) => {
-            if (err) {
-                console.log(err);
-            } else if (data) {
-                console.log('Airspeed:', data.AIRSPEED_INDICATED);
-                console.log('Altitude:', data.STRUCT_LATLONALT.altitude);
-            }
+    simulationVariables.watch(
+        ['AIRSPEED INDICATED', 'STRUCT LATLONALT'],
+        simvars => {
+            console.log('Airspeed:', simvars['AIRSPEED INDICATED']);
+            console.log('Altitude:', simvars['STRUCT LATLONALT']);
         },
         { onlyOnChange: true }
     );
 
     /** Set throttles to 50% */
-    simulationVariables.set(['GENERAL ENG THROTTLE LEVER POSITION:1', 50, 'Percent'], err =>
-        console.log(err)
+    simulationVariables.set(
+        { 'GENERAL ENG THROTTLE LEVER POSITION:index': 50 },
+        (
+            err // TODO: Fix index
+        ) => console.log(err)
     );
 
     /**

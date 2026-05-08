@@ -1,5 +1,5 @@
 import { RawBuffer } from '../RawBuffer';
-import { DataRequestId, ObjectId } from '../Types';
+import type { DataRequestId, ObjectId } from '../Types';
 
 export class RecvAssignedObjectID {
     requestID: DataRequestId;
@@ -7,7 +7,7 @@ export class RecvAssignedObjectID {
     objectID: ObjectId;
 
     constructor(data: RawBuffer) {
-        this.requestID = data.readInt32() as DataRequestId;
-        this.objectID = data.readInt32() as ObjectId;
+        this.requestID = data.readUint32() as DataRequestId;
+        this.objectID = data.readUint32() as ObjectId;
     }
 }

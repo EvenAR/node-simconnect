@@ -6,3 +6,6 @@ export * from './FacilityWaypoint';
 export * from './ControllerItem';
 export * from './InputEventDescriptor';
 export * from './JetwayData';
+export * from './EnumerateSimobjectLivery';
+export * from './VersionBaseType';
+export * from './CameraDefinitionItem';

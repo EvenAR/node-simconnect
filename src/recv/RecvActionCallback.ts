@@ -1,6 +1,6 @@
 import { RawBuffer } from '../RawBuffer';
 import { RecvEvent } from './RecvEvent';
-import { DataRequestId } from '../Types';
+import type { DataRequestId } from '../Types';
 
 export class RecvActionCallback extends RecvEvent {
     requestID: DataRequestId;
@@ -10,6 +10,6 @@ export class RecvActionCallback extends RecvEvent {
     constructor(data: RawBuffer) {
         super(data);
         this.actionID = data.readString260();
-        this.requestID = data.readInt32();
+        this.requestID = data.readUint32();
     }
 }

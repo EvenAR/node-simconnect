@@ -30,7 +30,3 @@ export enum TextResult {
     /**   Specifies that the menu or text identified by the EventID has timed-out and is no longer on display. */
     TIMEOUT = 0x00010004,
 }
-
-module.exports = {
-    TextResult,
-};

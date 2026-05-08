@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
-import { outdent } from 'outdent'; // TODO: this should be part of dev dependencies
-import { SimConnectDataType } from '../../index';
+import { outdent } from 'outdent';
+import { SimConnectDataType } from '../src/index';
 
 /**
  * Running manually:
@@ -50,7 +50,7 @@ async function clone() {
 
     const fileContent = createOutputFile(allSimvars);
 
-    fs.writeFile('generated/simvars.ts', fileContent, err => {
+    fs.writeFile('src/generated/simvars.ts', fileContent, err => {
         if (err) {
             console.error(err);
         }
@@ -124,7 +124,7 @@ function createOutputFile(simvars: { [key: string]: SimvarSpecs }) {
     });
 
     return outdent`
-        import { SimConnectDataType } from '../dist';
+        import { SimConnectDataType } from '../enums/SimConnectDataType';
         
         export type PredefinedVariable = {
             name: string;
