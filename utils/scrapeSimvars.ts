@@ -127,9 +127,12 @@ async function extractTables(url: string): Promise<SimvarSpecs[]> {
 }
 
 function correctUnits(originalValue: string): string {
-    if (originalValue.toUpperCase() === 'STRING') return '';
+    if (originalValue.toUpperCase().includes('STRING')) return '';
     if (originalValue.toUpperCase().includes('STRUCT')) return '';
-    return originalValue;
+    return originalValue
+        .replace(':', '')
+        .replace(/\s*\([^)]*\)?/g, '')
+        .trim();
 }
 
 function inferTypeFromUnit(type: string): SimConnectDataType {
