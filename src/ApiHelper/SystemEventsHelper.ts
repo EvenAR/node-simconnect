@@ -1,67 +1,76 @@
 import { SimConnectConnection } from '../SimConnectConnection';
-import { BaseHelper } from './BaseHelper';
+import { SimConnectHelperBase } from './BaseHelper';
 
-export class SystemEventsHelper extends BaseHelper {
-    private _nextClientEventId;
+export type SystemEventHandler = (data: number) => void;
 
-    private readonly _subscriptions: { [systemEventName: string]: EventSubscription };
+type Subscription = {
+    id: number;
+    listeners: SystemEventHandler[];
+};
+
+export class SystemEventsHelper extends SimConnectHelperBase {
+    private _nextClientEventId = 0;
+    private readonly _subscriptions = new Map<string, Subscription>();
 
     constructor(handle: SimConnectConnection) {
         super(handle);
-        this._nextClientEventId = 0;
-        this._subscriptions = {};
-
         handle.on('event', event => {
-            Object.values(this._subscriptions).forEach(subscription => {
-                if (event.clientEventId === subscription.clientEventId) {
-                    subscription.eventHandlers.forEach(eventHandler => {
-                        eventHandler(event.data);
-                    });
+            for (const [, sub] of this._subscriptions) {
+                if (event.clientEventId === sub.id) {
+                    sub.listeners.forEach(l => l(event.data));
+                    break;
                 }
-            });
+            }
         });
     }
 
-    addEventListener(systemEventName: string, eventHandler: SystemEventHandler) {
-        const existingSub = this._subscriptions[systemEventName];
-        if (existingSub) {
-            existingSub.eventHandlers.push(eventHandler);
+    on(eventName: string, listener: SystemEventHandler): this {
+        const sub = this._subscriptions.get(eventName);
+        if (sub) {
+            sub.listeners.push(listener);
         } else {
-            this._subscriptions[systemEventName] = {
-                clientEventId: this._nextClientEventId,
-                eventHandlers: [eventHandler],
-            };
-            const sendId = this._handle.subscribeToSystemEvent(
-                this._nextClientEventId,
-                systemEventName
-            );
-            this._nextClientEventId++;
+            const id = this._nextClientEventId++;
+            this._subscriptions.set(eventName, { id, listeners: [listener] });
+            const sendId = this._handle.subscribeToSystemEvent(id, eventName);
             this._checkForException(sendId, ex => {
-                throw Error(`Subscription for system event '${systemEventName}' failed: ${ex}`);
+                throw Error(`Subscription for system event '${eventName}' failed: ${ex}`);
             });
         }
+        return this;
     }
 
-    removeEventListener(systemEventName: string, eventHandler?: SystemEventHandler) {
-        const sub = this._subscriptions[systemEventName];
-        if (!sub) {
-            throw Error(`No subscription exists for system event '${systemEventName}'`);
+    off(eventName: string, listener: SystemEventHandler): this {
+        const sub = this._subscriptions.get(eventName);
+        if (!sub) return this;
+        sub.listeners = sub.listeners.filter(l => l !== listener);
+        if (sub.listeners.length === 0) {
+            this._unsubscribe(eventName, sub.id);
         }
+        return this;
+    }
 
-        sub.eventHandlers = eventHandler ? sub.eventHandlers.filter(cb => eventHandler !== cb) : [];
-        if (sub.eventHandlers.length === 0) {
-            const sendId = this._handle.unsubscribeFromSystemEvent(sub.clientEventId);
-            delete this._subscriptions[systemEventName];
-            this._checkForException(sendId, ex => {
-                throw Error(`Unsubscription for system event '${systemEventName}' failed: ${ex}`);
-            });
+    once(eventName: string, listener: SystemEventHandler): this {
+        const wrapped: SystemEventHandler = data => {
+            listener(data);
+            this.off(eventName, wrapped);
+        };
+        return this.on(eventName, wrapped);
+    }
+
+    removeAllListeners(eventName?: string): this {
+        const names = eventName ? [eventName] : [...this._subscriptions.keys()];
+        for (const name of names) {
+            const sub = this._subscriptions.get(name);
+            if (sub) this._unsubscribe(name, sub.id);
         }
+        return this;
+    }
+
+    private _unsubscribe(eventName: string, id: number) {
+        const sendId = this._handle.unsubscribeFromSystemEvent(id);
+        this._subscriptions.delete(eventName);
+        this._checkForException(sendId, ex => {
+            throw Error(`Unsubscription for system event '${eventName}' failed: ${ex}`);
+        });
     }
 }
-
-type SystemEventHandler = (data: number) => void;
-
-type EventSubscription = {
-    clientEventId: number;
-    eventHandlers: SystemEventHandler[];
-};

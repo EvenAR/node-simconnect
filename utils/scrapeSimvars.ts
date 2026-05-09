@@ -62,30 +62,66 @@ async function clone() {
     });
 }
 
+const EXPECTED_COLUMNS = [
+    'Simulation Variable',
+    'Index',
+    'Description',
+    'Units',
+    'Settable',
+] as const;
+type ColumnName = (typeof EXPECTED_COLUMNS)[number];
+
 async function extractTables(url: string): Promise<SimvarSpecs[]> {
     const xml = await fetch(url).then(res => res.text());
     const $ = cheerio.load(xml);
-    const rows = $('table:has(th:contains("Simulation Variable")) tr:has(td)');
+    const tables = $('table:has(th:contains("Simulation Variable"))');
 
     const output: SimvarSpecs[] = [];
 
-    for (let i = 0; i < rows.length; i++) {
-        // Process the rows and create arrays per row
-        const cells = $(rows[i]).find('td');
-        const settable = $(cells).find('span.checkmark_circle_red').length === 0;
+    tables.each((_, table) => {
+        // Build column name → index map from header row
+        const colIndex: Partial<Record<ColumnName, number>> = {};
+        $(table)
+            .find('tr:has(th)')
+            .first()
+            .find('th')
+            .each((i, th) => {
+                const name = $(th).text().trim() as ColumnName;
+                if (EXPECTED_COLUMNS.includes(name)) {
+                    colIndex[name] = i;
+                }
+            });
 
-        const simvarNames = $(cells[0]).text().split('\n');
-        simvarNames.forEach((name: string) =>
-            output.push({
-                name: name.trim(),
-                description: $(cells[1]).html() || '',
-                units: correctUnits($(cells[3]).text()),
-                type: inferTypeFromUnit($(cells[3]).text()),
-                settable,
-                supportsIndex: $(cells[1]).text().includes('N/A') === false,
-            })
-        );
-    }
+        const missing = EXPECTED_COLUMNS.filter(col => colIndex[col] === undefined);
+        if (missing.length > 0) {
+            console.warn(`[${url}] Missing columns: ${missing.join(', ')}`);
+        }
+
+        $(table)
+            .find('tr:has(td)')
+            .each((_, row) => {
+                const cells = $(row).find('td');
+                const get = (col: ColumnName) => cells.eq(colIndex[col] ?? -1);
+
+                const settable = get('Settable').find('span.checkmark_circle_red').length === 0;
+                const unitsText = get('Units').text();
+                const indexText = get('Index').text();
+
+                const simvarNames = get('Simulation Variable').text().split('\n');
+                simvarNames.forEach((name: string) => {
+                    const trimmed = name.trim();
+                    if (!trimmed) return;
+                    output.push({
+                        name: trimmed,
+                        description: get('Description').html() || '',
+                        units: correctUnits(unitsText),
+                        type: inferTypeFromUnit(unitsText),
+                        settable,
+                        supportsIndex: indexText.trim() !== 'N/A',
+                    });
+                });
+            });
+    });
 
     return output;
 }

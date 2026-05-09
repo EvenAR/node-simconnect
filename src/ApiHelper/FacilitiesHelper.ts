@@ -1,4 +1,4 @@
-import { BaseHelper } from './BaseHelper';
+import { SimConnectHelperBase } from './BaseHelper';
 import { SimConnectConnection } from '../SimConnectConnection';
 import { SimConnectDataType } from '../enums/SimConnectDataType';
 import { FacilityReturnType, JavascriptDataType, readSimConnectValue } from './utils';
@@ -17,7 +17,7 @@ import {
     RecvWaypointList,
 } from '../recv';
 
-export class FacilitiesHelper extends BaseHelper {
+export class FacilitiesHelper extends SimConnectHelperBase {
     private _nextFacilityDefinition: number;
 
     private _nextRequestId: number;
