@@ -18,7 +18,7 @@ export type SimConnectError = {
 type RequestedSimulationVariable =
     | CustomSimulationVariableRequest
     | keyof SimvarPredefinitions
-    | `${IndexedSimvarKey}:${number}`;
+    | `${string}:${number}`;
 
 /**
  * Used for requesting a simulation variable that is not predefined, or for requesting a predefined variable with different units.
@@ -56,7 +56,9 @@ type SimulationVariableType<Var extends RequestedSimulationVariable> =
                     : never]
               : never
           : Var extends CustomSimulationVariableRequest
-            ? JavascriptDataType[Var['dataType']]
+            ? Var['dataType'] extends infer D extends keyof JavascriptDataType
+                ? JavascriptDataType[D]
+                : unknown
             : never;
 
 /**
@@ -98,6 +100,33 @@ type SetValue<K extends SetKey> = K extends `${infer Base}:${number}`
 
 type VariablesToSet<T extends SetKey> = { [K in T]: SetValue<K> };
 
+type ValidateSimvars<
+    T extends readonly RequestedSimulationVariable[],
+    SeenNames extends string = never,
+> = T extends readonly [
+    infer Head extends RequestedSimulationVariable,
+    ...infer Rest extends readonly RequestedSimulationVariable[],
+]
+    ? Head extends `${infer Base}:${number}`
+        ? Base extends IndexedSimvarKey
+            ? SimulationVariableName<Head> extends SeenNames
+                ? [
+                      { error: `Duplicate simulation variable: '${SimulationVariableName<Head>}'` },
+                      ...ValidateSimvars<Rest, SeenNames>,
+                  ]
+                : [Head, ...ValidateSimvars<Rest, SeenNames | SimulationVariableName<Head>>]
+            : [
+                  { error: `'${Base}' does not support indexing` },
+                  ...ValidateSimvars<Rest, SeenNames>,
+              ]
+        : SimulationVariableName<Head> extends SeenNames
+          ? [
+                { error: `Duplicate simulation variable: '${SimulationVariableName<Head>}'` },
+                ...ValidateSimvars<Rest, SeenNames>,
+            ]
+          : [Head, ...ValidateSimvars<Rest, SeenNames | SimulationVariableName<Head>>]
+    : [];
+
 class SimulationVariablesHelper extends SimConnectHelperBase {
     private _nextDataDefinitionId: number;
 
@@ -118,9 +147,12 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
         simulationVariable: T,
         simObjectId: number = SimConnectConstants.OBJECT_ID_USER
     ) {
-        return this.getAll([simulationVariable], simObjectId).then(
-            data => Object.values(data)[0] as SimulationVariableType<T>
-        );
+        // Single element can never be a duplicate; cast bypasses the tuple constraint
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (this.getAll as (...args: any[]) => Promise<VariablesResponse<T>>)(
+            [simulationVariable],
+            simObjectId
+        ).then(data => Object.values(data)[0] as SimulationVariableType<T>);
     }
 
     /**
@@ -128,10 +160,10 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
      * @param simulationVariables The variables to retrieve
      * @param simObjectId Defaults to the user's aircraft
      */
-    async getAll<const T extends RequestedSimulationVariable>(
-        simulationVariables: T[],
+    async getAll<const T extends RequestedSimulationVariable[]>(
+        simulationVariables: T & [...ValidateSimvars<T>],
         simObjectId: number = SimConnectConstants.OBJECT_ID_USER
-    ): Promise<VariablesResponse<T>> {
+    ): Promise<VariablesResponse<T[number]>> {
         return new Promise((resolve, reject) => {
             let hasFailed = false;
             const simulationVariableRequests = simulationVariables.map(
@@ -144,22 +176,34 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
                 period: SimConnectPeriod.ONCE,
                 errorHandler: error => {
                     hasFailed = true;
+                    this._handle.off('simObjectData', onSimObjectData);
                     reject(error);
                     this._handle.clearDataDefinition(sub.defineId);
                 },
             });
-            this._handle.once('simObjectData', recvSimObjectData => {
+
+            const onSimObjectData = (recvSimObjectData: {
+                requestID: number;
+                defineID: number;
+                data: RawBuffer;
+            }) => {
                 if (
-                    !hasFailed &&
                     sub.requestId === recvSimObjectData.requestID &&
                     sub.defineId === recvSimObjectData.defineID
                 ) {
-                    resolve(
-                        extractVariablesFromBuffer(simulationVariables, recvSimObjectData.data)
-                    );
-                    this._handle.clearDataDefinition(sub.defineId);
+                    this._handle.off('simObjectData', onSimObjectData);
+                    if (!hasFailed) {
+                        resolve(
+                            extractVariablesFromBuffer(
+                                simulationVariables as RequestedSimulationVariable[],
+                                recvSimObjectData.data
+                            ) as VariablesResponse<T[number]>
+                        );
+                        this._handle.clearDataDefinition(sub.defineId);
+                    }
                 }
-            });
+            };
+            this._handle.on('simObjectData', onSimObjectData);
         });
     }
 
@@ -200,8 +244,8 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
             }
             writeSimConnectValue(
                 rawBuffer,
-                rawValues[i] as JavascriptDataType[typeof request.dataType],
-                request.dataType
+                rawValues[i] as JavascriptDataType[SimConnectDataType],
+                request.dataType!
             );
         });
 
@@ -232,9 +276,9 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
      * @param options.simObjectId Defaults to the user's aircraft
      * @param options.period Defaults to SimConnectPeriod.SIM_FRAME
      */
-    watch<const T extends RequestedSimulationVariable>(
-        simulationVariables: T[],
-        onData: (simulationVariables: VariablesResponse<T>) => void,
+    watch<const T extends RequestedSimulationVariable[]>(
+        simulationVariables: T & [...ValidateSimvars<T>],
+        onData: (simulationVariables: VariablesResponse<T[number]>) => void,
         options?: {
             onlyOnChange?: boolean;
             simObjectId?: number;
@@ -274,7 +318,7 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
                     extractVariablesFromBuffer(
                         simulationVariableRequests,
                         recvSimObjectData.data
-                    ) as VariablesResponse<T>
+                    ) as VariablesResponse<T[number]>
                 );
             }
         });
@@ -287,11 +331,11 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
      * @param simulationVariables The variables to watch
      * @param onData Called when the variables change
      */
-    watchObjects<const T extends RequestedSimulationVariable>(
+    watchObjects<const T extends RequestedSimulationVariable[]>(
         simobjectType: SimObjectType,
         radiusMeters: number,
-        simulationVariables: T[],
-        onData: (simulationVariables: VariablesResponse<T>) => void
+        simulationVariables: T & [...ValidateSimvars<T>],
+        onData: (simulationVariables: VariablesResponse<T[number]>) => void
     ) {
         const simulationVariableRequests = simulationVariables.map(
             toStandardizedSimulationVariableRequest
@@ -313,7 +357,12 @@ class SimulationVariablesHelper extends SimConnectHelperBase {
                 sub.requestId === recvSimObjectData.requestID &&
                 sub.defineId === recvSimObjectData.defineID
             ) {
-                onData(extractVariablesFromBuffer(simulationVariables, recvSimObjectData.data));
+                onData(
+                    extractVariablesFromBuffer(
+                        simulationVariables as RequestedSimulationVariable[],
+                        recvSimObjectData.data
+                    ) as VariablesResponse<T[number]>
+                );
                 // this._handle.clearDataDefinition(sub.defineId);
             }
         });
