@@ -14,6 +14,7 @@ type SimvarSpecs = {
     units: string;
     type: SimConnectDataType;
     settable: boolean;
+    supportsIndex: boolean;
 };
 
 async function clone() {
@@ -28,15 +29,18 @@ async function clone() {
         'Aircraft_SimVars/Aircraft_Misc_Variables.htm',
         'Aircraft_SimVars/Aircraft_RadioNavigation_Variables.htm',
         'Aircraft_SimVars/Aircraft_System_Variables.htm',
-        'Helicopter_Variables.htm',
-        'Camera_Variables.htm',
+        'Aircraft_SimVars/Helicopter_Variables.htm',
+        'Aircraft_SimVars/Balloon_Variables.htm',
         'Miscellaneous_Variables.htm',
         'Services_Variables.htm',
+        'Camera_Variables.htm',
     ];
 
     const results = await Promise.all(
         pages.map(async url =>
-            extractTables(`https://docs.flightsimulator.com/html/Programming_Tools/SimVars/${url}`)
+            extractTables(
+                `https://docs.flightsimulator.com/msfs2024/html/6_Programming_APIs/SimVars/${url}`
+            )
         )
     );
 
@@ -71,13 +75,14 @@ async function extractTables(url: string): Promise<SimvarSpecs[]> {
         const settable = $(cells).find('span.checkmark_circle_red').length === 0;
 
         const simvarNames = $(cells[0]).text().split('\n');
-        simvarNames.forEach(name =>
+        simvarNames.forEach((name: string) =>
             output.push({
                 name: name.trim(),
                 description: $(cells[1]).html() || '',
-                units: correctUnits($(cells[2]).text()),
-                type: inferTypeFromUnit($(cells[2]).text()),
+                units: correctUnits($(cells[3]).text()),
+                type: inferTypeFromUnit($(cells[3]).text()),
                 settable,
+                supportsIndex: $(cells[1]).text().includes('N/A') === false,
             })
         );
     }
@@ -113,12 +118,12 @@ function createOutputFile(simvars: { [key: string]: SimvarSpecs }) {
     Object.values(simvars).forEach(simvar => {
         output += outdent({ trimTrailingNewline: false })`
             ${outdent}
-                /** ${simvar.description} */
                 '${simvar.name}': {
                     name: '${simvar.name}',
                     units: '${simvar.units.split('\n')[0]}',
                     dataType: SimConnectDataType.${SimConnectDataType[simvar.type]},
                     settable: ${simvar.settable},
+                    supportsIndex: ${simvar.supportsIndex},
                 },
             `;
     });
@@ -131,6 +136,7 @@ function createOutputFile(simvars: { [key: string]: SimvarSpecs }) {
             units: string;
             dataType: SimConnectDataType;
             settable: boolean;
+            supportsIndex: boolean;
         };
         
         export const simvarPredefinitions = {
