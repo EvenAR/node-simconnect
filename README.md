@@ -3,15 +3,19 @@
 [![npm version](https://badge.fury.io/js/node-simconnect.svg)](https://badge.fury.io/js/node-simconnect)
 [![Strict TypeScript Checked](https://badgen.net/badge/TS/Strict 'Strict TypeScript Checked')](https://www.typescriptlang.org)
 
-A non-official SimConnect client library written in TypeScript. Lets you write Node.js applications that communicates directly with Microsoft Flight Simulator, FSX and Prepar3D without need for additional SDK files. Runs on Windows, Linux and Mac.
+Integrate your Node.js application with Microsoft Flight Simulator (X, 2020, 2024) and Prepar3D.
 
-This project is a port of the Java client library
-[jsimconnect](https://github.com/mharj/jsimconnect), originally written by
-[lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581). Details about the protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description). A huge thanks to everyone involved in that project! :pray:
+- ⚡ **Pure SimConnect over TCP or Windows named pipes**: communicates directly with the SimConnect protocol. No additional server, SDK files or middleware is required.
+- 🔌 **Cross-platform**: works on Windows, macOS, and Linux. The simulator must run on Windows, but your Node.js app can run anywhere Node.js runs (including Raspberry Pi and Electron).
+- 🧩 **Full TypeScript implementation**: while many community clients are bindings to the official SimConnect SDK, `node-simconnect` implements the client side directly in TypeScript.
+
+> [!NOTE]
+> `node-simconnect` is not an official Microsoft product and is not affiliated with Microsoft. It is an open-source project developed by the community.
+
+> [!IMPORTANT]
+> The SimConnect API evolves frequently with new Microsoft Flight Simulator releases, and `node-simconnect` strives to stay up to date as new features become available.
 
 ## Installation and use
-
-> :bulb: Tip: check out the [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper) which provides a more user-friendly wrapper around some of the `node-simconnect` APIs.
 
 1. `npm install node-simconnect`
 2. Check out the [/samples](https://github.com/EvenAR/node-simconnect/tree/master/samples) folder for example scripts.
@@ -61,15 +65,22 @@ open('My SimConnect client', Protocol.FSX_SP2)
     });
 ```
 
+
+> [!NOTE]
+> The protocol is forward compatible, so you can use the same protocol version for all Microsoft Flight Simulator releases. For example, `Protocol.FSX_SP2` will work for MSFS 2020 and MSFS 2024, although it limits you to the features available in FSX SP2. See the table below for more details on protocol versions.
+>
+>| Protocol | Description |
+>|---|---|
+>| `FSX_SP1` | FSX Service Pack 1. Original protocol version for FSX. |
+>| `FSX_SP2` | FSX Service Pack 2. Recommended for broadest compatibility. |
+>| `KittyHawk` | MSFS 2020 |
+>| `SunRise` | MSFS 2024 |
+
 ## node-simconnect vs the official API
 
 ### Supported APIs
 
-Most of the APIs described in the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) are implemented in `node-simconnect`. For information on how each feature works, please refer to the official documentation.
-
-Several new features have been added to the SimConnect API after the new Microsoft Flight Simulator was released, and more features are likely to come. Most of these will only be implemented on request. If you are missing any features in `node-simconnect` feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
-
-Prepar3D support and Prepar3D-only-features will not be prioritized.
+Most of the APIs described in the [official SimConnect documentation](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_API_Reference.htm) are implemented in `node-simconnect`. For information on how each feature works, please refer to the official documentation. If you are missing any features in `node-simconnect` feel free to [open a new issue](https://github.com/EvenAR/node-simconnect/issues) or create a pull request.
 
 For a complete list of available API methods, please refer to the [`SimConnectConnection`](https://evenar.github.io/node-simconnect/classes/SimConnectConnection.html) class.
 
@@ -195,3 +206,14 @@ Note that if no connection options are specified, `node-simconnect` will auto-di
 1. Look for a [`SimConnect.cfg`](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_CFG_Definition.htm) in the user's home directory (`%USERPROFILE%`, eg. `C:\Users\<username>`)
 1. Look for a named pipe in the Windows registry, automatically set by the simulator
 1. Look for a port number in the Windows registry, automatically set by the simulator. node-simconnect will then connect to `localhost:<port>`.
+
+
+## Background
+
+This project is a port of the Java client library
+[jsimconnect](https://github.com/mharj/jsimconnect), originally written by
+[lc0277](https://www.fsdeveloper.com/forum/members/lc0277.1581). Details about the SimConnect protocol can be found on [lc0277's old website](http://web.archive.org/web/20090620063532/http://lc0277.nerim.net/jsimconnect/doc/flightsim/simconnect/package-summary.html#package_description). A huge thanks to everyone involved in that project! 🙏
+
+`node-simconnect` was originally created to power a cross-platform virtual-airline flight tracker, and later grew into a general-purpose SimConnect library for Node.js.
+
+The `node-simconnect` API mirrors the official SimConnect C/C++ SDK closely. This means developers familiar with the official SDK docs will recognize the same method names and patterns, and new SimConnect features are straightforward to implement. Note that an optional higher-level API is under development. In the meantime, if you want a more user-friendly API (including less manual data unwrapping), check out [msfs-simconnect-api-wrapper](https://www.npmjs.com/package/msfs-simconnect-api-wrapper), which supports some of the features.
