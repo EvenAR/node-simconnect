@@ -9,11 +9,7 @@ Integrate your Node.js application with Microsoft Flight Simulator (X, 2020, 202
 - 🔌 **Cross-platform**: works on Windows, macOS, and Linux. The simulator must run on Windows, but your Node.js app can run anywhere Node.js runs (including Raspberry Pi and Electron).
 - 🧩 **Full TypeScript implementation**: while many community clients are bindings to the official SimConnect SDK, `node-simconnect` implements the client side directly in TypeScript.
 
-> [!NOTE]
-> `node-simconnect` is not an official Microsoft product and is not affiliated with Microsoft. It is an open-source project developed by the community.
-
-> [!IMPORTANT]
-> The SimConnect API evolves frequently with new Microsoft Flight Simulator releases, and `node-simconnect` strives to stay up to date as new features become available.
+`node-simconnect` is a community-developed, open-source project and is not an official Microsoft product. The SimConnect API evolves frequently with new Microsoft Flight Simulator releases, and this library aims to stay current with new features.
 
 ## Installation and use
 
