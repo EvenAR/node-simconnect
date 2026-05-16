@@ -71,10 +71,10 @@ open('My SimConnect client', Protocol.FSX_SP2)
 >
 >| Protocol | Description |
 >|---|---|
->| `FSX_SP1` | FSX Service Pack 1. Original protocol version for FSX. |
->| `FSX_SP2` | FSX Service Pack 2. Recommended for broadest compatibility. |
->| `KittyHawk` | MSFS 2020 |
->| `SunRise` | MSFS 2024 |
+>| `FSX_SP1` | FSX SP1, FSX SP2, MSFS 2020, MSFS 2024 and newer. |
+>| `FSX_SP2` | FSX SP2, MSFS 2020, MSFS 2024 and newer. |
+>| `KittyHawk` | MSFS 2020, MSFS 2024 and newer. |
+>| `SunRise` | MSFS 2024 and newer. |
 
 ## node-simconnect vs the official API
 
@@ -172,7 +172,7 @@ To connect from an external computer you must configure SimConnect to accept con
 
 1. Open `SimConnect.xml`. Where this file is located depends on your sim version:
    - MSFS 2024: [refer to offical docs](https://docs.flightsimulator.com/msfs2024/flighting/html/6_Programming_APIs/SimConnect/SimConnect_XML_Definition.htm)
-   - MSFS 2020: [refer to offical docs](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_XML_Definition.htm).
+   - MSFS 2020: [refer to offical docs](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_XML_Definition.htm)
    - FSX steam edition: `C:\Users\<USER>\AppData\Roaming\Microsoft\FSX`
 
 1. Set property `<Address>0.0.0.0</Address>`. Example of a working SimConnect.xml file:
