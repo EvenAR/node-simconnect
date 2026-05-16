@@ -170,10 +170,10 @@ If the Node.js application runs on the same computer as the flight simulator you
 
 To connect from an external computer you must configure SimConnect to accept connections from other hosts. This procedure is also described in the official docs, but here is the short version:
 
-1. Open `SimConnect.xml`.
-
-    - FSX: `X:\Users\<USER>\AppData\Roaming\Microsoft\FSX`
-    - MSFS: `X:\Users\<USER>\AppData\Local\Packages\Microsoft.FlightSimulator_**********\LocalCache`.
+1. Open `SimConnect.xml`. Please refer to the offical documentation for where to locate this file:
+   - MSFS 2024: [refer to offical docs](https://docs.flightsimulator.com/msfs2024/flighting/html/6_Programming_APIs/SimConnect/SimConnect_XML_Definition.htm)
+   - MSFS 2020: [refer to offical docs](https://docs.flightsimulator.com/html/Programming_Tools/SimConnect/SimConnect_XML_Definition.htm).
+   - FSX steam edition: `C:\Users\<USER>\AppData\Roaming\Microsoft\FSX`
 
 1. Set property `<Address>0.0.0.0</Address>`. Example of a working SimConnect.xml file:
 
