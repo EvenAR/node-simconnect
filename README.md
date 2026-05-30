@@ -9,7 +9,18 @@ Integrate your Node.js application with Microsoft Flight Simulator (X, 2020, 202
 - 🔌 **Cross-platform**: works on Windows, macOS, and Linux. The simulator must run on Windows, but your Node.js app can run anywhere Node.js runs (including Raspberry Pi and Electron).
 - 🧩 **Full TypeScript implementation**: while many community clients are bindings to the official SimConnect SDK, `node-simconnect` implements the client side directly in TypeScript.
 
-`node-simconnect` is a community-developed, open-source project and is not an official Microsoft product. The SimConnect API evolves frequently with new Microsoft Flight Simulator releases, and this library aims to stay current with new features.
+Typical use cases include flight tracking applications, virtual airline clients, traffic injection tools, and hardware integrations. 
+
+✈️ Projects built with `node-simconnect` include:
+
+- **[FSLTL Injector](https://fslivetrafficliveries.com/user-guide/)** – live traffic injection for Microsoft Flight Simulator.
+- **[Virtual Norwegian Pilot Client](https://www.virtualnorwegian.net/client)** – cross-platform pilot client for the Virtual Norwegian virtual airline.
+- **[External CDU for PMDG aircraft and the Asobo ATR](https://github.com/EvenAR/node-simconnect/discussions/109)**
+
+🛠️ *Building something with `node-simconnect`? Feel free to open a PR and add your project to the list.*
+
+> [!NOTE]
+> `node-simconnect` is a community-developed, open-source project and is not an official Microsoft product. The SimConnect API evolves frequently with new Microsoft Flight Simulator releases, and this library aims to stay current with new features.
 
 ## Installation and use
 
