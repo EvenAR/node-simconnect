@@ -15,7 +15,7 @@ Typical use cases include flight tracking applications, virtual airline clients,
 
 - **[FSLTL Injector](https://fslivetrafficliveries.com/user-guide/)** – live traffic injection for Microsoft Flight Simulator.
 - **[Virtual Norwegian Pilot Client](https://www.virtualnorwegian.net/client)** – cross-platform pilot client for the Virtual Norwegian virtual airline.
-- **[External CDU for PMDG aircraft and the Asobo ATR](https://github.com/EvenAR/node-simconnect/discussions/109)**
+- **[External CDU for the Asobo ATR](https://flightsim.to/addon/78075/msfs-atr-cdu)**
 
 🛠️ *Building something with `node-simconnect`? Feel free to open a PR and add your project to the list.*
 
