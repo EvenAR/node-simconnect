@@ -1,10 +1,5 @@
 export * from './bufferHelpers';
-export * from './icao';
-export * from './InitPosition';
-export * from './LatLonAlt';
-export * from './MarkerState';
-export * from './PBH';
+export type { IcaoType } from './icao';
 export * from './SimConnectData';
-export * from './Waypoint';
-export * from './XYZ';
-export * from './CameraData';
+// DTOs re-exported from generated spec — do not edit by hand.
+export * from '../generated/dto/index';

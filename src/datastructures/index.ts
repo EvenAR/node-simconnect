@@ -1,11 +1,2 @@
-export * from './FacilityAirport';
-export * from './FacilityNDB';
-export * from './FacilityMinimal';
-export * from './FacilityVOR';
-export * from './FacilityWaypoint';
-export * from './ControllerItem';
-export * from './InputEventDescriptor';
-export * from './JetwayData';
-export * from './EnumerateSimobjectLivery';
-export * from './VersionBaseType';
-export * from './CameraDefinitionItem';
+// Re-exported from generated spec — do not edit by hand.
+export * from '../generated/datastructures/index';

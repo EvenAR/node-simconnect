@@ -1,4 +1,5 @@
-import { Icao, LatLonAlt, readLatLonAlt } from '../dto';
+import { LatLonAlt, readLatLonAlt } from '../dto';
+import { Icao } from '../generated/datastructures/Icao';
 import { RawBuffer } from '../RawBuffer';
 import { Protocol } from '../enums/Protocol';
 

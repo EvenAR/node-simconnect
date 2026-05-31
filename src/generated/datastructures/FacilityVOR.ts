@@ -1,0 +1,50 @@
+// AUTO-GENERATED — do not edit by hand.
+// Re-generate with:  node tools/codegen/ts-gen.cjs
+
+import { RawBuffer } from '../../RawBuffer';
+import { Protocol } from '../enums/Protocol';
+import { FacilityNDB } from './FacilityNDB';
+
+export class FacilityVOR extends FacilityNDB {
+    public static HAS_NAV_SIGNAL = 1;
+    public static HAS_LOCALIZER = 2;
+    public static HAS_GLIDE_SLOPE = 4;
+    public static HAS_DME = 8;
+
+    flags: number;
+    localizer: number;
+    glideLat: number;
+    glideLon: number;
+    glideAlt: number;
+    glideSlipeAngle: number;
+
+    constructor(data: RawBuffer, protocol: Protocol) {
+        super(data, protocol);
+        this.flags = data.readUint32();
+        this.localizer = data.readFloat32();
+        this.glideLat = data.readFloat64();
+        this.glideLon = data.readFloat64();
+        this.glideAlt = data.readFloat64();
+        this.glideSlipeAngle = data.readFloat32();
+    }
+
+    hasFlag(flag: number): boolean {
+        return (this.flags & flag) !== 0;
+    }
+
+    hasNavSignal(): boolean {
+        return this.hasFlag(FacilityVOR.HAS_NAV_SIGNAL);
+    }
+
+    hasLocalizer(): boolean {
+        return this.hasFlag(FacilityVOR.HAS_LOCALIZER);
+    }
+
+    hasGlideSlope(): boolean {
+        return this.hasFlag(FacilityVOR.HAS_GLIDE_SLOPE);
+    }
+
+    hasDme(): boolean {
+        return this.hasFlag(FacilityVOR.HAS_DME);
+    }
+}

@@ -1,4 +1,2 @@
-export * from './EventFlag';
-export * from './DataRequestFlag';
-export * from './DataSetFlag';
-export * from './ClientDataRequestFlag';
+// Re-exported from generated spec — do not edit by hand.
+export * from '../generated/enums/index';

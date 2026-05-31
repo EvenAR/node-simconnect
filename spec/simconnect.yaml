@@ -1,0 +1,1765 @@
+meta:
+    version: '1.0.0'
+    description: >
+        Canonical SimConnect binary protocol spec.
+        Source of truth for codegen targeting TypeScript (node-simconnect) and Java.
+
+# ─── Protocol versions ────────────────────────────────────────────────────────
+protocols:
+    FSX_RTM: 2
+    FSX_SP1: 3
+    FSX_SP2: 4
+    KittyHawk: 5
+    SunRise: 6
+
+# ─── RecvID values (sequential from SimConnect.h) ────────────────────────────
+recv_ids:
+    ID_NULL: 0
+    ID_EXCEPTION: 1
+    ID_OPEN: 2
+    ID_QUIT: 3
+    ID_EVENT: 4
+    ID_EVENT_OBJECT_ADDREMOVE: 5
+    ID_EVENT_FILENAME: 6
+    ID_EVENT_FRAME: 7
+    ID_SIMOBJECT_DATA: 8
+    ID_SIMOBJECT_DATA_BYTYPE: 9
+    ID_WEATHER_OBSERVATION: 10
+    ID_CLOUD_STATE: 11
+    ID_ASSIGNED_OBJECT_ID: 12
+    ID_RESERVED_KEY: 13
+    ID_CUSTOM_ACTION: 14
+    ID_SYSTEM_STATE: 15
+    ID_CLIENT_DATA: 16
+    ID_EVENT_WEATHER_MODE: 17
+    ID_AIRPORT_LIST: 18
+    ID_VOR_LIST: 19
+    ID_NDB_LIST: 20
+    ID_WAYPOINT_LIST: 21
+    ID_EVENT_MULTIPLAYER_SERVER_STARTED: 22
+    ID_EVENT_MULTIPLAYER_CLIENT_STARTED: 23
+    ID_EVENT_MULTIPLAYER_SESSION_ENDED: 24
+    ID_EVENT_RACE_END: 25
+    ID_EVENT_RACE_LAP: 26
+    ID_EVENT_EX1: 27
+    ID_FACILITY_DATA: 28
+    ID_FACILITY_DATA_END: 29
+    ID_FACILITY_MINIMAL_LIST: 30
+    ID_JETWAY_DATA: 31
+    ID_CONTROLLERS_LIST: 32
+    ID_ACTION_CALLBACK: 33
+    ID_ENUMERATE_INPUT_EVENTS: 34
+    ID_GET_INPUT_EVENT: 35
+    ID_SUBSCRIBE_INPUT_EVENT: 36
+    ID_ENUMERATE_INPUT_EVENT_PARAMS: 37
+    ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST: 38
+    ID_FLOW_EVENT: 39
+    ID_CAMERA_DATA: 40
+    ID_CAMERA_STATUS: 41
+    ID_CAMERA_DEFINITION_LIST: 42
+    ID_COMM_BUS: 43
+    ID_CAMERA_WORLD_LOCKER: 44
+
+# ─── Constants ────────────────────────────────────────────────────────────────
+constants:
+    OBJECT_ID_USER: 0
+    UNUSED: 0xffffffff
+    UNKNOWN_GROUP: 0xffffffff
+    PROTO_VERSION: 4
+    RECEIVE_SIZE: 65536
+    MAX_PATH: 260
+    MAX_METAR_LENGTH: 2000
+    MAX_THERMAL_SIZE: 100000
+    MAX_THERMAL_RATE: 1000
+    INITPOSITION_AIRSPEED_CRUISE: -1
+    INITPOSITION_AIRSPEED_KEEP: -2
+    CLIENTDATAOFFSET_AUTO: -1
+    WAYPOINT_SPEED_REQUESTED: 0x04
+    WAYPOINT_THROTTLE_REQUESTED: 0x08
+    WAYPOINT_COMPUTE_VERTICAL_SPEED: 0x10
+    WAYPOINT_ALTITUDE_IS_AGL: 0x20
+    WAYPOINT_ON_GROUND: 0x100000
+    WAYPOINT_REVERSE: 0x200000
+    WAYPOINT_WRAP_TO_FIRST: 0x400000
+    MISSION_FAILED: 0
+    MISSION_CRASHED: 1
+    MISSION_SUCCEEDED: 2
+    VIEW_SYSTEM_EVENT_DATA_COCKPIT_2D: 0x00000001
+    VIEW_SYSTEM_EVENT_DATA_COCKPIT_VIRTUAL: 0x00000002
+    VIEW_SYSTEM_EVENT_DATA_ORTHOGONAL: 0x00000004
+    SOUND_SYSTEM_EVENT_DATA_MASTER: 1
+    CLIENT_DATA_TYPE_INT8: -1
+    CLIENT_DATA_TYPE_INT16: -2
+    CLIENT_DATA_TYPE_INT32: -3
+    CLIENT_DATA_TYPE_INT64: -4
+    CLIENT_DATA_TYPE_FLOAT32: -5
+    CLIENT_DATA_TYPE_FLOAT64: -6
+    TEXT_RESULT_MENU_SELECT_1: 0
+    TEXT_RESULT_MENU_SELECT_2: 1
+    TEXT_RESULT_MENU_SELECT_3: 2
+    TEXT_RESULT_MENU_SELECT_4: 3
+    TEXT_RESULT_MENU_SELECT_5: 4
+    TEXT_RESULT_MENU_SELECT_6: 5
+    TEXT_RESULT_MENU_SELECT_7: 6
+    TEXT_RESULT_MENU_SELECT_8: 7
+    TEXT_RESULT_MENU_SELECT_9: 8
+    TEXT_RESULT_MENU_SELECT_10: 9
+    TEXT_RESULT_DISPLAYED: 0x00010000
+    TEXT_RESULT_QUEUED: 0x00010001
+    TEXT_RESULT_REMOVED: 0x00010002
+    TEXT_RESULT_REPLACED: 0x00010003
+    TEXT_RESULT_TIMEOUT: 0x00010004
+
+# ─── Enums ────────────────────────────────────────────────────────────────────
+# Field type notation used in structs/recvs below:
+#   int8 int16 int32 uint32 int64 uint64 float32 float64
+#   bool_int32  (readInt32 != 0 / putInt32(b?1:0))
+#   bool_uint32 (readUint32 != 0 / putUint32(b?1:0))
+#   string      (requires length: N or length: {default:N, since:{Protocol:N}})
+#   stringv     (null-terminated variable-length)
+#   bytes       (requires length: N, produces Buffer / byte[])
+#   enum        (requires enum: EnumName, wire = uint32)
+#   struct      (requires struct: StructName)
+#   list        (requires count_field, item_type; optionally protocol_aware)
+#   derived     (no bytes consumed; requires derived:, source_field:)
+enums:
+    - name: CameraAvailability
+      members:
+          - { name: NOT_ACQUIRED, value: 0 }
+          - { name: ACQUIRED, value: 1 }
+          - { name: ACQUIRED_BY_OTHER, value: 2 }
+          - { name: USER_DISABLED, value: 3 }
+
+    - name: CameraDataMask
+      members:
+          - { name: NONE, value: 0 }
+          - { name: POSITION, value: '1 << 0' }
+          - { name: ROTATION, value: '1 << 1' }
+          - { name: TARGETED, value: '1 << 2' }
+          - { name: FOV, value: '1 << 3' }
+          - { name: REFERENTIAL, value: '1 << 4' }
+          - { name: ALL_ROTATION, value: { compose: [POSITION, ROTATION, FOV] } }
+          - { name: ALL_TARGETED, value: { compose: [POSITION, TARGETED, FOV] } }
+
+    - name: CameraFlag
+      members:
+          - { name: NONE, value: 0x00 }
+          - { name: INTERACTION, value: 0x01 }
+          - { name: ABOVE_GROUND, value: 0x02 }
+
+    - name: ClientDataPeriod
+      members:
+          - { name: NEVER, value: 0 }
+          - { name: ONCE, value: 1 }
+          - { name: VISUAL_FRAME, value: 2 }
+          - { name: ON_SET, value: 3 }
+          - { name: SECOND, value: 4 }
+
+    - name: CommBusBroadcastTo
+      members:
+          - { name: JS, value: '1 << 0' }
+          - { name: WASM, value: '1 << 1' }
+          - { name: SIMCONNECT, value: '1 << 3' }
+          - { name: SIMCONNECT_SELF_CALL, value: '1 << 4' }
+          - { name: DEFAULT, value: { compose: [JS, WASM, SIMCONNECT] } }
+          - { name: ALL_SIMCONNECT, value: { compose: [SIMCONNECT, SIMCONNECT_SELF_CALL] } }
+          - { name: ALL, value: { compose: [JS, WASM, SIMCONNECT, SIMCONNECT_SELF_CALL] } }
+
+    - name: FacilityDataType
+      members:
+          - { name: AIRPORT, value: 0 }
+          - { name: RUNWAY, value: 1 }
+          - { name: START, value: 2 }
+          - { name: FREQUENCY, value: 3 }
+          - { name: HELIPAD, value: 4 }
+          - { name: APPROACH, value: 5 }
+          - { name: APPROACH_TRANSITION, value: 6 }
+          - { name: APPROACH_LEG, value: 7 }
+          - { name: FINAL_APPROACH_LEG, value: 8 }
+          - { name: MISSED_APPROACH_LEG, value: 9 }
+          - { name: DEPARTURE, value: 10 }
+          - { name: ARRIVAL, value: 11 }
+          - { name: RUNWAY_TRANSITION, value: 12 }
+          - { name: ENROUTE_TRANSITION, value: 13 }
+          - { name: TAXI_POINT, value: 14 }
+          - { name: TAXI_PARKING, value: 15 }
+          - { name: TAXI_PATH, value: 16 }
+          - { name: TAXI_NAME, value: 17 }
+          - { name: JETWAY, value: 18 }
+          - { name: VOR, value: 19 }
+          - { name: NDB, value: 20 }
+          - { name: WAYPOINT, value: 21 }
+          - { name: ROUTE, value: 22 }
+          - { name: PAVEMENT, value: 23 }
+          - { name: APPROACHLIGHTS, value: 24 }
+          - { name: VASI, value: 25 }
+          - { name: VDGS, value: 26 }
+          - { name: HOLDING_PATTERN, value: 27 }
+          - { name: TAXI_PARKING_AIRLINE, value: 28 }
+
+    - name: FacilityListType
+      members:
+          - { name: AIRPORT, value: 0 }
+          - { name: WAYPOINT, value: 1 }
+          - { name: NDB, value: 2 }
+          - { name: VOR, value: 3 }
+          - { name: COUNT, value: 4 }
+
+    - name: FlowEvent
+      members:
+          - { name: NONE, value: 0 }
+          - { name: FLT_LOAD, value: 1 }
+          - { name: FLT_LOADED, value: 2 }
+          - { name: TELEPORT_START, value: 3 }
+          - { name: TELEPORT_DONE, value: 4 }
+          - { name: BACK_ON_TRACK_START, value: 5 }
+          - { name: BACK_ON_TRACK_DONE, value: 6 }
+          - { name: SKIP_START, value: 7 }
+          - { name: SKIP_DONE, value: 8 }
+          - { name: BACK_TO_MAIN_MENU, value: 9 }
+          - { name: RTC_START, value: 10 }
+          - { name: RTC_END, value: 11 }
+          - { name: REPLAY_START, value: 12 }
+          - { name: REPLAY_END, value: 13 }
+          - { name: FLIGHT_START, value: 14 }
+          - { name: FLIGHT_END, value: 15 }
+          - { name: PLANE_CRASH, value: 16 }
+
+    - name: InputEventType
+      const_enum: true
+      members:
+          - { name: DOUBLE, value: 0 }
+          - { name: STRING, value: 1 }
+
+    - name: JetwayStatus
+      const_enum: true
+      members:
+          - { name: REST, value: 0 }
+          - { name: APPROACH_OUTSIDE, value: 1 }
+          - { name: APPROACH_DOOR, value: 2 }
+          - { name: HOOD_CONNECT, value: 3 }
+          - { name: HOOD_DISCONNECT, value: 4 }
+          - { name: RETRACT_OUTSIDE, value: 5 }
+          - { name: RETRACT_HOME, value: 6 }
+          - { name: FULLY_ATTACHED, value: 7 }
+
+    - name: NotificationPriority
+      const_enum: true
+      members:
+          - { name: HIGHEST, value: 0x00000001 }
+          - { name: HIGHEST_MASKABLE, value: 0x00989680 }
+          - { name: STANDARD, value: 0x713fb300 }
+          - { name: DEFAULT, value: 0x77359400 }
+          - { name: LOWEST, value: 0xee6b2800 }
+
+    - name: PositionReferential
+      members:
+          - { name: NONE, value: 0 }
+          - { name: SIMOBJECT, value: 1 }
+          - { name: WORLD, value: 2 }
+          - { name: EYEPOINT, value: 3 }
+          - { name: SIMOBJECT_DATUM, value: 4 }
+
+    - name: Protocol
+      members:
+          - { name: FSX_RTM, value: 0x2 }
+          - { name: FSX_SP1, value: 0x3 }
+          - { name: FSX_SP2, value: 0x4 }
+          - { name: KittyHawk, value: 0x5 }
+          - { name: SunRise, value: 0x6 }
+
+    - name: SimConnectDataType
+      members:
+          - { name: INVALID, value: 0 }
+          - { name: INT32, value: 1 }
+          - { name: INT64, value: 2 }
+          - { name: FLOAT32, value: 3 }
+          - { name: FLOAT64, value: 4 }
+          - { name: STRING8, value: 5 }
+          - { name: STRING32, value: 6 }
+          - { name: STRING64, value: 7 }
+          - { name: STRING128, value: 8 }
+          - { name: STRING256, value: 9 }
+          - { name: STRING260, value: 10 }
+          - { name: STRINGV, value: 11 }
+          - { name: INITPOSITION, value: 12 }
+          - { name: MARKERSTATE, value: 13 }
+          - { name: WAYPOINT, value: 14 }
+          - { name: LATLONALT, value: 15 }
+          - { name: XYZ, value: 16 }
+          - { name: MAX, value: 17 }
+
+    - name: SimConnectException
+      members:
+          - { name: NONE, value: 0 }
+          - { name: ERROR, value: 1 }
+          - { name: SIZE_MISMATCH, value: 2 }
+          - { name: UNRECOGNIZED_ID, value: 3 }
+          - { name: UNOPENED, value: 4 }
+          - { name: VERSION_MISMATCH, value: 5 }
+          - { name: TOO_MANY_GROUPS, value: 6 }
+          - { name: NAME_UNRECOGNIZED, value: 7 }
+          - { name: TOO_MANY_EVENT_NAMES, value: 8 }
+          - { name: EVENT_ID_DUPLICATE, value: 9 }
+          - { name: TOO_MANY_MAPS, value: 10 }
+          - { name: TOO_MANY_OBJECTS, value: 11 }
+          - { name: TOO_MANY_REQUESTS, value: 12 }
+          - { name: WEATHER_INVALID_PORT, value: 13 }
+          - { name: WEATHER_INVALID_METAR, value: 14 }
+          - { name: WEATHER_UNABLE_TO_GET_OBSERVATION, value: 15 }
+          - { name: WEATHER_UNABLE_TO_CREATE_STATION, value: 16 }
+          - { name: WEATHER_UNABLE_TO_REMOVE_STATION, value: 17 }
+          - { name: INVALID_DATA_TYPE, value: 18 }
+          - { name: INVALID_DATA_SIZE, value: 19 }
+          - { name: DATA_ERROR, value: 20 }
+          - { name: INVALID_ARRAY, value: 21 }
+          - { name: CREATE_OBJECT_FAILED, value: 22 }
+          - { name: LOAD_FLIGHTPLAN_FAILED, value: 23 }
+          - { name: OPERATION_INVALID_FOR_OBJECT_TYPE, value: 24 }
+          - { name: ILLEGAL_OPERATION, value: 25 }
+          - { name: ALREADY_SUBSCRIBED, value: 26 }
+          - { name: INVALID_ENUM, value: 27 }
+          - { name: DEFINITION_ERROR, value: 28 }
+          - { name: DUPLICATE_ID, value: 29 }
+          - { name: DATUM_ID, value: 30 }
+          - { name: OUT_OF_BOUNDS, value: 31 }
+          - { name: ALREADY_CREATED, value: 32 }
+          - { name: OBJECT_OUTSIDE_REALITY_BUBBLE, value: 33 }
+          - { name: OBJECT_CONTAINER, value: 34 }
+          - { name: OBJECT_AI, value: 35 }
+          - { name: OBJECT_ATC, value: 36 }
+          - { name: OBJECT_SCHEDULE, value: 37 }
+          - { name: JETWAY_DATA, value: 38 }
+          - { name: ACTION_NOT_FOUND, value: 39 }
+          - { name: NOT_AN_ACTION, value: 40 }
+          - { name: INCORRECT_ACTION_PARAMS, value: 41 }
+          - { name: GET_INPUT_EVENT_FAILED, value: 42 }
+          - { name: SET_INPUT_EVENT_FAILED, value: 43 }
+          - { name: EVENT_NAME_RESERVED, value: 44 }
+          - { name: INTERNAL, value: 45 }
+          - { name: CAMERA_API, value: 46 }
+
+    - name: SimConnectPeriod
+      members:
+          - { name: NEVER, value: 0 }
+          - { name: ONCE, value: 1 }
+          - { name: VISUAL_FRAME, value: 2 }
+          - { name: SIM_FRAME, value: 3 }
+          - { name: SECOND, value: 4 }
+
+    - name: SimObjectType
+      members:
+          - { name: USER, value: 0 }
+          - { name: ALL, value: 1 }
+          - { name: AIRCRAFT, value: 2 }
+          - { name: HELICOPTER, value: 3 }
+          - { name: BOAT, value: 4 }
+          - { name: GROUND, value: 5 }
+          - { name: HOT_AIR_BALLOON, value: 6 }
+          - { name: ANIMAL, value: 7 }
+          - { name: USER_AVATAR, value: 8 }
+          - { name: USER_CURRENT, value: 9 }
+
+    - name: TextResult
+      members:
+          - { name: MENU_SELECT_1, value: 0 }
+          - { name: MENU_SELECT_2, value: 1 }
+          - { name: MENU_SELECT_3, value: 2 }
+          - { name: MENU_SELECT_4, value: 3 }
+          - { name: MENU_SELECT_5, value: 4 }
+          - { name: MENU_SELECT_6, value: 5 }
+          - { name: MENU_SELECT_7, value: 6 }
+          - { name: MENU_SELECT_8, value: 7 }
+          - { name: MENU_SELECT_9, value: 8 }
+          - { name: MENU_SELECT_10, value: 9 }
+          - { name: DISPLAYED, value: 0x00010000 }
+          - { name: QUEUED, value: 0x00010001 }
+          - { name: REMOVED, value: 0x00010002 }
+          - { name: REPLACED, value: 0x00010003 }
+          - { name: TIMEOUT, value: 0x00010004 }
+
+    - name: TextType
+      members:
+          - { name: SCROLL_BLACK, value: 0 }
+          - { name: SCROLL_WHITE, value: 1 }
+          - { name: SCROLL_RED, value: 2 }
+          - { name: SCROLL_GREEN, value: 3 }
+          - { name: SCROLL_BLUE, value: 4 }
+          - { name: SCROLL_YELLOW, value: 5 }
+          - { name: SCROLL_MAGENTA, value: 6 }
+          - { name: SCROLL_CYAN, value: 7 }
+          - { name: PRINT_BLACK, value: 0x0100 }
+          - { name: PRINT_WHITE, value: 0x0101 }
+          - { name: PRINT_RED, value: 0x0102 }
+          - { name: PRINT_GREEN, value: 0x0103 }
+          - { name: PRINT_BLUE, value: 0x0104 }
+          - { name: PRINT_YELLOW, value: 0x0105 }
+          - { name: PRINT_MAGENTA, value: 0x0106 }
+          - { name: PRINT_CYAN, value: 0x0107 }
+          - { name: MENU, value: 0x0200 }
+
+    - name: WeatherMode
+      members:
+          - { name: THEME, value: 0 }
+          - { name: RWW, value: 1 }
+          - { name: CUSTOM, value: 2 }
+          - { name: GLOBAL, value: 3 }
+
+# ─── Flags ────────────────────────────────────────────────────────────────────
+flags:
+    - name: ClientDataRequestFlag
+      members:
+          - { name: CLIENT_DATA_REQUEST_FLAG_DEFAULT, value: 0x00000000 }
+          - { name: CLIENT_DATA_REQUEST_FLAG_CHANGED, value: 0x00000001 }
+          - { name: CLIENT_DATA_REQUEST_FLAG_TAGGED, value: 0x00000002 }
+
+    - name: DataRequestFlag
+      members:
+          - { name: DATA_REQUEST_FLAG_DEFAULT, value: 0x00000000 }
+          - { name: DATA_REQUEST_FLAG_CHANGED, value: 0x00000001 }
+          - { name: DATA_REQUEST_FLAG_TAGGED, value: 0x00000002 }
+
+    - name: DataSetFlag
+      members:
+          - { name: DEFAULT, value: 0x00000000 }
+          - { name: TAGGED, value: 0x00000001 }
+
+    - name: EventFlag
+      members:
+          - { name: EVENT_FLAG_DEFAULT, value: 0x00000000 }
+          - { name: EVENT_FLAG_FAST_REPEAT_TIMER, value: 0x00000001 }
+          - { name: EVENT_FLAG_SLOW_REPEAT_TIMER, value: 0x00000002 }
+          - { name: EVENT_FLAG_GROUPID_IS_PRIORITY, value: 0x00000010 }
+
+# ─── Structs ──────────────────────────────────────────────────────────────────
+# simconnect_data: true  → implements SimConnectData (readFrom + writeTo)
+# protocol_aware: true   → constructor requires a Protocol parameter
+# extends: Name          → class extends another struct (reads parent fields first)
+structs:
+    # ── SimConnectData DTOs (read + write) ──────────────────────────────────────
+    - name: LatLonAlt
+      simconnect_data: true
+      fields:
+          - { name: latitude, type: float64 }
+          - { name: longitude, type: float64 }
+          - { name: altitude, type: float64 }
+
+    - name: XYZ
+      simconnect_data: true
+      fields:
+          - { name: x, type: float64 }
+          - { name: y, type: float64 }
+          - { name: z, type: float64 }
+
+    - name: PBH
+      simconnect_data: true
+      fields:
+          - { name: pitch, type: float32 }
+          - { name: bank, type: float32 }
+          - { name: heading, type: float32 }
+
+    - name: Waypoint
+      simconnect_data: true
+      fields:
+          - { name: latitude, type: float64 }
+          - { name: longitude, type: float64 }
+          - { name: altitude, type: float64 }
+          - { name: flags, type: uint32 }
+          - { name: speed, type: float64 }
+          - { name: throttle, type: float64 }
+
+    - name: MarkerState
+      simconnect_data: true
+      fields:
+          - { name: markerName, type: string, length: 64 }
+          - { name: markerState, type: bool_uint32 }
+
+    - name: InitPosition
+      simconnect_data: true
+      fields:
+          - { name: latitude, type: float64 }
+          - { name: longitude, type: float64 }
+          - { name: altitude, type: float64 }
+          - { name: pitch, type: float64 }
+          - { name: bank, type: float64 }
+          - { name: heading, type: float64 }
+          - { name: onGround, type: bool_int32 }
+          - { name: airspeed, type: int32 }
+
+    - name: CameraData
+      simconnect_data: true
+      fields:
+          - { name: position, type: struct, struct: XYZ }
+          - { name: positionReferential, type: enum, enum: PositionReferential }
+          - { name: positionReferentialObjectId, type: uint32 }
+          - { name: targetedPos, type: struct, struct: XYZ }
+          - { name: pbh, type: struct, struct: PBH }
+          - { name: rotationReferential, type: enum, enum: PositionReferential }
+          - { name: rotationReferentialObjectId, type: uint32 }
+          - { name: fov, type: float64 }
+
+    # ── Read-only datastructures ─────────────────────────────────────────────────
+    - name: VersionBaseType
+      fields:
+          - { name: major, type: int16 }
+          - { name: minor, type: int16 }
+          - { name: revision, type: int16 }
+          - { name: build, type: int16 }
+
+    - name: CameraDefinitionItem
+      fields:
+          - { name: name, type: string, length: 256 }
+
+    - name: EnumerateSimobjectLivery
+      fields:
+          - { name: aircraftTitle, type: string, length: 256 }
+          - { name: liveryName, type: string, length: 256 }
+
+    - name: ControllerItem
+      fields:
+          - { name: deviceName, type: string, length: 256 }
+          - { name: deviceId, type: uint32 }
+          - { name: productId, type: uint32 }
+          - { name: compositeId, type: uint32 }
+          - { name: hardwareVersion, type: struct, struct: VersionBaseType }
+
+    - name: InputEventDescriptor
+      fields:
+          - { name: name, type: string, length: 64 }
+          - { name: inputEventIdHash, type: uint64 }
+          - { name: type, type: enum, enum: InputEventType }
+
+    - name: JetwayData
+      fields:
+          - { name: airportIcao, type: string, length: 8 }
+          - { name: parkingIndex, type: int32 }
+          - { name: latLngAlt, type: struct, struct: LatLonAlt }
+          - { name: pbh, type: struct, struct: PBH }
+          - { name: status, type: enum, enum: JetwayStatus }
+          - { name: door, type: int32 }
+          - { name: exitDoorRelativePos, type: struct, struct: XYZ }
+          - { name: mainHandlePos, type: struct, struct: XYZ }
+          - { name: secondaryHandle, type: struct, struct: XYZ }
+          - { name: wheelGroundLock, type: struct, struct: XYZ }
+          - { name: jetwayObjectId, type: uint32 }
+          - { name: attachedObjectId, type: uint32 }
+
+    # ── Protocol-aware datastructures ────────────────────────────────────────────
+    - name: Icao
+      protocol_aware: true
+      fields:
+          - { name: type, type: string, length: 1 }
+          - name: ident
+            type: string
+            length:
+                default: 6
+                since:
+                    SunRise: 9
+          - { name: region, type: string, length: 3 }
+          - { name: airport, type: string, length: 5 }
+
+    - name: FacilityMinimal
+      protocol_aware: true
+      fields:
+          - { name: icao, type: struct, struct: Icao }
+          - { name: latLonAlt, type: struct, struct: LatLonAlt }
+
+    - name: FacilityAirport
+      protocol_aware: true
+      fields:
+          - name: icao
+            type: string
+            length:
+                default: 6
+                since:
+                    SunRise: 9
+          - { name: region, type: string, length: 3 }
+          - { name: latitude, type: float64 }
+          - { name: longitude, type: float64 }
+          - { name: altitude, type: float64 }
+
+    - name: FacilityWaypoint
+      protocol_aware: true
+      extends: FacilityAirport
+      fields:
+          - { name: magVar, type: float32 }
+
+    - name: FacilityNDB
+      protocol_aware: true
+      extends: FacilityWaypoint
+      fields:
+          - { name: frequency, type: uint32 }
+
+    - name: FacilityVOR
+      protocol_aware: true
+      extends: FacilityNDB
+      static_flags:
+          HAS_NAV_SIGNAL: 0x00000001
+          HAS_LOCALIZER: 0x00000002
+          HAS_GLIDE_SLOPE: 0x00000004
+          HAS_DME: 0x00000008
+      fields:
+          - { name: flags, type: uint32 }
+          - { name: localizer, type: float32 }
+          - { name: glideLat, type: float64 }
+          - { name: glideLon, type: float64 }
+          - { name: glideAlt, type: float64 }
+          - { name: glideSlipeAngle, type: float32 }
+
+# ─── Recv messages ────────────────────────────────────────────────────────────
+# base: Name           → extends another recv/struct class
+# list_field: name     → name of the array property for list recvs
+# item_type: Name      → struct type of each list item
+# protocol_aware: true → constructor receives a Protocol argument (for list items too)
+# handwritten: true    → not generated; must remain as handwritten TypeScript
+#
+# Handwritten exceptions (complex cases):
+#   RecvCloudState            - 64x64 nested loop
+#   RecvGetInputEvent         - number|string discriminated union on InputEventType
+#   RecvSubscribeInputEvent   - number|string discriminated union on InputEventType
+recv_messages:
+    - name: RecvOpen
+      recv_id: ID_OPEN
+      fields:
+          - { name: applicationName, type: string, length: 256 }
+          - { name: applicationVersionMajor, type: uint32 }
+          - { name: applicationVersionMinor, type: uint32 }
+          - { name: applicationBuildMajor, type: uint32 }
+          - { name: applicationBuildMinor, type: uint32 }
+          - { name: simConnectVersionMajor, type: uint32 }
+          - { name: simConnectVersionMinor, type: uint32 }
+          - { name: simConnectBuildMajor, type: uint32 }
+          - { name: simConnectBuildMinor, type: uint32 }
+          - { name: reserved1, type: uint32 }
+          - { name: reserved2, type: uint32 }
+
+    - name: RecvException
+      recv_id: ID_EXCEPTION
+      fields:
+          - { name: exception, type: uint32 }
+          - { name: sendId, type: uint32 }
+          - { name: index, type: uint32 }
+          - name: exceptionName
+            type: derived
+            derived: enum_name_lookup
+            source_field: exception
+            enum: SimConnectException
+            fallback: "'Unknown Exception'"
+
+    - name: RecvEvent
+      recv_id: ID_EVENT
+      fields:
+          - { name: groupID, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: data, type: uint32 }
+
+    - name: RecvEventEx1
+      recv_id: ID_EVENT_EX1
+      fields:
+          - { name: groupID, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+          - name: data
+            type: array
+            length: 5
+            item_type: uint32
+
+    - name: RecvEventAddRemove
+      recv_id: ID_EVENT_OBJECT_ADDREMOVE
+      base: RecvEvent
+      fields:
+          - { name: type, type: enum, enum: SimObjectType }
+
+    - name: RecvEventFilename
+      recv_id: ID_EVENT_FILENAME
+      base: RecvEvent
+      fields:
+          - { name: fileName, type: string, length: 260 }
+          - { name: flags, type: uint32 }
+
+    - name: RecvEventFrame
+      recv_id: ID_EVENT_FRAME
+      base: RecvEvent
+      fields:
+          - { name: frameRate, type: float32 }
+          - { name: simSpeed, type: float32 }
+
+    - name: RecvEventWeatherMode
+      recv_id: ID_EVENT_WEATHER_MODE
+      base: RecvEvent
+      fields:
+          - name: mode
+            type: derived
+            derived: clamp_enum
+            source_field: data
+            enum: WeatherMode
+            fallback: WeatherMode.THEME
+
+    - name: RecvEventRaceEnd
+      recv_id: ID_EVENT_RACE_END
+      base: RecvEvent
+      fields:
+          - { name: racerNumber, type: uint32 }
+          - { name: numberRacers, type: uint32 }
+          - { name: missionGUID, type: bytes, length: 16 }
+          - { name: playerName, type: string, length: 260 }
+          - { name: sessionType, type: string, length: 260 }
+          - { name: aircraft, type: string, length: 260 }
+          - { name: playerRole, type: string, length: 260 }
+          - { name: totalTime, type: float64 }
+          - { name: penaltyTime, type: float64 }
+          - { name: disqualified, type: bool_uint32 }
+
+    - name: RecvEventRaceLap
+      recv_id: ID_EVENT_RACE_LAP
+      base: RecvEvent
+      fields:
+          - { name: lapIndex, type: uint32 }
+          - { name: numberRacers, type: uint32 }
+          - { name: missionGUID, type: bytes, length: 16 }
+          - { name: playerName, type: string, length: 260 }
+          - { name: sessionType, type: string, length: 260 }
+          - { name: aircraft, type: string, length: 260 }
+          - { name: playerRole, type: string, length: 260 }
+          - { name: totalTime, type: float64 }
+          - { name: penaltyTime, type: float64 }
+          - { name: disqualified, type: bool_uint32 }
+
+    - name: RecvAssignedObjectID
+      recv_id: ID_ASSIGNED_OBJECT_ID
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: objectID, type: uint32 }
+
+    - name: RecvFacilityDataEnd
+      recv_id: ID_FACILITY_DATA_END
+      fields:
+          - { name: userRequestId, type: uint32 }
+
+    - name: RecvFlowEvent
+      recv_id: ID_FLOW_EVENT
+      fields:
+          - { name: flowEventID, type: uint32 }
+          - { name: fltPath, type: string, length: 256 }
+
+    - name: RecvCameraStatus
+      recv_id: ID_CAMERA_STATUS
+      fields:
+          - { name: acquiredState, type: enum, enum: CameraAvailability }
+          - { name: gameControlled, type: bool_int32 }
+
+    - name: RecvSystemState
+      recv_id: ID_SYSTEM_STATE
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: dataInteger, type: uint32 }
+          - { name: dataFloat, type: float32 }
+          - { name: dataString, type: string, length: 260 }
+
+    - name: RecvWeatherObservation
+      recv_id: ID_WEATHER_OBSERVATION
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: metar, type: stringv }
+
+    - name: RecvReservedKey
+      recv_id: ID_RESERVED_KEY
+      fields:
+          - { name: choiceReserved, type: string, length: 50 }
+          - { name: reservedKey, type: string, length: 30 }
+
+    - name: RecvCameraData
+      recv_id: ID_CAMERA_DATA
+      fields:
+          - { name: cameraData, type: struct, struct: CameraData }
+
+    - name: RecvActionCallback
+      recv_id: ID_ACTION_CALLBACK
+      base: RecvEvent
+      fields:
+          - { name: actionID, type: string, length: 260 }
+          - { name: requestID, type: uint32 }
+
+    # ── List-template base ───────────────────────────────────────────────────────
+    - name: RecvListTemplate
+      recv_id: null
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: arraySize, type: uint32 }
+          - { name: entryNumber, type: uint32 }
+          - { name: outOf, type: uint32 }
+
+    # RecvFacilitiesList is a separate class but identical to RecvListTemplate
+    - name: RecvFacilitiesList
+      recv_id: null
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: arraySize, type: uint32 }
+          - { name: entryNumber, type: uint32 }
+          - { name: outOf, type: uint32 }
+
+    # ── List recv subclasses (protocol-aware facilities) ─────────────────────────
+    - name: RecvAirportList
+      recv_id: ID_AIRPORT_LIST
+      base: RecvFacilitiesList
+      protocol_aware: true
+      list_field: airports
+      item_type: FacilityAirport
+
+    - name: RecvNDBList
+      recv_id: ID_NDB_LIST
+      base: RecvFacilitiesList
+      protocol_aware: true
+      list_field: ndbs
+      item_type: FacilityNDB
+
+    - name: RecvVORList
+      recv_id: ID_VOR_LIST
+      base: RecvFacilitiesList
+      protocol_aware: true
+      list_field: vors
+      item_type: FacilityVOR
+
+    - name: RecvWaypointList
+      recv_id: ID_WAYPOINT_LIST
+      base: RecvFacilitiesList
+      protocol_aware: true
+      list_field: waypoints
+      item_type: FacilityWaypoint
+
+    - name: RecvFacilityMinimalList
+      recv_id: ID_FACILITY_MINIMAL_LIST
+      base: RecvFacilitiesList
+      protocol_aware: true
+      list_field: data
+      item_type: FacilityMinimal
+
+    # ── List recv subclasses (non-protocol-aware) ────────────────────────────────
+    - name: RecvJetwayData
+      recv_id: ID_JETWAY_DATA
+      base: RecvListTemplate
+      list_field: jetways
+      item_type: JetwayData
+
+    - name: RecvControllersList
+      recv_id: ID_CONTROLLERS_LIST
+      base: RecvListTemplate
+      list_field: controllers
+      item_type: ControllerItem
+
+    - name: RecvEnumerateInputEvents
+      recv_id: ID_ENUMERATE_INPUT_EVENTS
+      base: RecvListTemplate
+      list_field: inputEventDescriptors
+      item_type: InputEventDescriptor
+
+    - name: RecvCameraDefinitionList
+      recv_id: ID_CAMERA_DEFINITION_LIST
+      base: RecvListTemplate
+      list_field: cameraDefinitions
+      item_type: CameraDefinitionItem
+
+    - name: RecvEnumerateSimobjectAndLiveryList
+      recv_id: ID_ENUMERATE_SIMOBJECT_AND_LIVERY_LIST
+      base: RecvListTemplate
+      list_field: simobjectLiveries
+      item_type: EnumerateSimobjectLivery
+
+    - name: RecvCommBus
+      recv_id: ID_COMM_BUS
+      base: RecvListTemplate
+      fields:
+          - { name: eventId, type: uint32 }
+          - { name: data, type: stringv }
+
+    # ── Handwritten-only (not generated) ─────────────────────────────────────────
+    - name: RecvSimObjectData
+      recv_id: ID_SIMOBJECT_DATA
+      fields:
+          - { name: requestID, type: uint32 }
+          - { name: objectID, type: uint32 }
+          - { name: defineID, type: uint32 }
+          - { name: flags, type: enum, enum: DataRequestFlag }
+          - { name: entryNumber, type: uint32 }
+          - { name: outOf, type: uint32 }
+          - { name: defineCount, type: uint32 }
+          - { name: data, type: rawbuffer }
+
+    - name: RecvFacilityData
+      recv_id: ID_FACILITY_DATA
+      fields:
+          - { name: userRequestId, type: uint32 }
+          - { name: uniqueRequestId, type: uint32 }
+          - { name: parentUniqueRequestId, type: uint32 }
+          - { name: type, type: enum, enum: FacilityDataType }
+          - { name: isListItem, type: bool_uint32 }
+          - { name: itemIndex, type: uint32 }
+          - { name: listSize, type: uint32 }
+          - { name: data, type: rawbuffer }
+
+    - name: RecvCloudState
+      recv_id: ID_CLOUD_STATE
+      handwritten: true
+      reason: '64x64 nested byte loop cannot be expressed in field spec'
+
+    - name: RecvGetInputEvent
+      recv_id: ID_GET_INPUT_EVENT
+      handwritten: true
+      reason: 'number|string discriminated union on InputEventType flag'
+
+    - name: RecvSubscribeInputEvent
+      recv_id: ID_SUBSCRIBE_INPUT_EVENT
+      handwritten: true
+      reason: 'number|string discriminated union on InputEventType flag'
+
+    - name: RecvEnumerateInputEventParams
+      recv_id: ID_ENUMERATE_INPUT_EVENT_PARAMS
+      fields:
+          - { name: inputEventIdHash, type: uint64 }
+          - { name: value, type: stringv }
+
+    - name: RecvCustomAction
+      recv_id: ID_CUSTOM_ACTION
+      fields:
+          - { name: guid, type: bytes, length: 16 }
+          - { name: waitForCompletion, type: uint32 }
+          - { name: payload, type: stringv }
+
+# ─── Packet encoders ──────────────────────────────────────────────────────────
+# opcode: hex value used as (0xf0000000 | opcode) in packet header
+packet_encoders:
+    # ── Client events ──────────────────────────────────────────────────────────
+    - name: mapClientEventToSimEvent
+      opcode: 0x04
+      fields:
+          - { name: clientEventId, type: uint32 }
+          - { name: eventName, type: string256, optional: true, default: '' }
+
+    - name: transmitClientEvent
+      opcode: 0x05
+      fields:
+          - { name: objectId, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: data, type: uint32 }
+          - { name: notificationGroupId, type: uint32 }
+          - { name: flags, type: uint32 }
+
+    - name: setSystemEventState
+      opcode: 0x06
+      fields:
+          - { name: clientEventId, type: uint32 }
+          - { name: state, type: bool_uint32 }
+
+    - name: addClientEventToNotificationGroup
+      opcode: 0x07
+      fields:
+          - { name: notificationGroupId, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: maskable, type: bool_uint32 }
+
+    - name: removeClientEvent
+      opcode: 0x08
+      fields:
+          - { name: notificationGroupId, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+
+    - name: setNotificationGroupPriority
+      opcode: 0x09
+      fields:
+          - { name: notificationGroupId, type: uint32 }
+          - { name: priority, type: enum, enum: NotificationPriority }
+
+    - name: clearNotificationGroup
+      opcode: 0x0a
+      fields:
+          - { name: notificationGroupId, type: uint32 }
+
+    - name: requestNotificationGroup
+      opcode: 0x0b
+      fields:
+          - { name: notificationGroupId, type: uint32 }
+          - { name: reserved, type: uint32 }
+          - { name: flags, type: uint32 }
+
+    # ── Data definitions ───────────────────────────────────────────────────────
+    - name: addToDataDefinition
+      opcode: 0x0c
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: datumName, type: string256 }
+          - { name: unitsName, type: string256, nullable: true }
+          - {
+                name: dataType,
+                type: enum,
+                enum: SimConnectDataType,
+                optional: true,
+                default_enum: FLOAT64,
+            }
+          - { name: epsilon, type: float32, optional: true, default: 0 }
+          - { name: datumId, type: uint32, optional: true, default_constant: UNUSED }
+
+    - name: clearDataDefinition
+      opcode: 0x0d
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+
+    - name: requestDataOnSimObject
+      opcode: 0x0e
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: objectId, type: uint32 }
+          - { name: period, type: enum, enum: SimConnectPeriod }
+          - { name: flags, type: uint32, optional: true, default: 0 }
+          - { name: origin, type: uint32, optional: true, default: 0 }
+          - { name: interval, type: uint32, optional: true, default: 0 }
+          - { name: limit, type: uint32, optional: true, default: 0 }
+
+    - name: requestDataOnSimObjectType
+      opcode: 0x0f
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: radiusMeters, type: uint32 }
+          - { name: type, type: enum, enum: SimObjectType }
+
+    - name: setDataOnSimObject
+      opcode: 0x10
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: objectId, type: uint32 }
+          - { name: flags, type: enum, enum: DataSetFlag }
+          - { name: arrayCount, type: uint32 }
+          - { name: cbUnitSize, type: uint32 }
+          - { name: data, type: bytes }
+
+    # ── Input events ───────────────────────────────────────────────────────────
+    - name: mapInputEventToClientEvent
+      opcode: 0x11
+      deprecated: true
+      fields:
+          - { name: inputGroupId, type: uint32 }
+          - { name: inputDefinition, type: string256 }
+          - { name: clientEventDownID, type: uint32 }
+          - { name: downValue, type: uint32, optional: true, default: 0 }
+          - { name: clientEventUpID, type: uint32, optional: true, default_constant: UNUSED }
+          - { name: upValue, type: uint32, optional: true, default: 0 }
+          - { name: maskable, type: bool_uint32, optional: true, default: false }
+
+    - name: setInputGroupPriority
+      opcode: 0x12
+      fields:
+          - { name: inputGroupId, type: uint32 }
+          - { name: priority, type: enum, enum: NotificationPriority }
+
+    - name: removeInputEvent
+      opcode: 0x13
+      fields:
+          - { name: inputGroupId, type: uint32 }
+          - { name: inputDefinition, type: string256 }
+
+    - name: clearInputGroup
+      opcode: 0x14
+      fields:
+          - { name: inputGroupId, type: uint32 }
+
+    - name: setInputGroupState
+      opcode: 0x15
+      fields:
+          - { name: inputGroupId, type: uint32 }
+          - { name: state, type: bool_uint32 }
+
+    - name: requestReservedKey
+      opcode: 0x16
+      fields:
+          - { name: clientEventId, type: uint32 }
+          - { name: keyChoice1, type: string, length: 30, optional: true, default: '' }
+          - { name: keyChoice2, type: string, length: 30, optional: true, default: '' }
+          - { name: keyChoice3, type: string, length: 30, optional: true, default: '' }
+
+    # ── System events ──────────────────────────────────────────────────────────
+    - name: subscribeToSystemEvent
+      opcode: 0x17
+      fields:
+          - { name: clientEventId, type: uint32 }
+          - { name: eventName, type: string256 }
+
+    - name: unsubscribeFromSystemEvent
+      opcode: 0x18
+      fields:
+          - { name: clientEventId, type: uint32 }
+
+    # ── Weather (deprecated since MSFS/KittyHawk) ─────────────────────────────
+    - name: weatherRequestInterpolatedObservation
+      opcode: 0x19
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: lat, type: float32 }
+          - { name: lon, type: float32 }
+          - { name: alt, type: float32 }
+
+    - name: weatherRequestObservationAtStation
+      opcode: 0x1a
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: ICAO, type: string, length: 5 }
+
+    - name: weatherRequestObservationAtNearestStation
+      opcode: 0x1b
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: lat, type: float32 }
+          - { name: lon, type: float32 }
+
+    - name: weatherCreateStation
+      opcode: 0x1c
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: ICAO, type: string, length: 5 }
+          - { name: name, type: string256 }
+          - { name: lat, type: float32 }
+          - { name: lon, type: float32 }
+          - { name: alt, type: float32 }
+
+    - name: weatherRemoveStation
+      opcode: 0x1d
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: ICAO, type: string, length: 5 }
+
+    - name: weatherSetObservation
+      opcode: 0x1e
+      deprecated: true
+      handwritten: true
+      reason: 'Variable-length null-terminated string followed by explicit putByte(0)'
+      fields:
+          - { name: seconds, type: uint32 }
+          - { name: metar, type: stringv }
+
+    - name: weatherSetModeServer
+      opcode: 0x1f
+      deprecated: true
+      fields:
+          - { name: port, type: uint32 }
+          - { name: seconds, type: uint32 }
+
+    - name: weatherSetModeTheme
+      opcode: 0x20
+      deprecated: true
+      fields:
+          - { name: themeName, type: string256 }
+
+    - name: weatherSetModeGlobal
+      opcode: 0x21
+      deprecated: true
+      fields: []
+
+    - name: weatherSetModeCustom
+      opcode: 0x22
+      deprecated: true
+      fields: []
+
+    - name: weatherSetDynamicUpdateRate
+      opcode: 0x23
+      deprecated: true
+      fields:
+          - { name: rate, type: uint32 }
+
+    - name: weatherRequestCloudState
+      opcode: 0x24
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: minLat, type: float32 }
+          - { name: minLon, type: float32 }
+          - { name: minAlt, type: float32 }
+          - { name: maxLat, type: float32 }
+          - { name: maxLon, type: float32 }
+          - { name: maxAlt, type: float32 }
+          - { name: flags, type: uint32, optional: true, default: 0 }
+
+    - name: weatherCreateThermal
+      opcode: 0x25
+      deprecated: true
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: lat, type: float32 }
+          - { name: lon, type: float32 }
+          - { name: alt, type: float32 }
+          - { name: radius, type: float32 }
+          - { name: height, type: float32 }
+          - { name: coreRate, type: float32 }
+          - { name: coreTurbulence, type: float32 }
+          - { name: sinkRate, type: float32 }
+          - { name: sinkTurbulence, type: float32 }
+          - { name: coreSize, type: float32 }
+          - { name: coreTransitionSize, type: float32 }
+          - { name: sinkLayerSize, type: float32 }
+          - { name: sinkTransitionSize, type: float32 }
+
+    - name: weatherRemoveThermal
+      opcode: 0x26
+      deprecated: true
+      fields:
+          - { name: objectId, type: uint32 }
+
+    # ── AI vehicles ────────────────────────────────────────────────────────────
+    - name: aICreateParkedATCAircraft
+      opcode: 0x27
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: airportID, type: string, length: 5 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateEnrouteATCAircraft
+      opcode: 0x28
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: flightNumber, type: int32 }
+          - { name: flightPlanPath, type: string, length: 260 }
+          - { name: flightPlanPosition, type: float64 }
+          - { name: touchAndGo, type: bool_uint32 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateNonATCAircraft
+      opcode: 0x29
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: initPos, type: struct, struct: InitPosition }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateSimulatedObject
+      opcode: 0x2a
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: initPos, type: struct, struct: InitPosition }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aIReleaseControl
+      opcode: 0x2b
+      fields:
+          - { name: objectId, type: uint32 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aIRemoveObject
+      opcode: 0x2c
+      fields:
+          - { name: objectId, type: uint32 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aISetAircraftFlightPlan
+      opcode: 0x2d
+      fields:
+          - { name: objectId, type: uint32 }
+          - { name: flightPlanPath, type: string, length: 260 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: executeMissionAction
+      opcode: 0x2e
+      handwritten: true
+      reason: 'Requires Buffer.length === 16 validation'
+      fields:
+          - { name: guidInstanceId, type: bytes, length: 16 }
+
+    - name: completeCustomMissionAction
+      opcode: 0x2f
+      handwritten: true
+      reason: 'Requires Buffer.length === 16 validation'
+      fields:
+          - { name: guidInstanceId, type: bytes, length: 16 }
+
+    # ── Camera & UI ────────────────────────────────────────────────────────────
+    - name: cameraSetRelative6DOF
+      opcode: 0x30
+      fields:
+          - { name: deltaX, type: float32 }
+          - { name: deltaY, type: float32 }
+          - { name: deltaZ, type: float32 }
+          - { name: pitchDeg, type: float32 }
+          - { name: bankDeg, type: float32 }
+          - { name: headingDeg, type: float32 }
+
+    - name: menuAddItem
+      opcode: 0x31
+      deprecated: true
+      fields:
+          - { name: menuItem, type: string256 }
+          - { name: menuEventId, type: uint32 }
+          - { name: data, type: uint32 }
+
+    - name: menuDeleteItem
+      opcode: 0x32
+      deprecated: true
+      fields:
+          - { name: menuEventId, type: uint32 }
+
+    - name: menuAddSubItem
+      opcode: 0x33
+      deprecated: true
+      fields:
+          - { name: menuEventId, type: uint32 }
+          - { name: menuItem, type: string256 }
+          - { name: subMenuEventId, type: uint32 }
+          - { name: data, type: uint32 }
+
+    - name: menuDeleteSubItem
+      opcode: 0x34
+      deprecated: true
+      fields:
+          - { name: menuEventId, type: uint32 }
+          - { name: subMenuEventId, type: uint32 }
+
+    # ── System state ───────────────────────────────────────────────────────────
+    - name: requestSystemState
+      opcode: 0x35
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: state, type: string256 }
+
+    - name: setSystemState
+      opcode: 0x36
+      fields:
+          - { name: state, type: string256 }
+          - { name: paramInt, type: uint32 }
+          - { name: paramFloat, type: float32 }
+          - { name: paramString, type: string256 }
+          - { name: _reserved, type: const_uint32, value: 0 }
+
+    # ── Client data ────────────────────────────────────────────────────────────
+    - name: mapClientDataNameToID
+      opcode: 0x37
+      fields:
+          - { name: clientDataName, type: string256 }
+          - { name: clientDataId, type: uint32 }
+
+    - name: createClientData
+      opcode: 0x38
+      fields:
+          - { name: clientDataId, type: uint32 }
+          - { name: size, type: uint32 }
+          - { name: readOnly, type: bool_uint32 }
+
+    - name: addToClientDataDefinition
+      opcode: 0x39
+      min_protocol: FSX_SP1
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: offset, type: uint32 }
+          - { name: sizeOrType, type: uint32 }
+          - { name: epsilon, type: float32, optional: true, default: 0 }
+          - { name: datumId, type: uint32, optional: true, default: 0 }
+
+    - name: clearClientDataDefinition
+      opcode: 0x3a
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+
+    - name: requestClientData
+      opcode: 0x3b
+      min_protocol: FSX_SP1
+      fields:
+          - { name: clientDataId, type: uint32 }
+          - { name: dataRequestId, type: uint32 }
+          - { name: clientDataDefineID, type: uint32 }
+          - { name: period, type: enum, enum: ClientDataPeriod }
+          - { name: flags, type: uint32 }
+          - { name: origin, type: uint32, optional: true, default: 0 }
+          - { name: interval, type: uint32, optional: true, default: 0 }
+          - { name: limit, type: uint32, optional: true, default: 0 }
+
+    - name: setClientData
+      opcode: 0x3c
+      handwritten: true
+      reason: 'Conditional arrayCount normalization (0 → 1) and raw Buffer append'
+      fields:
+          - { name: clientDataId, type: uint32 }
+          - { name: clientDataDefineID, type: uint32 }
+          - { name: reserved, type: uint32 }
+          - { name: arrayCount, type: uint32 }
+          - { name: unitSize, type: uint32 }
+          - { name: data, type: bytes }
+
+    # ── Flight files ───────────────────────────────────────────────────────────
+    - name: flightLoad
+      opcode: 0x3d
+      returns_void: true
+      fields:
+          - { name: fileName, type: string, length: 260 }
+
+    - name: flightSave
+      opcode: 0x3e
+      handwritten: true
+      reason: 'Protocol-conditional title field (FSX_SP2+)'
+      fields:
+          - { name: fileName, type: stringv }
+          - { name: title, type: string256, nullable: true }
+          - { name: description, type: stringv }
+          - { name: flags, type: uint32, optional: true }
+
+    - name: flightPlanLoad
+      opcode: 0x3f
+      fields:
+          - { name: fileName, type: string, length: 260 }
+
+    # ── Text / menu (deprecated since MSFS/KittyHawk) ─────────────────────────
+    - name: text
+      opcode: 0x40
+      deprecated: true
+      min_protocol: FSX_SP1
+      handwritten: true
+      reason: 'Conditional dynamic string with explicit null byte'
+      fields:
+          - { name: type, type: enum, enum: TextType }
+          - { name: timeSeconds, type: float32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: message, type: stringv }
+
+    - name: menu
+      opcode: 0x40
+      deprecated: true
+      min_protocol: FSX_SP1
+      handwritten: true
+      reason: 'Complex dynamic string construction with back-patched size offset'
+      fields:
+          - { name: timeSeconds, type: float32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: title, type: stringv, optional: true }
+          - { name: prompt, type: stringv, optional: true }
+          - { name: items, type: stringv, variadic: true }
+
+    # ── Facilities ─────────────────────────────────────────────────────────────
+    - name: subscribeToFacilities
+      opcode: 0x41
+      min_protocol: FSX_SP1
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+          - { name: clientEventId, type: uint32 }
+
+    - name: unSubscribeToFacilities
+      opcode: 0x42
+      min_protocol: FSX_SP1
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+
+    - name: requestFacilitiesList
+      opcode: 0x43
+      min_protocol: FSX_SP1
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+          - { name: clientEventId, type: uint32 }
+
+    - name: transmitClientEventEx
+      opcode: 0x44
+      fields:
+          - { name: objectId, type: uint32 }
+          - { name: clientEventId, type: uint32 }
+          - { name: notificationGroupId, type: uint32 }
+          - { name: flags, type: uint32 }
+          - { name: data0, type: uint32, optional: true, default: 0 }
+          - { name: data1, type: uint32, optional: true, default: 0 }
+          - { name: data2, type: uint32, optional: true, default: 0 }
+          - { name: data3, type: uint32, optional: true, default: 0 }
+          - { name: data4, type: uint32, optional: true, default: 0 }
+
+    - name: addToFacilityDefinition
+      opcode: 0x45
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: fieldName, type: string256 }
+
+    - name: requestFacilityData
+      opcode: 0x46
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: dataRequestId, type: uint32 }
+          - { name: icao, type: string, length: 16 }
+          - { name: region, type: string, length: 4, optional: true, default: '' }
+
+    - name: requestFacilityDataEx1
+      opcode: 0x4a
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: dataRequestId, type: uint32 }
+          - { name: icao, type: string, length: 16 }
+          - { name: region, type: string, length: 4, optional: true, default: '' }
+          - { name: type, type: string, length: 1, optional: true, default: '' }
+
+    - name: subscribeToFacilitiesEx1
+      opcode: 0x47
+      min_protocol: KittyHawk
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+          - { name: newElemInRangeRequestID, type: uint32 }
+          - { name: oldElemOutRangeRequestID, type: uint32 }
+
+    - name: unSubscribeToFacilitiesEx1
+      opcode: 0x48
+      min_protocol: FSX_SP1
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+          - { name: unsubscribeNewInRange, type: bool_byte }
+          - { name: unsubscribeOldOutRange, type: bool_byte }
+
+    - name: requestFacilitiesListEx1
+      opcode: 0x49
+      min_protocol: KittyHawk
+      fields:
+          - { name: type, type: enum, enum: FacilityListType }
+          - { name: clientEventId, type: uint32 }
+
+    - name: requestJetwayData
+      opcode: 0x4b
+      min_protocol: KittyHawk
+      handwritten: true
+      reason: 'Dynamic array of parking indices'
+      fields:
+          - { name: airportIcao, type: stringv }
+          - { name: parkingIndices, type: array, item_type: uint32, optional: true }
+
+    - name: enumerateControllers
+      opcode: 0x4c
+      min_protocol: KittyHawk
+      fields: []
+
+    - name: mapInputEventToClientEventEx1
+      opcode: 0x4d
+      min_protocol: KittyHawk
+      fields:
+          - { name: inputGroupId, type: uint32 }
+          - { name: inputDefinition, type: string256 }
+          - { name: clientEventDownID, type: uint32 }
+          - { name: downValue, type: uint32, optional: true, default: 0 }
+          - { name: clientEventUpID, type: uint32, optional: true, default_constant: UNUSED }
+          - { name: upValue, type: uint32, optional: true, default: 0 }
+          - { name: maskable, type: bool_uint32, optional: true, default: false }
+
+    - name: executeAction
+      opcode: 0x4e
+      min_protocol: KittyHawk
+      handwritten: true
+      reason: 'Requires RawBuffer.getBuffer() conversion and size-prefixed bytes'
+      fields:
+          - { name: dataRequestID, type: uint32 }
+          - { name: actionID, type: string256 }
+          - { name: values, type: rawbuffer }
+
+    - name: enumerateInputEvents
+      opcode: 0x4f
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataRequestID, type: uint32 }
+
+    - name: getInputEvent
+      opcode: 0x50
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataRequestID, type: uint32 }
+          - { name: inputEventHashID, type: uint64 }
+
+    - name: setInputEvent
+      opcode: 0x51
+      min_protocol: KittyHawk
+      handwritten: true
+      reason: 'Discriminated union: string value uses putString, number value uses putFloat64'
+      fields:
+          - { name: inputEventHashID, type: uint64 }
+          - { name: value, type: float64_or_string }
+
+    - name: subscribeInputEvent
+      opcode: 0x52
+      min_protocol: KittyHawk
+      fields:
+          - { name: inputEventHashID, type: uint64 }
+
+    - name: unsubscribeInputEvent
+      opcode: 0x53
+      min_protocol: KittyHawk
+      fields:
+          - { name: inputEventHashID, type: uint64 }
+
+    - name: enumerateInputEventParams
+      opcode: 0x54
+      min_protocol: KittyHawk
+      fields:
+          - { name: inputEventHashID, type: uint64 }
+
+    - name: addFacilityDataDefinitionFilter
+      opcode: 0x55
+      min_protocol: KittyHawk
+      handwritten: true
+      reason: 'Nullable RawBuffer with conditional size-prefixed bytes'
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+          - { name: filterPath, type: string256 }
+          - { name: filterData, type: rawbuffer, nullable: true }
+
+    - name: clearAllFacilityDataDefinitionFilters
+      opcode: 0x56
+      min_protocol: KittyHawk
+      fields:
+          - { name: dataDefinitionId, type: uint32 }
+
+    # ── AI vehicles Ex1 (SunRise) ──────────────────────────────────────────────
+    - name: aICreateParkedATCAircraftEx1
+      opcode: 0x57
+      min_protocol: SunRise
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: livery, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: airportID, type: string, length: 5 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateEnrouteATCAircraftEx1
+      opcode: 0x58
+      min_protocol: SunRise
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: livery, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: flightNumber, type: int32 }
+          - { name: flightPlanPath, type: string, length: 260 }
+          - { name: flightPlanPosition, type: float64 }
+          - { name: touchAndGo, type: bool_uint32 }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateNonATCAircraftEx1
+      opcode: 0x59
+      min_protocol: SunRise
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: livery, type: string256 }
+          - { name: tailNumber, type: string, length: 12 }
+          - { name: initPos, type: struct, struct: InitPosition }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: aICreateSimulatedObjectEx1
+      opcode: 0x5a
+      min_protocol: SunRise
+      fields:
+          - { name: containerTitle, type: string256 }
+          - { name: livery, type: string256 }
+          - { name: initPos, type: struct, struct: InitPosition }
+          - { name: dataRequestId, type: uint32 }
+
+    - name: enumerateSimObjectsAndLiveries
+      opcode: 0x5b
+      min_protocol: SunRise
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: type, type: enum, enum: SimObjectType }
+
+    - name: subscribeToFlowEvent
+      opcode: 0x5c
+      min_protocol: SunRise
+      fields: []
+
+    - name: unsubscribeToFlowEvent
+      opcode: 0x5d
+      min_protocol: SunRise
+      fields: []
+
+    - name: requestAllFacilities
+      opcode: 0x5e
+      min_protocol: SunRise
+      fields:
+          - { name: dataRequestId, type: uint32 }
+          - { name: type, type: enum, enum: FacilityListType }
+
+    # ── Camera (SunRise) ───────────────────────────────────────────────────────
+    - name: cameraAcquire
+      opcode: 0x5f
+      min_protocol: SunRise
+      fields:
+          - { name: clientId, type: string, length: 2048 }
+
+    - name: cameraRelease
+      opcode: 0x60
+      min_protocol: SunRise
+      fields:
+          - { name: cameraDefName, type: string, length: 2048 }
+
+    - name: cameraGetStatus
+      opcode: 0x61
+      min_protocol: SunRise
+      fields: []
+
+    - name: cameraSet
+      opcode: 0x62
+      min_protocol: SunRise
+      fields:
+          - { name: cameraData, type: struct, struct: CameraData }
+          - { name: dataMask, type: enum, enum: CameraDataMask }
+
+    - name: cameraGet
+      opcode: 0x63
+      min_protocol: SunRise
+      fields:
+          - { name: positionReferential, type: enum, enum: PositionReferential }
+
+    - name: cameraEnableFlag
+      opcode: 0x64
+      min_protocol: SunRise
+      fields:
+          - { name: flag, type: enum, enum: CameraFlag }
+
+    - name: cameraDisableFlag
+      opcode: 0x65
+      min_protocol: SunRise
+      fields:
+          - { name: flag, type: enum, enum: CameraFlag }
+
+    - name: subscribeToCameraStatusUpdate
+      opcode: 0x66
+      min_protocol: SunRise
+      fields: []
+
+    - name: unsubscribeToCameraStatusUpdate
+      opcode: 0x67
+      min_protocol: SunRise
+      fields: []
+
+    - name: enumerateCameraDefinitions
+      opcode: 0x68
+      min_protocol: SunRise
+      fields: []
+
+    - name: cameraSetUsingCameraDefinition
+      opcode: 0x69
+      min_protocol: SunRise
+      fields:
+          - { name: cameraDefinition, type: string, length: 2048 }
+
+    # ── CommBus (SunRise) ──────────────────────────────────────────────────────
+    - name: subscribeToCommBusEvent
+      opcode: 0x6a
+      min_protocol: SunRise
+      fields:
+          - { name: eventId, type: uint32 }
+          - { name: eventName, type: string256 }
+
+    - name: unsubscribeToCommBusEvent
+      opcode: 0x6b
+      min_protocol: SunRise
+      fields:
+          - { name: eventId, type: uint32 }
+
+    - name: callCommBusEvent
+      opcode: 0x6c
+      min_protocol: SunRise
+      handwritten: true
+      reason: 'Size-prefixed variable-length string payload'
+      fields:
+          - { name: eventName, type: stringv }
+          - { name: broadcastTo, type: enum, enum: CommBusBroadcastTo }
+          - { name: payload, type: stringv }

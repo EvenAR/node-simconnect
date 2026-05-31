@@ -1,0 +1,231 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SimConnect Protocol Spec",
+  "type": "object",
+  "required": [
+    "meta",
+    "protocols",
+    "recv_ids",
+    "constants",
+    "enums",
+    "flags",
+    "structs",
+    "recv_messages",
+    "packet_encoders"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["version"],
+      "properties": {
+        "version": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "protocols": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "recv_ids": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "constants": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "enums": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/enumDef" }
+    },
+    "flags": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/enumDef" }
+    },
+    "structs": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/structDef" }
+    },
+    "recv_messages": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/recvDef" }
+    },
+    "packet_encoders": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/packetEncoderDef" }
+    }
+  },
+  "definitions": {
+    "memberValue": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "object",
+          "required": ["compose"],
+          "properties": {
+            "compose": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 2
+            }
+          }
+        }
+      ]
+    },
+    "enumMember": {
+      "type": "object",
+      "required": ["name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "$ref": "#/definitions/memberValue" },
+        "doc": { "type": "string" }
+      }
+    },
+    "enumDef": {
+      "type": "object",
+      "required": ["name", "members"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "const_enum": { "type": "boolean" },
+        "members": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/enumMember" },
+          "minItems": 1
+        }
+      }
+    },
+    "fieldLength": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "object",
+          "required": ["default"],
+          "properties": {
+            "default": { "type": "number" },
+            "since": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          }
+        }
+      ]
+    },
+    "fieldDef": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "int8",
+            "int16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+            "float32",
+            "float64",
+            "bool_int32",
+            "bool_uint32",
+            "string",
+            "stringv",
+            "bytes",
+            "rawbuffer",
+            "enum",
+            "struct",
+            "list",
+            "array",
+            "derived",
+            "string256",
+            "string256_nullable",
+            "byte",
+            "bool_byte",
+            "const_uint32",
+            "float64_or_string",
+            "raw_or_simdata"
+          ]
+        },
+        "length": { "$ref": "#/definitions/fieldLength" },
+        "enum": { "type": "string" },
+        "struct": { "type": "string" },
+        "item_type": { "type": "string" },
+        "count_field": { "type": "string" },
+        "protocol_aware": { "type": "boolean" },
+        "derived": { "type": "string" },
+        "source_field": { "type": "string" },
+        "fallback": { "type": "string" },
+        "doc": { "type": "string" },
+        "optional": { "type": "boolean" },
+        "default": {},
+        "default_constant": { "type": "string" },
+        "default_enum": { "type": "string" },
+        "nullable": { "type": "boolean" },
+        "variadic": { "type": "boolean" },
+        "value": { "type": "number" }
+      }
+    },
+    "structDef": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "simconnect_data": { "type": "boolean" },
+        "protocol_aware": { "type": "boolean" },
+        "extends": { "type": "string" },
+        "static_flags": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/fieldDef" }
+        }
+      }
+    },
+    "recvDef": {
+      "type": "object",
+      "required": ["name", "recv_id"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "recv_id": {
+          "oneOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "base": { "type": "string" },
+        "protocol_aware": { "type": "boolean" },
+        "list_field": { "type": "string" },
+        "item_type": { "type": "string" },
+        "handwritten": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/fieldDef" }
+        }
+      }
+    },
+    "packetEncoderDef": {
+      "type": "object",
+      "required": ["name", "opcode"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "opcode": { "type": "number" },
+        "min_protocol": { "type": "string" },
+        "handwritten": { "type": "boolean" },
+        "reason": { "type": "string" },
+        "deprecated": { "type": "boolean" },
+        "returns_void": { "type": "boolean" },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/fieldDef" }
+        }
+      }
+    }
+  }
+}
