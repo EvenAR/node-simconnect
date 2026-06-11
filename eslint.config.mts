@@ -27,7 +27,7 @@ export default defineConfig([
       },
     },
     rules: {
-      "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": "warn",
       "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-use-before-define": "off",

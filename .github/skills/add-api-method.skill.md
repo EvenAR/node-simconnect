@@ -26,10 +26,10 @@ Example: `SimConnect_CameraGet` maps to `SIMCONNECT_RECV_ID_CAMERA_DATA`.
 
 ### 0. Request → Recv mapping (always)
 
--   Identify the request function in `SimConnect.h` and verify whether it has a corresponding `SIMCONNECT_RECV_ID_*` response.
--   Use the online SDK API docs to verify whether the function produces recv messages, while keeping `SimConnect.h` as the authoritative source if docs and header disagree.
--   If a response exists, implement both request and receive paths in the same change.
--   Do not stop after adding only the request method when the SDK defines a recv packet for it.
+- Identify the request function in `SimConnect.h` and verify whether it has a corresponding `SIMCONNECT_RECV_ID_*` response.
+- Use the online SDK API docs to verify whether the function produces recv messages, while keeping `SimConnect.h` as the authoritative source if docs and header disagree.
+- If a response exists, implement both request and receive paths in the same change.
+- Do not stop after adding only the request method when the SDK defines a recv packet for it.
 
 ### 1. Recv struct (only if the server sends a response packet)
 
@@ -51,13 +51,13 @@ export class RecvXxx {
 
 Rules:
 
--   Constructor takes a single `RawBuffer` argument.
--   **Check if the SDK struct inherits from a base struct** (e.g., `SIMCONNECT_RECV_LIST_TEMPLATE`). If it does, extend the corresponding TypeScript base class (e.g., `RecvListTemplate`) and call `super(data)` first.
--   Read fields in the exact order they appear in the C++ struct.
--   Fixed-length string fields: `data.readString(N)` where **N is the exact byte length from the SDK struct**.
--   Variable-length text payloads declared with the `SIMCONNECT_STRINGV(name)` macro (expands to `char name[1]`): use `data.readStringV()` typed as `string`.
--   Variable-length raw byte blobs that are not text: `data.readBytes(data.remaining())` typed as `Buffer`.
--   **Verify every field name and type against the SDK struct** — do not rename fields or change types based on assumptions.
+- Constructor takes a single `RawBuffer` argument.
+- **Check if the SDK struct inherits from a base struct** (e.g., `SIMCONNECT_RECV_LIST_TEMPLATE`). If it does, extend the corresponding TypeScript base class (e.g., `RecvListTemplate`) and call `super(data)` first.
+- Read fields in the exact order they appear in the C++ struct.
+- Fixed-length string fields: `data.readString(N)` where **N is the exact byte length from the SDK struct**.
+- Variable-length text payloads declared with the `SIMCONNECT_STRINGV(name)` macro (expands to `char name[1]`): use `data.readStringV()` typed as `string`.
+- Variable-length raw byte blobs that are not text: `data.readBytes(data.remaining())` typed as `Buffer`.
+- **Verify every field name and type against the SDK struct** — do not rename fields or change types based on assumptions.
 
 Then export the new class from `src/recv/index.ts`:
 
@@ -71,8 +71,8 @@ Read the `SIMCONNECT_RECV_ID` enum directly from `SimConnect.h` and add the new 
 
 **Critical rules:**
 
--   Never assign explicit integer values to enum members (e.g. `ID_FOO = 40`) — rely on TypeScript's sequential auto-increment. Explicit values cause the entire subsequent sequence to shift if any entry is inserted before it.
--   Before adding entries, find the full `SIMCONNECT_RECV_ID` enum in `SimConnect.h` and verify the complete ordering. Pay attention to entries that may have been inserted between existing ones.
+- Never assign explicit integer values to enum members (e.g. `ID_FOO = 40`) — rely on TypeScript's sequential auto-increment. Explicit values cause the entire subsequent sequence to shift if any entry is inserted before it.
+- Before adding entries, find the full `SIMCONNECT_RECV_ID` enum in `SimConnect.h` and verify the complete ordering. Pay attention to entries that may have been inserted between existing ones.
 
 ```ts
 ID_XXX, // position must match SDK enum order, no explicit value
@@ -92,9 +92,9 @@ export enum XxxEnum {
 
 Rules:
 
--   File name: `PascalCase.ts`.
--   Member names: short `PascalCase` stripping the repetitive C++ prefix.
--   Values must exactly match the SDK definitions.
+- File name: `PascalCase.ts`.
+- Member names: short `PascalCase` stripping the repetitive C++ prefix.
+- Values must exactly match the SDK definitions.
 
 Then export from `src/enums/index.ts`:
 
@@ -108,12 +108,12 @@ Add the public method to `src/SimConnectConnection.ts`.
 
 **Before writing the method, determine:**
 
--   The exact packet opcode (hex ID) — **do not guess**. Opcodes are sequential based on the order functions appear in `SimConnect.h`. To find the correct opcode:
+- The exact packet opcode (hex ID) — **do not guess**. Opcodes are sequential based on the order functions appear in `SimConnect.h`. To find the correct opcode:
     1. Find the last implemented method in `src/SimConnectConnection.ts` and note its opcode.
     2. Locate that same function in `SimConnect.h` and count forward to the target function.
     3. Increment the last known opcode by the number of steps between them.
--   The exact parameter order as declared in the SDK function signature in `SimConnect.h`
--   The exact string field sizes
+- The exact parameter order as declared in the SDK function signature in `SimConnect.h`
+- The exact string field sizes
 
 ```ts
 /**
@@ -134,11 +134,11 @@ methodName(foo: string): number {
 
 Payload encoding rules:
 
--   All strings use **`latin1`**. Never use `utf8`.
--   **String field sizes**: use the correct `putStringN` helper matching the byte length in `SimConnect.h` (e.g. `.putString256(value)` for 256-byte fields). Always check the struct definition.
--   If `SimConnect.h` or the function's documentation comment explicitly states the payload carries **JSON**, accept `string | object`; objects are serialized with `JSON.stringify` before encoding. Otherwise the parameter type is plain `string`.
--   Variable-length string fields declared with `SIMCONNECT_STRINGV` in the SDK struct: `.putUint32(str.length).putString(str)` (no fixed-size argument to `putString`).
--   Variable-length byte blobs: `.putUint32(buf.length).putBytes(buf)`.
+- All strings use **`latin1`**. Never use `utf8`.
+- **String field sizes**: use the correct `putStringN` helper matching the byte length in `SimConnect.h` (e.g. `.putString256(value)` for 256-byte fields). Always check the struct definition.
+- If `SimConnect.h` or the function's documentation comment explicitly states the payload carries **JSON**, accept `string | object`; objects are serialized with `JSON.stringify` before encoding. Otherwise the parameter type is plain `string`.
+- Variable-length string fields declared with `SIMCONNECT_STRINGV` in the SDK struct: `.putUint32(str.length).putString(str)` (no fixed-size argument to `putString`).
+- Variable-length byte blobs: `.putUint32(buf.length).putBytes(buf)`.
 
 ### 5. Event handler (only if step 1 applies)
 

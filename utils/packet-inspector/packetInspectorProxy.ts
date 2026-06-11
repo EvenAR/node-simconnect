@@ -19,7 +19,7 @@ const server = net.createServer(clientSocket => {
     const targetSocket = net.connect(simConnectPort, simConnectHost, () => {
         console.log(`Proxy connected to target server: ${simConnectHost}:${simConnectPort}`);
 
-        clientSocket.on('data', data => {
+        clientSocket.on('data', (data: Buffer) => {
             console.log(
                 `[Application -> SimConnect] ${data.length} bytes ::::::::::::::::::::::::\n`
             );
@@ -29,7 +29,7 @@ const server = net.createServer(clientSocket => {
             targetSocket.write(Uint8Array.from(Buffer.from(hexString, 'hex'))); // Forwarding the data to the target server
         });
 
-        targetSocket.on('data', data => {
+        targetSocket.on('data', (data: Buffer) => {
             console.log(
                 `[SimConnect -> Application] ${data.length} bytes ::::::::::::::::::::::::\n`
             );
