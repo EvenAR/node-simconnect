@@ -1,8 +1,9 @@
 name: Publish new release to npm
 
 on:
+    workflow_dispatch:
     release:
-        types: [created]
+        types: [published]
 
 jobs:
     build:
@@ -26,7 +27,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: '24.x'
-                  registry-url: 'https://npm.pkg.github.com'
+                  registry-url: 'https://registry.npmjs.org'
             - run: npm ci
             - run: npm publish
               env:
